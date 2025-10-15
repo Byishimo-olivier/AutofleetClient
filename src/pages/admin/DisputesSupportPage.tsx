@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSettings } from "@/contexts/SettingContxt";
 import {
   BarChart2,
   ClipboardList,
@@ -7,7 +8,7 @@ import {
   User,
   LogOut,
   FileText,
-  Settings,
+  Settings as SettingsIcon,
   Bell,
   PieChart,
   MessageCircle,
@@ -17,6 +18,7 @@ import {
   PlusCircle,
   Eye,
   X,
+  Fuel,
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
@@ -106,10 +108,59 @@ const ticketStatusColor: Record<string, string> = {
   Resolved: "bg-green-100 text-green-700",
 };
 
+interface Vehicle {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  pricePerDay: number;
+  location: string;
+  seats: number;
+  fuelType: string;
+  image?: string;
+  available: boolean;
+}
+
 const DisputesSupportPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [tab, setTab] = useState<"disputes" | "tickets">("disputes");
+  const { settings, formatPrice, t } = useSettings();
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading vehicles
+    setTimeout(() => {
+      setVehicles([
+        {
+          id: "1",
+          make: "Toyota",
+          model: "RAV4",
+          year: 2023,
+          pricePerDay: 150,
+          location: "Kigali",
+          seats: 5,
+          fuelType: "Gasoline",
+          available: true,
+        },
+        // Add more vehicles...
+      ]);
+      setLoading(false);
+    }, 1000);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className={`min-h-screen ${settings.darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
+        <div className="flex items-center justify-center h-64">
+          <div className={`text-lg ${settings.darkMode ? "text-white" : "text-gray-900"}`}>
+            Loading vehicles...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -299,6 +350,115 @@ const DisputesSupportPage: React.FC = () => {
             </table>
           </div>
         )}
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">Available Vehicles</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {vehicles.map((vehicle) => (
+              <div
+                key={vehicle.id}
+                className={`rounded-lg shadow-lg overflow-hidden ${
+                  settings.darkMode ? "bg-gray-800" : "bg-white"
+                }`}
+              >
+                <div className="h-48 bg-gray-300 flex items-center justify-center">
+                  <Car className={`w-16 h-16 ${settings.darkMode ? "text-gray-600" : "text-gray-400"}`} />
+                </div>
+
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3
+                        className={`text-lg font-semibold ${
+                          settings.darkMode ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        {vehicle.make} {vehicle.model}
+                      </h3>
+                      <p
+                        className={`text-sm ${
+                          settings.darkMode ? "text-gray-400" : "text-gray-600"
+                        }`}
+                      >
+                        {vehicle.year}
+                      </p>
+                    </div>
+                    <div
+                      className={`px-2 py-1 rounded text-xs font-medium ${
+                        vehicle.available
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {vehicle.available ? "Available" : "Unavailable"}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <MessageCircle className={`w-4 h-4 ${settings.darkMode ? "text-gray-400" : "text-gray-500"}`} />
+                      <span
+                        className={`text-sm ${
+                          settings.darkMode ? "text-gray-300" : "text-gray-700"
+                        }`}
+                      >
+                        {vehicle.location}
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Users className={`w-4 h-4 ${settings.darkMode ? "text-gray-400" : "text-gray-500"}`} />
+                      <span
+                        className={`text-sm ${
+                          settings.darkMode ? "text-gray-300" : "text-gray-700"
+                        }`}
+                      >
+                        {vehicle.seats} seats
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Fuel className={`w-4 h-4 ${settings.darkMode ? "text-gray-400" : "text-gray-500"}`} />
+                      <span
+                        className={`text-sm ${
+                          settings.darkMode ? "text-gray-300" : "text-gray-700"
+                        }`}
+                      >
+                        {vehicle.fuelType}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <span
+                        className={`text-2xl font-bold ${
+                          settings.darkMode ? "text-white" : "text-gray-900"
+                        }`}
+                      >
+                        {formatPrice(vehicle.pricePerDay)}
+                      </span>
+                      <span
+                        className={`text-sm ${
+                          settings.darkMode ? "text-gray-400" : "text-gray-600"
+                        }`}
+                      >
+                        /day
+                      </span>
+                    </div>
+                    <button
+                      disabled={!vehicle.available}
+                      className={`px-4 py-2 rounded-lg font-medium transition ${
+                        vehicle.available
+                          ? "bg-blue-600 text-white hover:bg-blue-700"
+                          : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      }`}
+                    >
+                      {vehicle.available ? "Book Now" : "Unavailable"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

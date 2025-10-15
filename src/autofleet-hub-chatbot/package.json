@@ -1,0 +1,41 @@
+{
+  "name": "autofleet-hub-chatbot",
+  "version": "1.0.0",
+  "description": "A chatbot integration for the AutoFleet Hub project.",
+  "main": "src/index.tsx",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "keywords": [
+    "chatbot",
+    "react",
+    "typescript"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-scripts": "4.0.3",
+    "axios": "^0.21.1"
+  },
+  "devDependencies": {
+    "typescript": "^4.1.2",
+    "@types/react": "^17.0.2",
+    "@types/react-dom": "^17.0.2"
+  },
+  "homepage": "https://github.com/yourusername/autofleet-hub-chatbot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/autofleet-hub-chatbot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/autofleet-hub-chatbot/issues"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

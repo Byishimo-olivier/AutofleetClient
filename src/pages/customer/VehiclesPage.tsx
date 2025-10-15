@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { MapPin, Calendar, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { useSettings } from '@/contexts/SettingContxt';
 
 const allVehicles = [
   {
@@ -66,6 +67,8 @@ const transmissions = ["All", "Automatic", "Manual"];
 const ITEMS_PER_PAGE = 6;
 
 export default function VehiclesPage() {
+  const { settings, formatPrice, t } = useSettings();
+  
   const [type, setType] = useState("All");
   const [transmission, setTransmission] = useState("All");
   const [search, setSearch] = useState("");
@@ -82,7 +85,7 @@ export default function VehiclesPage() {
   const vehicles = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className={settings.darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>
       {/* Filter/Search Bar */}
       <section className="bg-gradient-to-br from-[#2c4a9d] to-[#1e3a7d] text-white py-10 px-4">
         <div className="max-w-6xl mx-auto">

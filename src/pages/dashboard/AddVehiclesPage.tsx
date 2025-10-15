@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import SidebarLayout from '@/components/layout/SidebarLayout';
 import { Car } from 'lucide-react';
 import { apiClient } from "@/services/apiClient";
+import { useSettings } from '@/contexts/SettingContxt';
 
 interface Vehicle {
   id: number;
@@ -36,6 +37,7 @@ const initialForm = {
 };
 
 const VehiclesPage: React.FC = () => {
+  const { settings, formatPrice, t } = useSettings();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -184,6 +186,18 @@ const VehiclesPage: React.FC = () => {
       }
     );
   };
+
+  if (loading) {
+    return (
+      <div className={`min-h-screen ${settings.darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <div className="flex items-center justify-center h-64">
+          <div className={`text-lg ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
+            Loading vehicles...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SidebarLayout>

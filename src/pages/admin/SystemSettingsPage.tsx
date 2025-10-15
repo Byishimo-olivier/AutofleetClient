@@ -32,6 +32,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid
 } from "recharts";
+import { useSettings } from '@/contexts/SettingContxt';
 
 const adminNav = [
   { icon: <BarChart2 className="w-5 h-5" />, label: "Dashboard", to: "/admin" },
@@ -83,9 +84,10 @@ const SystemSettingsPage: React.FC = () => {
   const [dynamicPricing, setDynamicPricing] = useState(true);
   const [lateFee, setLateFee] = useState(25);
   const [cancelFee, setCancelFee] = useState(15);
+  const { settings, formatPrice, t } = useSettings();
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className={`flex min-h-screen ${settings.darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
       {/* Sidebar */}
       <aside className="w-64 bg-[#2c3e7d] text-white flex flex-col shadow-lg">
         <div className="px-4 py-6 border-b border-[#3d4f8f]">

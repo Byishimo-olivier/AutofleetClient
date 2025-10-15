@@ -12,6 +12,7 @@ import {
     Search,
 } from "lucide-react";
 import { apiClient } from "@/services/apiClient";
+import { useSettings } from '@/contexts/SettingContxt';
 
 // Get base URL without /api for static files
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -66,6 +67,7 @@ export default function CustomerDashboard() {
     const [pickupDate, setPickupDate] = useState("");
     const [returnDate, setReturnDate] = useState("");
     const navigate = useNavigate();
+    const { settings, formatPrice, t } = useSettings();
 
     useEffect(() => {
         const fetchFeatured = async () => {
@@ -119,7 +121,7 @@ export default function CustomerDashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className={settings.darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>
             {/* Hero Section with Search */}
             <section className="bg-gradient-to-br from-[#2c4a9d] to-[#1e3a7d] text-white py-16 px-4">
                 <div className="max-w-6xl mx-auto">

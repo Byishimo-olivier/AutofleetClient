@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import { apiClient } from "@/services/apiClient";
+import { useSettings } from '@/contexts/SettingContxt';
 
 const statusColors: Record<string, string> = {
   Cancelled: "text-red-600",
@@ -37,6 +38,7 @@ const statusFilters = ["All", "Pending", "Confirmed", "Active", "Completed", "Ca
 const ITEMS_PER_PAGE = 10;
 
 const BookingPage: React.FC = () => {
+  const { settings, formatPrice, t } = useSettings();
   const [bookings, setBookings] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({
     totalBookings: 0,

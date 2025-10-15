@@ -5,8 +5,10 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line
 } from "recharts";
 import { apiClient } from "@/services/apiClient";
+import { useSettings } from '@/contexts/SettingContxt';
 
 const DashboardPage: React.FC = () => {
+  const { settings, formatPrice, t } = useSettings();
   const [stats, setStats] = useState<any>({
     totalVehicles: 0,
     activeBookings: 0,

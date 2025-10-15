@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { useSettings } from "@/contexts/SettingContxt";
 import {
   BarChart2,
   ClipboardList,
@@ -7,7 +8,7 @@ import {
   User,
   LogOut,
   FileText,
-  Settings,
+  Settings as SettingsIcon,
   Bell,
   PieChart,
   MessageCircle,
@@ -94,9 +95,58 @@ const statusColor: Record<string, string> = {
   Failed: "bg-red-100 text-red-700",
 };
 
+interface Vehicle {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  pricePerDay: number;
+  location: string;
+  seats: number;
+  fuelType: string;
+  image?: string;
+  available: boolean;
+}
+
 const NotificationsCenterPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { settings, formatPrice, t } = useSettings();
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading vehicles
+    setTimeout(() => {
+      setVehicles([
+        {
+          id: "1",
+          make: "Toyota",
+          model: "RAV4",
+          year: 2023,
+          pricePerDay: 150,
+          location: "Kigali",
+          seats: 5,
+          fuelType: "Gasoline",
+          available: true,
+        },
+        // Add more vehicles...
+      ]);
+      setLoading(false);
+    }, 1000);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className={`min-h-screen ${settings.darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
+        <div className="flex items-center justify-center h-64">
+          <div className={`text-lg ${settings.darkMode ? "text-white" : "text-gray-900"}`}>
+            Loading vehicles...
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -133,69 +183,8 @@ const NotificationsCenterPage: React.FC = () => {
             <LogOut className="mr-2 w-4 h-4" /> Logout
           </button>
         </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 p-8 space-y-8">
-        {/* Booking Alerts */}
-        <div>
-          <div className="font-semibold text-lg flex items-center gap-2 mb-2">
-            <Bell className="w-5 h-5" /> Booking Alerts
-          </div>
-          <div className="bg-white rounded-xl shadow p-4 mb-6">
-            {bookingAlerts.map((alert, i) => (
-              <div
-                key={i}
-                className={`flex items-center justify-between border-b last:border-b-0 py-3`}
-              >
-                <div className="flex items-center gap-3">
-                  {alert.type === "success" ? (
-                    <CheckCircle className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <XCircle className="w-5 h-5 text-red-600" />
-                  )}
-                  <div>
-                    <div className={`font-semibold ${alert.type === "success" ? "text-green-700" : "text-red-700"}`}>
-                      {alert.title}
-                    </div>
-                    <div className="text-xs text-gray-500">{alert.desc}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-xs text-gray-400">{alert.time}</span>
-                  <input type="checkbox" checked={alert.checked} readOnly className="accent-blue-600 w-4 h-4" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* System Announcements */}
-        <div>
-          <div className="font-semibold text-lg flex items-center gap-2 mb-2">
-            <Megaphone className="w-5 h-5" /> System Announcements
-            <button className="ml-auto flex items-center gap-2 bg-[#f59e0b] hover:bg-[#d97706] text-white px-4 py-1.5 rounded font-semibold text-sm shadow">
-              <PlusCircle className="w-4 h-4" /> Add Announcement
-            </button>
-          </div>
-          <div className="bg-white rounded-xl shadow p-0 mb-6">
-            {announcements.map((a, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-4 px-6 py-4 border-b last:border-b-0 ${a.color}`}
-              >
-                <div className="flex-1">
-                  <div className="font-semibold">{a.title}</div>
-                  <div className="text-xs text-gray-600">{a.desc}</div>
-                </div>
-                <div className="text-xs text-gray-500">{a.time}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
         {/* Payment Updates */}
-        <div>
+        <div className="mt-6">
           <div className="font-semibold text-lg flex items-center gap-2 mb-2">
             <FileText className="w-5 h-5" /> Payment Updates
           </div>
@@ -238,7 +227,7 @@ const NotificationsCenterPage: React.FC = () => {
             </table>
           </div>
         </div>
-      </div>
+      </aside>
     </div>
   );
 };
