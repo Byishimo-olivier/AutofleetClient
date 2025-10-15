@@ -14,10 +14,12 @@ import {
   FileText,
 } from "lucide-react";
 import { apiClient } from "@/services/apiClient";
+import { useSettings } from "@/contexts/SettingContxt";
 
 const FeedbackPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { settings, formatPrice, t } = useSettings();
   const [showReplyModal, setShowReplyModal] = useState(false);
   const [reply, setReply] = useState("");
   const [feedbackList, setFeedbackList] = useState<any[]>([]);

@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { apiClient } from "@/services/apiClient";
+import { useSettings } from '@/contexts/SettingContxt';
 
 function SidebarNavItem({ icon, label, to, active = false }: { icon: React.ReactNode; label: string; to: string; active?: boolean }) {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ const AnalyticsPage: React.FC = () => {
   const [bookingsData, setBookingsData] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const { settings, formatPrice, t } = useSettings();
 
   useEffect(() => {
     setLoading(true);

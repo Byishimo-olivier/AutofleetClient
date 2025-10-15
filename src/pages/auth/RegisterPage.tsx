@@ -109,26 +109,28 @@ const RegisterPage: React.FC = () => {
                   <Label htmlFor="role" className="text-white">Account Type</Label>
                   <Select
                     value={formData.role}
-                    onValueChange={(value: 'customer' | 'owner') => 
-                      setFormData(prev => ({ ...prev, role: value }))
+                    onValueChange={(value: string) => 
+                      setFormData(prev => ({ ...prev, role: value as 'customer' | 'owner' }))
                     }
                   >
                     <SelectTrigger className="mt-1 bg-gray-900 text-white border-gray-700">
                       <SelectValue placeholder="Select account type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-900 text-white border-gray-700">
-                      <SelectItem value="customer">
-                        <div className="flex items-center space-x-2">
-                          <User className="h-4 w-4" />
-                          <span>Customer - Rent vehicles</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="owner">
-                        <div className="flex items-center space-x-2">
-                          <Users className="h-4 w-4" />
-                          <span>Owner - List your vehicles</span>
-                        </div>
-                      </SelectItem>
+                    <SelectContent>
+                      <div className="bg-gray-900 text-white border-gray-700">
+                        <SelectItem value="customer">
+                          <div className="flex items-center space-x-2">
+                            <User className="h-4 w-4" />
+                            <span>Customer - Rent vehicles</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="owner">
+                          <div className="flex items-center space-x-2">
+                            <Users className="h-4 w-4" />
+                            <span>Owner - List your vehicles</span>
+                          </div>
+                        </SelectItem>
+                      </div>
                     </SelectContent>
                   </Select>
                 </div>

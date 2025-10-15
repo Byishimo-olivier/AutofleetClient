@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Car, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useSettings } from '@/contexts/SettingContxt';
 
 // Replace with your actual car image path
 import carImage from '@/assets/car-login.jpg';
@@ -21,6 +22,7 @@ const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { settings, formatPrice, t } = useSettings();
 
   const from = location.state?.from?.pathname || '/dashboard';
 
