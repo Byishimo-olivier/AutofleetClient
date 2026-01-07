@@ -1,10 +1,11 @@
 import { ChatBotResponse } from '../types/chatbot';
 
 interface ConversationContext {
-  messages: Array<{role: 'user' | 'assistant', content: string}>;
+  messages: Array<{role: 'user' | 'assistant', content: string, timestamp?: number}>;
   lastNavigationUrl: string | null;
   awaitingConfirmation: boolean;
   userPreferences: Map<string, any>;
+  sessionId?: string;
 }
 
 interface AIProvider {
@@ -97,6 +98,7 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
 
   /**
    * Send message to AI API or fallback to keyword-based responses
+   * Enhanced: Adds timestamp, sessionId to context, logs interactions
    */
   async sendMessage(
     message: string,
@@ -108,14 +110,16 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
         throw new Error('Message cannot be empty');
       }
 
-      // Add user message to context
-      this.addMessageToContext('user', message);
+      // Add user message to context with timestamp
+      this.addMessageToContext('user', message, Date.now());
+      this.context.sessionId = sessionId;
 
       // Try AI API first, fallback to keyword-based if fails
       if (this.aiProvider) {
         try {
           const aiResponse = await this.sendToAI(message, signal);
-          this.addMessageToContext('assistant', aiResponse.message);
+          this.addMessageToContext('assistant', aiResponse.message, Date.now());
+          this.logInteraction(message, aiResponse.message, sessionId);
           return aiResponse;
         } catch (aiError) {
           console.warn('AI API failed, falling back to keyword responses:', aiError);
@@ -123,11 +127,17 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
       }
 
       // Fallback to keyword-based responses
-      return this.getFallbackResponse(message);
+      const fallback = this.getFallbackResponse(message);
+      this.addMessageToContext('assistant', fallback.message, Date.now());
+      this.logInteraction(message, fallback.message, sessionId, true);
+      return fallback;
 
     } catch (error) {
       console.error('Error in sendMessage:', error);
-      return this.getErrorResponse();
+      const errResp = this.getErrorResponse();
+      this.addMessageToContext('assistant', errResp.message, Date.now());
+      this.logInteraction(message, errResp.message, sessionId, true);
+      return errResp;
     }
   }
 
@@ -341,15 +351,38 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
   }
 
   /**
-   * Add message to conversation context
+   * Add message to conversation context (Enhanced: timestamp support)
    */
-  private addMessageToContext(role: 'user' | 'assistant', content: string): void {
-    this.context.messages.push({ role, content });
-    
+  private addMessageToContext(role: 'user' | 'assistant', content: string, timestamp?: number): void {
+    this.context.messages.push({ role, content, timestamp });
     if (this.context.messages.length > this.MAX_CONTEXT_LENGTH) {
-      // Keep first message (system context) and remove oldest user/assistant messages
       this.context.messages.splice(1, 2);
     }
+  }
+
+  /**
+   * Log interaction for analytics/debugging (Enhanced)
+   */
+  private logInteraction(userMsg: string, botMsg: string, sessionId: string, isFallback: boolean = false): void {
+    // You can replace this with actual logging/analytics integration
+    if (window && window.console) {
+      console.log(`[ChatBot][${sessionId}] User: ${userMsg}`);
+      console.log(`[ChatBot][${sessionId}] Bot${isFallback ? ' (fallback)' : ''}: ${botMsg}`);
+    }
+  }
+
+  /**
+   * Get conversation history (Enhanced)
+   */
+  public getConversationHistory(): Array<{role: string, content: string, timestamp?: number}> {
+    return [...this.context.messages];
+  }
+
+  /**
+   * Get last navigation URL (Enhanced)
+   */
+  public getLastNavigationUrl(): string | null {
+    return this.context.lastNavigationUrl;
   }
 
   /**
@@ -357,6 +390,25 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
    */
   private getFallbackResponse(message: string): ChatBotResponse {
     const lowerMessage = message.toLowerCase();
+
+    // Improved booking intent detection
+    if (
+      lowerMessage.includes('book a vehicle') ||
+      lowerMessage.includes('book vehicle') ||
+      lowerMessage.includes('book a car') ||
+      lowerMessage.includes('rent a car') ||
+      lowerMessage.includes('rent vehicle') ||
+      lowerMessage.includes('make a booking') ||
+      lowerMessage.includes('reserve a car') ||
+      lowerMessage.includes('reserve vehicle')
+    ) {
+      return {
+        message: "Great! Let's help you book a vehicle. 🚗",
+        type: 'navigation',
+        navigationUrl: '/vehicle',
+        suggestions: ["View vehicles", "Compare prices", "Check availability", "Book now"]
+      };
+    }
 
     // Simple keyword matching for fallback
     if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {

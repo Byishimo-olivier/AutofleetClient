@@ -121,6 +121,7 @@ export default function CustomerDashboard() {
     };
 
     return (
+
         <div className={settings.darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>
             {/* Hero Section with Search */}
             <section className="bg-gradient-to-br from-[#2c4a9d] to-[#1e3a7d] text-white py-16 px-4">
@@ -308,7 +309,7 @@ export default function CustomerDashboard() {
                                         {/* Action Button */}
                                         <button
                                             className="w-full bg-[#2c4a9d] hover:bg-[#1e3a7d] text-white font-semibold py-3 rounded-lg transition shadow-md"
-                                            onClick={() => navigate(`/customer/booking/${vehicle.id}`, { 
+                                            onClick={() => navigate(`/Booking/${vehicle.id}`, { 
                                                 state: { vehicle } 
                                             })}
                                         >

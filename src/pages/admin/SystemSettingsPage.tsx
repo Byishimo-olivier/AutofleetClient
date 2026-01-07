@@ -34,18 +34,6 @@ import {
 } from "recharts";
 import { useSettings } from '@/contexts/SettingContxt';
 
-const adminNav = [
-  { icon: <BarChart2 className="w-5 h-5" />, label: "Dashboard", to: "/admin" },
-  { icon: <Users className="w-5 h-5" />, label: "User Management", to: "/admin/users" },
-  { icon: <Car className="w-5 h-5" />, label: "Vehicle Management", to: "/admin/vehicles" },
-  { icon: <ClipboardList className="w-5 h-5" />, label: "Bookings Management", to: "/admin/bookings" },
-  { icon: <PieChart className="w-5 h-5" />, label: "Reports & Analytics", to: "/admin/reports" },
-  { icon: <MessageCircle className="w-5 h-5" />, label: "Disputes & Support", to: "/admin/disputes" },
-  { icon: <Sliders className="w-5 h-5" />, label: "System Settings", to: "/admin/settings" },
-  { icon: <AlertCircle className="w-5 h-5" />, label: "Notifications Center", to: "/admin/notifications" },
-  { icon: <User className="w-5 h-5" />, label: "Profile & Account", to: "/profile" },
-];
-
 const notificationTemplates = [
   {
     type: "Email",
@@ -87,43 +75,7 @@ const SystemSettingsPage: React.FC = () => {
   const { settings, formatPrice, t } = useSettings();
 
   return (
-    <div className={`flex min-h-screen ${settings.darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#2c3e7d] text-white flex flex-col shadow-lg">
-        <div className="px-4 py-6 border-b border-[#3d4f8f]">
-          <h1 className="text-xl font-bold">AutoFleet Hub</h1>
-        </div>
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-[#3d4f8f]">
-          <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
-            <User className="w-6 h-6 text-gray-600" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-gray-200">Admin</span>
-            <span className="text-xs text-gray-400">admin@example.com</span>
-          </div>
-        </div>
-        <nav className="flex-1 px-2 py-4">
-          {adminNav.map((item) => (
-            <div
-              key={item.label}
-              className={`flex items-center gap-3 px-4 py-2 rounded-md cursor-pointer
-              ${location.pathname === item.to ? "bg-[#3d4f8f] text-white" : "text-gray-300 hover:bg-[#3d4f8f] hover:text-white"}
-              `}
-              onClick={() => navigate(item.to)}
-            >
-              {item.icon}
-              <span className="text-sm font-medium">{item.label}</span>
-            </div>
-          ))}
-        </nav>
-        <div className="p-3">
-          <button className="w-full flex items-center justify-center bg-[#f59e0b] hover:bg-[#d97706] text-white py-2.5 rounded-lg transition font-medium text-sm shadow-md">
-            <LogOut className="mr-2 w-4 h-4" /> Logout
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
+    <div className={`flex min-h-screen ${settings.darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}> {/* Main Content */}
       <div className="flex-1 p-8 flex gap-6">
         {/* Left Main Settings */}
         <div className="flex-1 space-y-8">

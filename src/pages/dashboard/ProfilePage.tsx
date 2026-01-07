@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSettings } from '@/contexts/SettingContxt';
-import SidebarLayout from '@/components/layout/SidebarLayout';
 import {
   BarChart2,
   Car,
@@ -251,7 +250,6 @@ const ProfilePage: React.FC = () => {
   );
 
   return (
-    <SidebarLayout>
       <div className="p-12">
         <div className={`max-w-4xl mx-auto ${settings.darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow`}>
           {/* Tabs */}
@@ -807,7 +805,6 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
       </div>
-    </SidebarLayout>
   );
 };
 

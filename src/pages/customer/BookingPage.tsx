@@ -13,23 +13,56 @@ import {
 } from "lucide-react";
 import { apiClient } from "@/services/apiClient";
 import { useSettings } from '@/contexts/SettingContxt';
+import { Button } from "@/components/ui/button";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const STATIC_BASE_URL = API_BASE_URL.replace('/api', '');
 
-// Replace this with your actual token retrieval logic
-const yourToken = localStorage.getItem('token') || '';
+// Move type/interface definitions outside the component
+interface Vehicle {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  img: string;
+  images?: string[] | string;
+  listing_type: string;
+  selling_price?: number;
+  price?: number;
+  rating?: number;
+  reviews?: number;
+  description?: string;
+  make?: string;
+  model?: string;
+  location_address?: string;
+  locationAddress?: string;
+  locationLat?: number;
+  locationLng?: number;
+}
 
-// Optionally, set up an interceptor to add the Authorization header to every request
-// Add Authorization header manually in each request below if token exists
+type PaymentMethod = "mobile" | "card";
+
+interface BookingData {
+  customerId: any;
+  vehicle_id: string | undefined;
+  pickup_location: string;
+  pickup_date: string;
+  return_date: string;
+  payment_method: PaymentMethod;
+  total_price: number;
+  card_number?: string;
+  expiry_date?: string;
+  security_code?: string;
+  telephone?: string;
+}
 
 export default function VehicleDetails() {
-  const { id } = useParams();
+  const { vehicleId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const vehicleFromState = location.state?.vehicle;
 
-  const [vehicle, setVehicle] = useState(vehicleFromState || null);
+  const [vehicle, setVehicle] = useState<Vehicle | null>(vehicleFromState || null);
   const [loading, setLoading] = useState(!vehicleFromState);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
@@ -37,75 +70,66 @@ export default function VehicleDetails() {
   const [pickupLocation, setPickupLocation] = useState("");
   const [pickupDate, setPickupDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("mobile");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mobile");
   const [cardNumber, setCardNumber] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [securityCode, setSecurityCode] = useState("");
   const [telephone, setTelephone] = useState("");
-  const [booking, setBooking] = useState<any>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const { settings, formatPrice, t } = useSettings();
 
   useEffect(() => {
-    if (!vehicleFromState) {
+    if (!vehicleFromState && vehicleId) {
       fetchVehicleDetails();
     }
-  }, [id, vehicleFromState]);
+  }, [vehicleId, vehicleFromState]);
 
   const fetchVehicleDetails = async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get(`/vehicles/${id}`);
+      const res = await apiClient.get(`/vehicles/${vehicleId}`);
       if (res && res.success && res.data) {
-        setVehicle(res.data);
+        const v = res.data as Partial<Vehicle> & { location_lat?: number; location_lng?: number };
+        setVehicle({
+          ...v,
+          locationLat: v.locationLat !== undefined && v.locationLat !== null
+            ? Number(v.locationLat)
+            : v.location_lat !== undefined && v.location_lat !== null
+              ? Number(v.location_lat)
+              : undefined,
+          locationLng: v.locationLng !== undefined && v.locationLng !== null
+            ? Number(v.locationLng)
+            : v.location_lng !== undefined && v.location_lng !== null
+              ? Number(v.location_lng)
+              : undefined,
+        } as Vehicle);
+        console.log('Fetched vehicle:', {
+          locationLat: v.locationLat ?? v.location_lat,
+          locationLng: v.locationLng ?? v.location_lng,
+          raw: v
+        });
       }
     } catch (error) {
       console.error("Error fetching vehicle:", error);
     }
     setLoading(false);
   };
-    const fetchBooking = async (bookingId: string) => {
-      try {
-        const res = await apiClient.get(`/bookings/${bookingId}`);
-        if (res && res.success && res.data) {
-          // res.data contains booking info, including images array
-          setBooking(res.data);
-        }
-      } catch (error) {
-        console.error("Error fetching booking:", error);
-      }
-    };
-  
-  // Move type/interface definitions outside the component
-  interface Vehicle {
-    id: string;
-    name: string;
-    type: string;
-    status: string;
-    img: string;
-    images?: string[] | string;
-    listing_type: string;
-    selling_price?: number;
-    price?: number;
-    rating?: number;
-    reviews?: number;
-    description?: string;
-  }
-  
-  type PaymentMethod = "mobile" | "card";
-  
-  interface BookingData {
-    vehicle_id: string | undefined;
-    pickup_location: string;
-    pickup_date: string;
-    return_date: string;
-    payment_method: PaymentMethod;
-    total_price: number;
-    card_number?: string;
-    expiry_date?: string;
-    security_code?: string;
-    telephone?: string;
-  }
+
+  // Helper function to open Google Maps navigation
+  const openGoogleMapsNavigation = (lat: number, lng: number) => {
+    if (
+      lat === undefined || lat === null ||
+      lng === undefined || lng === null ||
+      isNaN(Number(lat)) || isNaN(Number(lng))
+    ) {
+      alert('GPS coordinates are not available for this vehicle.');
+      return;
+    }
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    window.open(url, '_blank');
+  };
 
   const getImageUrl = (img: string | undefined): string => {
     if (!img) return "/placeholder.png";
@@ -114,18 +138,20 @@ export default function VehicleDetails() {
     return `${STATIC_BASE_URL}${normalizedImg}`;
   };
 
-  interface ParseVehicleImages {
-    (images: string[] | string | undefined): string[];
-  }
-
-  const parseVehicleImages: ParseVehicleImages = (images) => {
+  const parseVehicleImages = (images: string[] | string | undefined): string[] => {
     try {
       if (Array.isArray(images)) return images;
       if (images && typeof images === 'string' && images.trim() !== '') {
-        return JSON.parse(images);
+        try {
+          const parsed = JSON.parse(images);
+          return Array.isArray(parsed) ? parsed : [images];
+        } catch {
+          return images.split(',').map(img => img.trim()).filter(Boolean);
+        }
       }
       return [];
     } catch (e) {
+      console.error('Error parsing vehicle images:', e);
       return [];
     }
   };
@@ -150,28 +176,13 @@ export default function VehicleDetails() {
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
     if (!pickupLocation || !pickupDate || !returnDate) {
       alert("Please fill in all required fields");
       return;
     }
 
-    if (paymentMethod === "card" && (!cardNumber || !expiryDate || !securityCode)) {
-      alert("Please fill in all card details");
-      return;
-    }
-
-    if (paymentMethod === "mobile" && !telephone) {
-      alert("Please enter your telephone number");
-      return;
-    }
-
-    if (!id) {
-      alert("Vehicle ID is missing. Cannot proceed with booking.");
-      return;
-    }
-    const bookingData = {
-      vehicle_id: id,
+    const bookingData: BookingData = {
+      vehicle_id: vehicleId,
       pickup_location: pickupLocation,
       pickup_date: pickupDate,
       return_date: returnDate,
@@ -185,36 +196,42 @@ export default function VehicleDetails() {
       ...(paymentMethod === "mobile" && {
         telephone: telephone,
       }),
+      customerId: undefined
     };
 
     try {
-      const res = await apiClient.post("/bookings", bookingData);
-      if (res && res.success) {
-        alert("Booking confirmed successfully!");
-        navigate("/customer/my-bookings");
+      await apiClient.post('/bookings', bookingData);
+      setSuccessMessage("Booking confirmed successfully!");
+      setErrorMessage("");
+      setTimeout(() => navigate("/MyBookings"), 1500);
+    } catch (error: any) {
+      if (error.message === 'Vehicle is already booked for the selected dates') {
+        setErrorMessage(error.message);
+      } else if (error.response && error.response.status === 409) {
+        setErrorMessage('Vehicle is already booked for the selected dates.');
       } else {
-        alert("Booking failed. Please try again.");
+        setErrorMessage('Booking failed. Please try again.');
       }
-    } catch (error) {
-      alert("An error occurred. Please try again.");
+      setSuccessMessage("");
     }
   };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-gray-600">Loading vehicle details...</div>
+      <div className={`min-h-screen flex items-center justify-center ${settings.darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
+        <div className="text-xl">Loading vehicle details...</div>
       </div>
     );
   }
 
   if (!vehicle) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center ${settings.darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Vehicle Not Found</h2>
+          <h2 className="text-2xl font-bold mb-2">Vehicle Not Found</h2>
           <button
-            onClick={() => navigate("/customer/dashboard")}
+            onClick={() => navigate("/home")}
             className="text-blue-600 hover:underline"
           >
             Return to Dashboard
@@ -224,19 +241,19 @@ export default function VehicleDetails() {
     );
   }
 
-  const images = Array.isArray(booking?.images) ? booking.images : [];
-  const allImages = [vehicle.img, ...images].filter(Boolean);
+  const vehicleImages = parseVehicleImages(vehicle.images);
+  const allImages = [vehicle.img, ...vehicleImages].filter(Boolean);
   const currentImage = allImages[currentImageIndex] || vehicle.img;
   const isForSale = vehicle.listing_type === "sale";
 
   return (
     <div className={`min-h-screen pb-12 ${settings.darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
       {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
+      <div className={`shadow-sm sticky top-0 z-10 ${settings.darkMode ? 'bg-gray-800' : 'bg-white'}`}>
         <div className="max-w-7xl mx-auto px-4 py-4">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition"
+            className={`flex items-center gap-2 transition ${settings.darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="font-medium">Back</span>
@@ -248,7 +265,7 @@ export default function VehicleDetails() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Vehicle Details */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className={`rounded-2xl shadow-lg overflow-hidden ${settings.darkMode ? 'bg-gray-800' : 'bg-white'}`}>
               {/* Image Gallery */}
               <div className="relative">
                 <img
@@ -280,17 +297,22 @@ export default function VehicleDetails() {
                       <ChevronRight className="w-6 h-6 text-gray-800" />
                     </button>
                     
-                    {/* Image Indicators */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                       {allImages.map((_, idx) => (
                         <button
                           key={idx}
                           onClick={() => setCurrentImageIndex(idx)}
-                          className={`w-2 h-2 rounded-full transition ${
-                            idx === currentImageIndex ? "bg-white w-8" : "bg-white/50"
+                          className={`h-2 rounded-full transition ${
+                            idx === currentImageIndex 
+                              ? "bg-white w-8" 
+                              : "bg-white/50 w-2"
                           }`}
                         />
                       ))}
+                    </div>
+
+                    <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                      {currentImageIndex + 1} / {allImages.length}
                     </div>
                   </>
                 )}
@@ -300,7 +322,7 @@ export default function VehicleDetails() {
               <div className="p-8">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                    <h1 className={`text-3xl font-bold mb-2 ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
                       {vehicle.name}
                     </h1>
                     <p className="text-xl text-blue-600 font-semibold">{vehicle.type}</p>
@@ -320,49 +342,120 @@ export default function VehicleDetails() {
                 <div className="flex items-center gap-3 mb-6">
                   <div className="flex items-center gap-1">
                     <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                    <span className="font-bold text-gray-800">{vehicle.rating || 4.7}</span>
+                    <span className={`font-bold ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
+                      {vehicle.rating || 4.7}
+                    </span>
                   </div>
-                  <span className="text-gray-500">
+                  <span className={settings.darkMode ? 'text-gray-400' : 'text-gray-500'}>
                     ({vehicle.reviews || 120} reviews)
                   </span>
                 </div>
 
                 {/* Vehicle Features */}
-                <div className="border-t border-gray-200 pt-6">
-                  <h3 className="text-lg font-bold text-gray-800 mb-4">Vehicle Features</h3>
+                <div className={`border-t pt-6 ${settings.darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                  <h3 className={`text-lg font-bold mb-4 ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
+                    Vehicle Features
+                  </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                         <span className="text-blue-600 font-bold">❄️</span>
                       </div>
-                      <span className="text-gray-700">Air Conditioning</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                        <span className="text-red-600 font-bold">🚗</span>
-                      </div>
-                      <span className="text-gray-700">GPS Navigation</span>
+                      {(() => {
+                        // Always use locationLat/locationLng, fallback to location_lat/location_lng
+                        const lat = vehicle.locationLat !== undefined && vehicle.locationLat !== null
+                          ? vehicle.locationLat
+                          : (vehicle as any).location_lat;
+                        const lng = vehicle.locationLng !== undefined && vehicle.locationLng !== null
+                          ? vehicle.locationLng
+                          : (vehicle as any).location_lng;
+                        const valid = lat !== undefined && lat !== null &&
+                          lng !== undefined && lng !== null &&
+                          !isNaN(Number(lat)) && !isNaN(Number(lng));
+                        if (typeof window !== 'undefined') {
+                          // eslint-disable-next-line no-console
+                          console.log('[GPS Button] lat:', lat, 'lng:', lng, 'valid:', valid);
+                        }
+                        return valid ? (
+                          <button
+                            className={`${settings.darkMode ? 'text-white hover:text-blue-400' : 'text-gray-700 hover:text-blue-600'} transition-colors duration-200 font-medium text-left`}
+                            onClick={() => openGoogleMapsNavigation(Number(lat), Number(lng))}
+                          >
+                            GPS Navigation
+                          </button>
+                        ) : (
+                          <span className={settings.darkMode ? 'text-gray-500' : 'text-gray-400'}>
+                            GPS not available
+                          </span>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                         <span className="text-green-600 font-bold">🔄</span>
                       </div>
-                      <span className="text-gray-700">Automatic</span>
+                      <span className={settings.darkMode ? 'text-gray-300' : 'text-gray-700'}>
+                        Automatic
+                      </span>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                         <span className="text-purple-600 font-bold">🔊</span>
                       </div>
-                      <span className="text-gray-700">Bluetooth</span>
+                      <span className={settings.darkMode ? 'text-gray-300' : 'text-gray-700'}>
+                        Bluetooth
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Description */}
                 {vehicle.description && (
-                  <div className="border-t border-gray-200 pt-6 mt-6">
-                    <h3 className="text-lg font-bold text-gray-800 mb-3">Description</h3>
-                    <p className="text-gray-600 leading-relaxed">{vehicle.description}</p>
+                  <div className={`border-t pt-6 mt-6 ${settings.darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <h3 className={`text-lg font-bold mb-3 ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
+                      Description
+                    </h3>
+                    <p className={`leading-relaxed ${settings.darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {vehicle.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Location Section */}
+                {(vehicle.locationAddress || vehicle.location_address || (vehicle.locationLat !== undefined && vehicle.locationLng !== undefined)) && (
+                  <div className={`border-t pt-6 mt-6 ${settings.darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <h3 className={`text-lg font-bold mb-3 ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
+                      Vehicle Location
+                    </h3>
+                    <div className="space-y-3">
+                      {(vehicle.locationAddress || vehicle.location_address) && (
+                        <div className="flex items-start gap-3">
+                          <MapPin className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
+                          <p className={`${settings.darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                            {vehicle.locationAddress || vehicle.location_address}
+                          </p>
+                        </div>
+                      )}
+                      {vehicle.locationLat !== undefined && vehicle.locationLng !== undefined &&
+                        !isNaN(Number(vehicle.locationLat !== undefined && vehicle.locationLat !== null ? vehicle.locationLat : (vehicle as any).location_lat)) &&
+                        !isNaN(Number(vehicle.locationLng !== undefined && vehicle.locationLng !== null ? vehicle.locationLng : (vehicle as any).location_lng)) && (
+                        <button
+                          onClick={() => {
+                            const lat = vehicle.locationLat !== undefined && vehicle.locationLat !== null ? vehicle.locationLat : (vehicle as any).location_lat;
+                            const lng = vehicle.locationLng !== undefined && vehicle.locationLng !== null ? vehicle.locationLng : (vehicle as any).location_lng;
+                            openGoogleMapsNavigation(Number(lat), Number(lng));
+                          }}
+                          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition flex items-center justify-center gap-2"
+                        >
+                          <MapPin className="w-5 h-5" />
+                          Get Directions to Vehicle
+                          <span className="ml-2 text-xs font-mono">[
+                            {Number(vehicle.locationLat !== undefined && vehicle.locationLat !== null ? vehicle.locationLat : (vehicle as any).location_lat).toFixed(6)},
+                            {Number(vehicle.locationLng !== undefined && vehicle.locationLng !== null ? vehicle.locationLng : (vehicle as any).location_lng).toFixed(6)}
+                          ]</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -371,13 +464,15 @@ export default function VehicleDetails() {
 
           {/* Right Column - Booking Form */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
-              <h2 className="text-xl font-bold text-gray-800 mb-6">Book This Vehicle</h2>
+            <div className={`rounded-2xl shadow-lg p-6 sticky top-24 ${settings.darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <h2 className={`text-xl font-bold mb-6 ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
+                Book This Vehicle
+              </h2>
 
               <form onSubmit={handleBooking} className="space-y-4">
                 {/* Pickup Location */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className={`block text-sm font-medium mb-2 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Pickup Location
                   </label>
                   <div className="relative">
@@ -386,7 +481,11 @@ export default function VehicleDetails() {
                       type="text"
                       value={pickupLocation}
                       onChange={(e) => setPickupLocation(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        settings.darkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                      }`}
                       placeholder="Enter pickup location"
                       required
                     />
@@ -396,7 +495,7 @@ export default function VehicleDetails() {
                 {/* Dates */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={`block text-sm font-medium mb-2 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Pickup Date
                     </label>
                     <div className="relative">
@@ -405,13 +504,17 @@ export default function VehicleDetails() {
                         type="date"
                         value={pickupDate}
                         onChange={(e) => setPickupDate(e.target.value)}
-                        className="w-full pl-10 pr-2 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        className={`w-full pl-10 pr-2 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm ${
+                          settings.darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white' 
+                            : 'bg-white border-gray-300 text-gray-900'
+                        }`}
                         required
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={`block text-sm font-medium mb-2 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Return Date
                     </label>
                     <div className="relative">
@@ -420,7 +523,11 @@ export default function VehicleDetails() {
                         type="date"
                         value={returnDate}
                         onChange={(e) => setReturnDate(e.target.value)}
-                        className="w-full pl-10 pr-2 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        className={`w-full pl-10 pr-2 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm ${
+                          settings.darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white' 
+                            : 'bg-white border-gray-300 text-gray-900'
+                        }`}
                         required
                       />
                     </div>
@@ -428,24 +535,30 @@ export default function VehicleDetails() {
                 </div>
 
                 {/* Price Summary */}
-                <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                <div className={`rounded-lg p-4 space-y-2 ${settings.darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Total Days:</span>
-                    <span className="font-semibold text-gray-800">
+                    <span className={settings.darkMode ? 'text-gray-400' : 'text-gray-600'}>
+                      Total Days:
+                    </span>
+                    <span className={`font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
                       {calculateTotalDays()} days
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Daily Rate:</span>
-                    <span className="font-semibold text-gray-800">
-                      ${isForSale ? vehicle.selling_price : vehicle.price}/day
+                    <span className={settings.darkMode ? 'text-gray-400' : 'text-gray-600'}>
+                      Daily Rate:
+                    </span>
+                    <span className={`font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
+                      {formatPrice(isForSale ? vehicle.selling_price || 0 : vehicle.price || 0)}/day
                     </span>
                   </div>
-                  <div className="border-t border-gray-200 pt-2 mt-2">
+                  <div className={`border-t pt-2 mt-2 ${settings.darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
                     <div className="flex justify-between">
-                      <span className="font-bold text-gray-800">Total Price:</span>
+                      <span className={`font-bold ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
+                        Total Price:
+                      </span>
                       <span className="font-bold text-green-600 text-xl">
-                        ${calculateTotalPrice()}
+                        {formatPrice(calculateTotalPrice())}
                       </span>
                     </div>
                   </div>
@@ -453,7 +566,7 @@ export default function VehicleDetails() {
 
                 {/* Payment Method */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className={`block text-sm font-medium mb-3 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                     Payment Method
                   </label>
                   <div className="grid grid-cols-2 gap-3">
@@ -463,7 +576,11 @@ export default function VehicleDetails() {
                       className={`py-3 px-4 rounded-lg border-2 font-medium transition ${
                         paymentMethod === "mobile"
                           ? "border-blue-600 bg-blue-50 text-blue-600"
-                          : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
+                          : `border-gray-300 hover:border-gray-400 ${
+                              settings.darkMode 
+                                ? 'bg-gray-700 text-gray-300 border-gray-600' 
+                                : 'bg-white text-gray-700'
+                            }`
                       }`}
                     >
                       Mobile Money
@@ -474,7 +591,11 @@ export default function VehicleDetails() {
                       className={`py-3 px-4 rounded-lg border-2 font-medium transition ${
                         paymentMethod === "card"
                           ? "border-blue-600 bg-blue-50 text-blue-600"
-                          : "border-gray-300 bg-white text-gray-700 hover:border-gray-400"
+                          : `border-gray-300 hover:border-gray-400 ${
+                              settings.darkMode 
+                                ? 'bg-gray-700 text-gray-300 border-gray-600' 
+                                : 'bg-white text-gray-700'
+                            }`
                       }`}
                     >
                       Card
@@ -485,14 +606,18 @@ export default function VehicleDetails() {
                 {/* Payment Details */}
                 {paymentMethod === "mobile" && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className={`block text-sm font-medium mb-2 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                       Telephone
                     </label>
                     <input
                       type="tel"
                       value={telephone}
                       onChange={(e) => setTelephone(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                        settings.darkMode 
+                          ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                          : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                      }`}
                       placeholder="Enter phone number"
                       required
                     />
@@ -502,41 +627,53 @@ export default function VehicleDetails() {
                 {paymentMethod === "card" && (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className={`block text-sm font-medium mb-2 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                         Card number
                       </label>
                       <input
                         type="text"
                         value={cardNumber}
                         onChange={(e) => setCardNumber(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                          settings.darkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                        }`}
                         placeholder="1234 5678 9012 3456"
                         required
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className={`block text-sm font-medium mb-2 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           Expiry date
                         </label>
                         <input
                           type="text"
                           value={expiryDate}
                           onChange={(e) => setExpiryDate(e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            settings.darkMode 
+                              ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                              : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                          }`}
                           placeholder="MM/YY"
                           required
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className={`block text-sm font-medium mb-2 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                           Security code
                         </label>
                         <input
                           type="text"
                           value={securityCode}
                           onChange={(e) => setSecurityCode(e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                            settings.darkMode 
+                              ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                              : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                          }`}
                           placeholder="CVV"
                           required
                         />
@@ -562,11 +699,31 @@ export default function VehicleDetails() {
                     Cancel
                   </button>
                 </div>
+
+                {/* Error Message */}
+                {errorMessage && (
+                  <div className="mt-4 text-center">
+                    <span className="text-red-500 text-sm font-medium">
+                      {errorMessage}
+                    </span>
+                  </div>
+                )}
+
+                {/* Success Message */}
+                {successMessage && (
+                  <div className="mt-4 text-center">
+                    <span className="text-green-600 text-sm font-medium">
+                      {successMessage}
+                    </span>
+                  </div>
+                )}
               </form>
             </div>
           </div>
         </div>
       </div>
     </div>
+  
   );
-}
+};
+

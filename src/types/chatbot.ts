@@ -16,9 +16,14 @@ export interface ChatBotState {
 
 export interface ChatBotResponse {
   message: string;
-  suggestions?: string[];
-  type?: 'text' | 'quick_reply' | 'navigation';
+  type?: 'navigation' | 'confirmation' | 'error';
   navigationUrl?: string;
+  suggestions?: string[];
+  metadata?: {
+    confidence?: number;
+    provider?: string;
+    sessionId?: string;
+  };
 }
 
 export interface ChatBotConfig {

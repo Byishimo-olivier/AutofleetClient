@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { User, Car, ClipboardList, DollarSign, Star, LogOut, Plus, FileText, BarChart2, Users, MessageCircle } from 'lucide-react';
-import SidebarLayout from '@/components/layout/SidebarLayout';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line
 } from "recharts";
@@ -52,7 +51,6 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   return (
-    <SidebarLayout>
       <div className="flex-1 p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -177,7 +175,6 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </SidebarLayout>
   );
 };
 

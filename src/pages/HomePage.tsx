@@ -1,256 +1,409 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
-  Car, 
-  Users, 
-  Shield, 
-  Star, 
-  Search, 
-  Calendar,
-  CreditCard,
-  MapPin,
-  BarChart3,
-  Clock
-} from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import {
+    Car,
+    CreditCard,
+    MessageCircle,
+    LifeBuoy,
+    MapPin,
+    Calendar,
+    ChevronLeft,
+    ChevronRight,
+    Search,
+} from "lucide-react";
+import { apiClient } from "@/services/apiClient";
+import { useSettings } from '@/contexts/SettingContxt';
 
-const HomePage: React.FC = () => {
-  const { isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+// Get base URL without /api for static files
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const STATIC_BASE_URL = API_BASE_URL.replace('/api', '');
 
-  const features = [
+const quickActions = [
     {
-      icon: Search,
-      title: 'Easy Vehicle Search',
-      description: 'Find the perfect vehicle with our advanced search and filtering system.'
+        label: "My Bookings",
+        desc: "View active rentals",
+        color: "bg-green-600",
+        icon: <Car className="w-6 h-6" />,
+        onClick: (navigate: (path: string) => void) => navigate("/customer/my-bookings"),
     },
     {
-      icon: Calendar,
-      title: 'Simple Booking',
-      description: 'Book vehicles instantly with our streamlined reservation process.'
+        label: "Payment Methods",
+        desc: "Manage payments",
+        color: "bg-purple-600",
+        icon: <CreditCard className="w-6 h-6" />,
+        onClick: undefined,
     },
     {
-      icon: CreditCard,
-      title: 'Secure Payments',
-      description: 'Safe and secure payment processing with multiple payment options.'
+        label: "Feedback & Ratings",
+        desc: "Rate your experience",
+        color: "bg-orange-500",
+        icon: <MessageCircle className="w-6 h-6" />,
+        onClick: undefined,
     },
     {
-      icon: MapPin,
-      title: 'Real-time Tracking',
-      description: 'Track vehicle location and availability in real-time.'
+        label: "Support",
+        desc: "Get help 24/7",
+        color: "bg-red-600",
+        icon: <LifeBuoy className="w-6 h-6" />,
+        onClick: (navigate: (path: string) => void) => navigate("/customer/support"),
     },
-    {
-      icon: Star,
-      title: 'Rating System',
-      description: 'Rate and review vehicles to help other customers make informed decisions.'
-    },
-    {
-      icon: BarChart3,
-      title: 'Analytics Dashboard',
-      description: 'Comprehensive analytics for vehicle owners and administrators.'
-    }
-  ];
+];
 
-  const stats = [
-    { number: '500+', label: 'Vehicles Available' },
-    { number: '1000+', label: 'Happy Customers' },
-    { number: '50+', label: 'Vehicle Owners' },
-    { number: '24/7', label: 'Customer Support' }
-  ];
+const whyChoose = [
+    { value: "500+", label: "Vehicles Available", color: "text-blue-600" },
+    { value: "10K+", label: "Happy Customers", color: "text-green-600" },
+    { value: "4.8", label: "Average Rating", color: "text-orange-500" },
+    { value: "24/7", label: "Customer Support", color: "text-purple-600" },
+];
 
-  return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Welcome to AutoFleet Hub
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
-              Your trusted platform for car rental management. Connect with vehicle owners, 
-              find the perfect ride, and manage your fleet with ease.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {isAuthenticated ? (
-                <>
-                  <Button 
-                    size="lg" 
-                    variant="secondary"
-                    onClick={() => navigate('/vehicles')}
-                    className="text-lg px-8 py-3"
-                  >
-                    <Car className="mr-2 h-5 w-5" />
-                    Browse Vehicles
-                  </Button>
-                  <Button 
-                    size="lg" 
-                    variant="outline"
-                    onClick={() => navigate('/dashboard')}
-                    className="text-lg px-8 py-3 text-white border-white hover:bg-white hover:text-blue-600"
-                  >
-                    Go to Dashboard
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button 
-                    size="lg" 
-                    variant="secondary"
-                    onClick={() => navigate('/register')}
-                    className="text-lg px-8 py-3"
-                  >
-                    Get Started
-                  </Button>
-                  <Button 
-                    size="lg" 
-                    variant="outline"
-                    onClick={() => navigate('/vehicles')}
-                    className="text-lg px-8 py-3 text-white border-white hover:bg-white hover:text-blue-600"
-                  >
-                    <Car className="mr-2 h-5 w-5" />
-                    Browse Vehicles
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
+export default function CustomerDashboard() {
+    const [currentPage, setCurrentPage] = useState(1);
+    const [featuredVehicles, setFeaturedVehicles] = useState<any[]>([]);
+    const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1 });
+    const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState("");
+    const [location, setLocation] = useState("");
+    const [vehicleType, setVehicleType] = useState("");
+    const [pickupDate, setPickupDate] = useState("");
+    const [returnDate, setReturnDate] = useState("");
+    const navigate = useNavigate();
+    const { settings, formatPrice, t } = useSettings();
 
-      {/* Stats Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-blue-600 mb-2">
-                  {stat.number}
+    useEffect(() => {
+        const fetchVehicles = async () => {
+            setLoading(true);
+            // Build query string
+            const params = new URLSearchParams();
+            params.append("page", String(currentPage));
+            params.append("limit", "6");
+            if (search) params.append("search", search);
+            if (location) params.append("location", location);
+            if (vehicleType) params.append("type", vehicleType);
+            if (pickupDate) params.append("pickupDate", pickupDate);
+            if (returnDate) params.append("returnDate", returnDate);
+
+            const res = await apiClient.get<any>(`/vehicles?${params.toString()}`);
+            if (res && res.success && res.data && Array.isArray(res.data.vehicles)) {
+                setFeaturedVehicles(res.data.vehicles);
+                setPagination(res.data.pagination);
+            } else {
+                setFeaturedVehicles([]);
+                setPagination({ currentPage: 1, totalPages: 1 });
+            }
+            setLoading(false);
+        };
+        fetchVehicles();
+    }, [currentPage, search, location, vehicleType, pickupDate, returnDate]);
+
+    // Updated helper function to construct image URLs correctly
+    const getImageUrl = (img: string | null | undefined) => {
+        if (!img) return "/placeholder.png";
+        if (img.startsWith("http://") || img.startsWith("https://")) return img;
+        // Always ensure a single leading slash
+        const normalizedImg = img.startsWith("/") ? img : `/${img}`;
+        return `${STATIC_BASE_URL}${normalizedImg}`;
+    };
+
+    const parseVehicleImages = (images: any, vehicleId: string) => {
+        let parsedImages = [];
+        try {
+            if (Array.isArray(images)) {
+                parsedImages = images;
+            } else if (images && typeof images === 'string' && images.trim() !== '') {
+                parsedImages = JSON.parse(images);
+            } else {
+                parsedImages = [];
+            }
+            return parsedImages;
+        } catch (e) {
+            return [];
+        }
+    };
+
+    return (
+        <div className={settings.darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>
+            {/* Navigation Bar */}
+            
+            {/* Hero Section with Search */}
+            <section className="bg-gradient-to-br from-[#2c4a9d] to-[#1e3a7d] text-white py-16 px-4">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-8">
+                        <h1 className="text-4xl font-bold mb-3">Find Your Perfect Ride</h1>
+                        <p className="text-blue-100 text-lg">
+                            Choose from thousands of vehicles, book instantly, and drive away with confidence
+                        </p>
+                    </div>
+
+                    {/* Search Card */}
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-5xl mx-auto">
+                        <form
+                            className="grid grid-cols-1 md:grid-cols-6 gap-4"
+                            onSubmit={e => {
+                                e.preventDefault();
+                                setCurrentPage(1);
+                            }}
+                        >
+                            {/* Search input */}
+                            <div className="relative md:col-span-2">
+                                <div className="relative w-full">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 pointer-events-none" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search (make, model, etc)"
+                                        className="w-full pl-12 pr-4 h-14 border border-gray-300 rounded-xl text-gray-700 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={search}
+                                        onChange={e => setSearch(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            {/* Pickup Location */}
+                            <div className="relative">
+                                <div className="relative w-full">
+                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 pointer-events-none" />
+                                    <input
+                                        type="text"
+                                        placeholder="Pickup Location"
+                                        className="w-full pl-12 pr-4 h-14 border border-gray-300 rounded-xl text-gray-700 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={location}
+                                        onChange={e => setLocation(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            {/* Pickup Date */}
+                            <div className="relative">
+                                <div className="relative w-full">
+                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 pointer-events-none" />
+                                    <input
+                                        type="date"
+                                        placeholder="mm/dd/yyyy"
+                                        className="w-full pl-12 pr-4 h-14 border border-gray-300 rounded-xl text-gray-700 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={pickupDate}
+                                        onChange={e => setPickupDate(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            {/* Return Date */}
+                            <div className="relative">
+                                <div className="relative w-full">
+                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 pointer-events-none" />
+                                    <input
+                                        type="date"
+                                        placeholder="mm/dd/yyyy"
+                                        className="w-full pl-12 pr-4 h-14 border border-gray-300 rounded-xl text-gray-700 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={returnDate}
+                                        onChange={e => setReturnDate(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            {/* Vehicle Type and Button stacked vertically in the same column */}
+                            <div className="flex flex-col md:col-span-1 lg:col-span-1">
+                                <select
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={vehicleType}
+                                    onChange={e => setVehicleType(e.target.value)}
+                                >
+                                    <option value="">Vehicle Type</option>
+                                    <option value="suv">SUV</option>
+                                    <option value="sedan">Sedan</option>
+                                    <option value="van">Van</option>
+                                    <option value="truck">Truck</option>
+                                </select>
+                                <button
+                                    type="submit"
+                                    className="bg-[#2c4a9d] hover:bg-[#1e3a7d] text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition flex items-center justify-center gap-2 mt-3"
+                                >
+                                    <Search className="w-5 h-5" />
+                                    Find Vehicle
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div className="text-gray-600">{stat.label}</div>
-              </div>
-            ))}
-          </div>
+            </section>
+
+            {/* Quick Actions */}
+            <section className="max-w-6xl mx-auto px-4 -mt-8 relative z-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {quickActions.map((action, i) => (
+                        <button
+                            key={i}
+                            className={`${action.color} text-white rounded-xl shadow-lg hover:shadow-xl transition p-8 flex flex-col items-center gap-4 mt-13`}
+                            onClick={action.onClick ? () => action.onClick(navigate) : undefined}
+                        >
+                            <div className="bg-white/20 rounded-lg p-4 mb-2">
+                                {action.icon}
+                            </div>
+                            <div className="text-center">
+                                <div className="font-bold text-lg mb-2">{action.label}</div>
+                                <div className="text-sm opacity-90">{action.desc}</div>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            </section>
+
+            {/* Featured Vehicles */}
+            <section className="max-w-6xl mx-auto px-4 mt-16">
+                <div className="text-center mb-8">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-2">Featured Vehicles</h2>
+                    <p className="text-gray-600">
+                        Choose from our premium fleet of well-maintained vehicles
+                    </p>
+                    
+                </div>
+
+
+                    <div className="flex justify-end mt-8">
+                    <Link
+    to="/vehicles"
+    className="text-blue font-semibold px-8 py-3 rounded-lg shadow-lg transition inline-block"
+  >
+    View All Vehicles
+  </Link>
+                    </div>
+
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {loading ? (
+                        <div className="col-span-3 text-center text-gray-500 py-12">Loading vehicles...</div>
+                    ) : featuredVehicles.length === 0 ? (
+                        <div className="col-span-3 text-center text-gray-500 py-12">No vehicles found.</div>
+                    ) : (
+                        featuredVehicles.map((vehicle, i) => {
+                            const images = parseVehicleImages(vehicle.images, vehicle.id);
+                            const firstImage = images && images.length > 0 ? images[0] : null;
+                            const imageUrl = getImageUrl(firstImage);
+                            const isForSale = vehicle.listing_type === "sale";
+                            return (
+                                <div key={i} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition">
+                                    <div className="relative">
+                                        <img
+                                            src={imageUrl}
+                                            alt={vehicle.name}
+                                            className="w-full h-56 object-cover"
+                                            onError={e => { (e.target as HTMLImageElement).src = "/placeholder.png"; }}
+                                        />
+                                        <span
+                                            className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold ${
+                                                vehicle.status === "Available"
+                                                    ? "bg-green-500 text-white"
+                                                    : "bg-red-500 text-white"
+                                            }`}
+                                        >
+                                            {vehicle.status}
+                                        </span>
+                                    </div>
+
+                                    {/* Vehicle Info */}
+                                    <div className="p-6">
+                                        <h3 className="text-xl font-bold text-gray-800 mb-1">{vehicle.make} {vehicle.model}</h3>
+                                        <p className="text-gray-500 text-sm mb-3">{vehicle.type}</p>
+                                        <div className="text-sm text-gray-500">
+                                            <span className="font-semibold">Location:</span> {vehicle.location_address || 'N/A'}
+                                        </div>
+
+                                        {/* Rating */}
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <div className="flex text-yellow-400">
+                                                {Array(5)
+                                                    .fill(0)
+                                                    .map((_, idx) => (
+                                                        <span key={idx} className={idx < Math.round(vehicle.rating) ? "" : "text-gray-300"}>
+                                                            ★
+                                                        </span>
+                                                    ))}
+                                            </div>
+                                            <span className="text-sm text-gray-600">
+                                                {vehicle.rating} ({vehicle.reviews} reviews)
+                                            </span>
+                                        </div>
+
+                                        {/* Price */}
+                                        <div className="flex items-end justify-between mb-4">
+                                            <div>
+                                                <span className="text-3xl font-bold text-gray-800">
+                                                    {isForSale ? `$${vehicle.selling_price}` : `$${vehicle.price}`}
+                                                </span>
+                                                <span className="text-gray-500 text-sm ml-1">
+                                                    {isForSale ? "" : "per day"}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Action Button */}
+                                        <button
+                                            className="w-full bg-[#2c4a9d] hover:bg-[#1e3a7d] text-white font-semibold py-3 rounded-lg transition shadow-md"
+                                            onClick={() => navigate(`/Booking/${vehicle.id}`, {
+                                                state: { vehicle } 
+                                            })}
+                                        >
+                                            {isForSale ? "BUY IT" : "Book Now"}
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+
+                {/* Pagination */}
+                <div className="flex items-center justify-center gap-4 mt-10">
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        disabled={pagination.currentPage === 1}
+                    >
+                        <ChevronLeft className="w-4 h-4" />
+                        Prev
+                    </button>
+                    <div className="flex gap-2">
+                        {Array.from({ length: pagination.totalPages }, (_, i) => (
+                            <button
+                                key={i + 1}
+                                onClick={() => setCurrentPage(i + 1)}
+                                className={`w-10 h-10 rounded-lg font-semibold transition ${
+                                    currentPage === i + 1
+                                        ? "bg-[#2c4a9d] text-white"
+                                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                }`}
+                            >
+                                {i + 1}
+                            </button>
+                        ))}
+                    </div>
+                    <button
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => setCurrentPage((p) => Math.min(p + 1, pagination.totalPages))}
+                        disabled={pagination.currentPage === pagination.totalPages}
+                    >
+                        Next
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
+                </div>
+            </section>
+
+            {/* Why Choose Section */}
+            <section className="max-w-6xl mx-auto px-4 py-16">
+                <div className="text-center mb-12">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-2">Why Choose AutoFleet Hub?</h2>
+                    <p className="text-gray-600">
+                        Trusted by thousands of customers worldwide
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+                    {whyChoose.map((item, i) => (
+                        <div key={i} className="text-center">
+                            <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition">
+                                <div className={`text-5xl font-bold mb-2 ${item.color}`}>
+                                    {item.value}
+                                </div>
+                                <div className="text-gray-600 font-medium">{item.label}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
         </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose AutoFleet Hub?
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              We provide a comprehensive platform that makes car rental management 
-              simple, secure, and efficient for everyone.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                    <feature.icon className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <CardDescription className="text-gray-600">
-                    {feature.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              How It Works
-            </h2>
-            <p className="text-xl text-gray-600">
-              Get started in just a few simple steps
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                1
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Sign Up</h3>
-              <p className="text-gray-600">
-                Create your account as a customer or vehicle owner
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                2
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Browse & Book</h3>
-              <p className="text-gray-600">
-                Find the perfect vehicle and make your reservation
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                3
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Enjoy Your Ride</h3>
-              <p className="text-gray-600">
-                Pick up your vehicle and enjoy your journey
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-20 bg-blue-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to Get Started?
-          </h2>
-          <p className="text-xl mb-8 text-blue-100">
-            Join thousands of satisfied customers and vehicle owners
-          </p>
-          {!isAuthenticated && (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                variant="secondary"
-                onClick={() => navigate('/register')}
-                className="text-lg px-8 py-3"
-              >
-                <Users className="mr-2 h-5 w-5" />
-                Join as Customer
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline"
-                onClick={() => navigate('/register')}
-                className="text-lg px-8 py-3 text-white border-white hover:bg-white hover:text-blue-600"
-              >
-                <Car className="mr-2 h-5 w-5" />
-                Become an Owner
-              </Button>
-            </div>
-          )}
-        </div>
-      </section>
-    </div>
-  );
-};
-
-export default HomePage;
-
+    );
+}

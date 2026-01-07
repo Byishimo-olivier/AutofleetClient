@@ -1,233 +1,458 @@
-import React, { useState, useEffect } from "react";
-import { useSettings } from "@/contexts/SettingContxt";
+import React, { useEffect, useState } from "react";
 import {
-  BarChart2,
-  ClipboardList,
-  Car,
-  Users,
-  User,
-  LogOut,
-  FileText,
-  Settings as SettingsIcon,
   Bell,
-  PieChart,
-  MessageCircle,
-  Shield,
-  Sliders,
-  AlertCircle,
-  PlusCircle,
   CheckCircle,
   XCircle,
+  AlertCircle,
   Megaphone,
+  Trash2,
+  Filter,
+  Loader2,
+  Shield,
 } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useSettings } from "@/contexts/SettingContxt";
+import { useNavigate } from "react-router-dom";
+import ReactDOM from "react-dom";
+import {apiClient} from "@/services/apiClient"; // Import the apiClient
 
-const adminNav = [
-  { icon: <BarChart2 className="w-5 h-5" />, label: "Dashboard", to: "/admin" },
-  { icon: <Users className="w-5 h-5" />, label: "User Management", to: "/admin/users" },
-  { icon: <Car className="w-5 h-5" />, label: "Vehicle Management", to: "/admin/vehicles" },
-  { icon: <ClipboardList className="w-5 h-5" />, label: "Bookings Management", to: "/admin/bookings" },
-  { icon: <PieChart className="w-5 h-5" />, label: "Reports & Analytics", to: "/admin/reports" },
-  { icon: <MessageCircle className="w-5 h-5" />, label: "Disputes & Support", to: "/admin/disputes" },
-  { icon: <Sliders className="w-5 h-5" />, label: "System Settings", to: "/admin/settings" },
-  { icon: <AlertCircle className="w-5 h-5" />, label: "Notifications Center", to: "/admin/notifications" },
-  { icon: <User className="w-5 h-5" />, label: "Profile & Account", to: "/profile" },
-];
+type NotificationType = "booking" | "payment" | "reminder" | "system";
 
-const bookingAlerts = [
-  {
-    type: "success",
-    title: "Booking #1456 confirmed",
-    desc: "Customer John Doe booked Toyota Corolla",
-    time: "2 min ago",
-    checked: true,
-  },
-  {
-    type: "error",
-    title: "Booking #1452 cancelled",
-    desc: "Owner cancelled request",
-    time: "10 mins ago",
-    checked: true,
-  },
-];
-
-const announcements = [
-  {
-    type: "maintenance",
-    title: "System Maintenance Scheduled",
-    desc: "Aug 20, 2:00–4:00 AM",
-    time: "Posted 1 hour ago",
-    color: "bg-yellow-100",
-  },
-  {
-    type: "feature",
-    title: "New Feature Released",
-    desc: "Dispute Resolution Dashboard",
-    time: "Posted 1 hour ago",
-    color: "bg-blue-100",
-  },
-];
-
-const paymentUpdates = [
-  {
-    date: "15 Aug 25",
-    notification: "Payment from John Doe (Booking #1460)",
-    status: "Success",
-    action: "View",
-  },
-  {
-    date: "14 Aug 25",
-    notification: "Refund issued to Jane (Booking #1458)",
-    status: "Pending",
-    action: "Retry",
-  },
-  {
-    date: "14 Aug 25",
-    notification: "Payment failed – Card declined",
-    status: "Failed",
-    action: "Resolve",
-  },
-];
-
-const statusColor: Record<string, string> = {
-  Success: "bg-green-100 text-green-700",
-  Pending: "bg-yellow-100 text-yellow-700",
-  Failed: "bg-red-100 text-red-700",
-};
-
-interface Vehicle {
+interface Notification {
   id: string;
-  make: string;
-  model: string;
-  year: number;
-  pricePerDay: number;
-  location: string;
-  seats: number;
-  fuelType: string;
-  image?: string;
-  available: boolean;
+  type: NotificationType;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
 }
 
+interface Pagination {
+  currentPage: number;
+  totalPages: number;
+  totalNotifications: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+interface Stats {
+  totalNotifications: number;
+  unreadNotifications: number;
+  activeUsers: number;
+  notificationsByType: { type: NotificationType; count: number }[];
+}
+
+const typeIcon = {
+  booking: <CheckCircle className="text-blue-600" />,
+  payment: <Shield className="text-green-600" />,
+  reminder: <AlertCircle className="text-yellow-600" />,
+  system: <Megaphone className="text-purple-600" />,
+};
+
+const typeLabel = {
+  booking: "Booking",
+  payment: "Payment",
+  reminder: "Reminder",
+  system: "System",
+};
+
 const NotificationsCenterPage: React.FC = () => {
+  const { settings, t } = useSettings();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { settings, formatPrice, t } = useSettings();
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
+  const [filterType, setFilterType] = useState<string>("");
+  const [filterRead, setFilterRead] = useState<string>("");
+  const [page, setPage] = useState(1);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [bulkRole, setBulkRole] = useState<string>("owners");
+  const [bulkType, setBulkType] = useState<NotificationType>("system");
+  const [bulkTitle, setBulkTitle] = useState<string>("");
+  const [bulkMessage, setBulkMessage] = useState<string>("");
+  const [bulkSendEmail, setBulkSendEmail] = useState<boolean>(false);
+  const [bulkLoading, setBulkLoading] = useState<boolean>(false);
+  const [bulkFeedback, setBulkFeedback] = useState<string>("");
+  const [showModal, setShowModal] = useState(false);
+
+  const storedUser = localStorage.getItem("user");
+  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+  const isAdmin = currentUser?.role === "admin";
+
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("limit", "20");
+      if (filterType) params.append("type", filterType);
+      if (filterRead) params.append("isRead", filterRead);
+
+      const data = await apiClient.get(`/notifications?${params.toString()}`);
+      if (data.success) {
+        const responseData = data.data as { notifications: Notification[]; pagination: Pagination };
+        setNotifications(responseData.notifications);
+        setPagination(responseData.pagination);
+      }
+    } catch (err) {
+      setNotifications([]);
+    }
+    setLoading(false);
+  };
+
+  // Fetch stats (admin only)
+  const fetchStats = async () => {
+    try {
+      const res = await fetch("/api/notifications/stats", {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.success) setStats(data.data);
+    } catch {}
+  };
+
+  // Fetch unread count
+  const fetchUnreadCount = async () => {
+    try {
+      const res = await fetch("/api/notifications/unread-count", {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (data.success) setUnreadCount(Number(data.data.unreadCount));
+    } catch {}
+  };
 
   useEffect(() => {
-    // Simulate loading vehicles
-    setTimeout(() => {
-      setVehicles([
-        {
-          id: "1",
-          make: "Toyota",
-          model: "RAV4",
-          year: 2023,
-          pricePerDay: 150,
-          location: "Kigali",
-          seats: 5,
-          fuelType: "Gasoline",
-          available: true,
-        },
-        // Add more vehicles...
-      ]);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    fetchNotifications();
+    fetchUnreadCount();
+    // Only fetch stats if user is admin (optional: check role)
+    fetchStats();
+    // eslint-disable-next-line
+  }, [page, filterType, filterRead]);
 
-  if (loading) {
-    return (
-      <div className={`min-h-screen ${settings.darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
-        <div className="flex items-center justify-center h-64">
-          <div className={`text-lg ${settings.darkMode ? "text-white" : "text-gray-900"}`}>
-            Loading vehicles...
+  // Mark as read
+  const markAsRead = async (id: string) => {
+    await fetch(`/api/notifications/${id}/read`, {
+      method: "PUT",
+      credentials: "include",
+    });
+    fetchNotifications();
+    fetchUnreadCount();
+  };
+
+  // Delete notification
+  const deleteNotification = async (id: string) => {
+    await fetch(`/api/notifications/${id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    fetchNotifications();
+    fetchUnreadCount();
+  };
+
+  // Mark all as read
+  const markAllRead = async () => {
+    await fetch(`/api/notifications/mark-all-read`, {
+      method: "PUT",
+      credentials: "include",
+    });
+    fetchNotifications();
+    fetchUnreadCount();
+  };
+
+  const handleSendBulk = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBulkLoading(true);
+    setBulkFeedback("");
+    try {
+      if (!bulkRole || !bulkType || !bulkTitle || !bulkMessage) {
+        setBulkFeedback("Please fill all fields.");
+        setBulkLoading(false);
+        return;
+      }
+      const data = await apiClient.post('/notifications/bulk', {
+        role: bulkRole, // send role instead of userIds
+        type: bulkType,
+        title: bulkTitle,
+        message: bulkMessage,
+        sendEmail: bulkSendEmail,
+      });
+      if (data.success) {
+        const bulkData = data.data as { sentCount: number; emailsSent?: number };
+        setBulkFeedback(`Sent to ${bulkData.sentCount} users. ${bulkSendEmail ? `Emails sent: ${bulkData.emailsSent}` : ""}`);
+        setBulkTitle("");
+        setBulkMessage("");
+        setBulkSendEmail(false);
+        fetchNotifications();
+      } else {
+        setBulkFeedback(data.message || "Failed to send notifications.");
+      }
+    } catch {
+      setBulkFeedback("Failed to send notifications.");
+    }
+    setBulkLoading(false);
+  };
+
+  // Modal component
+  const BulkNotificationModal = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+      <div className="bg-white rounded-lg shadow-lg max-w-lg w-full p-6 relative">
+        <button
+          className="absolute top-2 right-2 text-gray-500 hover:text-red-600"
+          onClick={() => setShowModal(false)}
+          aria-label="Close"
+        >
+          <XCircle className="w-6 h-6" />
+        </button>
+        <h2 className="text-xl font-bold mb-4">Send Notification to Users</h2>
+        <form className="flex flex-col gap-3" onSubmit={handleSendBulk}>
+          <div>
+            <label className="font-semibold mr-2">Role:</label>
+            <select
+              value={bulkRole}
+              onChange={e => setBulkRole(e.target.value)}
+              className="border rounded px-2 py-1"
+            >
+              <option value="owners">Owners</option>
+              <option value="customers">Customers</option>
+            </select>
           </div>
-        </div>
+          <div>
+            <label className="font-semibold mr-2">Type:</label>
+            <select
+              value={bulkType}
+              onChange={e => setBulkType(e.target.value as NotificationType)}
+              className="border rounded px-2 py-1"
+            >
+              <option value="booking">Booking</option>
+              <option value="payment">Payment</option>
+              <option value="reminder">Reminder</option>
+              <option value="system">System</option>
+            </select>
+          </div>
+          <div>
+            <label className="font-semibold mr-2">Title:</label>
+            <input
+              type="text"
+              value={bulkTitle}
+              onChange={e => setBulkTitle(e.target.value)}
+              className="border rounded px-2 py-1 w-full"
+              maxLength={100}
+            />
+          </div>
+          <div>
+            <label className="font-semibold mr-2">Message:</label>
+            <textarea
+              value={bulkMessage}
+              onChange={e => setBulkMessage(e.target.value)}
+              className="border rounded px-2 py-1 w-full"
+              rows={3}
+              maxLength={500}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={bulkSendEmail}
+              onChange={e => setBulkSendEmail(e.target.checked)}
+              id="bulkSendEmail"
+            />
+            <label htmlFor="bulkSendEmail" className="font-semibold">Send Email</label>
+          </div>
+          <button
+            type="submit"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-semibold"
+            disabled={bulkLoading}
+          >
+            {bulkLoading ? "Sending..." : "Send Notification"}
+          </button>
+          {bulkFeedback && (
+            <div className="mt-2 text-sm text-red-600">{bulkFeedback}</div>
+          )}
+        </form>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#2c3e7d] text-white flex flex-col shadow-lg">
-        <div className="px-4 py-6 border-b border-[#3d4f8f]">
-          <h1 className="text-xl font-bold">AutoFleet Hub</h1>
-        </div>
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-[#3d4f8f]">
-          <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
-            <User className="w-6 h-6 text-gray-600" />
+    <div className={`min-h-screen ${settings.darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
+      <div className="max-w-4xl mx-auto py-8 px-4">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Bell className="w-7 h-7 text-blue-600" />
+            <h1 className="text-2xl font-bold">
+              Notifications Center
+            </h1>
+            <span className="ml-2 px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-semibold">
+              {unreadCount} Unread
+            </span>
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-gray-200">Admin</span>
-            <span className="text-xs text-gray-400">admin@example.com</span>
-          </div>
-        </div>
-        <nav className="flex-1 px-2 py-4">
-          {adminNav.map((item) => (
-            <div
-              key={item.label}
-              className={`flex items-center gap-3 px-4 py-2 rounded-md cursor-pointer
-              ${location.pathname === item.to ? "bg-[#3d4f8f] text-white" : "text-gray-300 hover:bg-[#3d4f8f] hover:text-white"}
-              `}
-              onClick={() => navigate(item.to)}
+          <div className="flex gap-2">
+            <button
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+              onClick={markAllRead}
             >
-              {item.icon}
-              <span className="text-sm font-medium">{item.label}</span>
+              Mark All Read
+            </button>
+            <button
+              className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded"
+              onClick={() => fetchNotifications()}
+            >
+              Refresh
+            </button>
+            {isAdmin && (
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded flex items-center gap-2"
+                onClick={() => setShowModal(true)}
+              >
+                <Megaphone className="w-5 h-5" />
+                Send Notification
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="flex gap-4 mb-4">
+          <div>
+            <label className="text-sm font-semibold mr-2">Type:</label>
+            <select
+              value={filterType}
+              onChange={e => setFilterType(e.target.value)}
+              className="border rounded px-2 py-1"
+            >
+              <option value="">All</option>
+              <option value="booking">Booking</option>
+              <option value="payment">Payment</option>
+              <option value="reminder">Reminder</option>
+              <option value="system">System</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-sm font-semibold mr-2">Read:</label>
+            <select
+              value={filterRead}
+              onChange={e => setFilterRead(e.target.value)}
+              className="border rounded px-2 py-1"
+            >
+              <option value="">All</option>
+              <option value="true">Read</option>
+              <option value="false">Unread</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Stats (admin only) */}
+        {stats && (
+          <div className="mb-6 bg-white rounded shadow p-4 flex flex-wrap gap-6">
+            <div>
+              <span className="font-bold text-lg">{stats.totalNotifications}</span>
+              <span className="ml-2 text-gray-500">Total</span>
             </div>
-          ))}
-        </nav>
-        <div className="p-3">
-          <button className="w-full flex items-center justify-center bg-[#f59e0b] hover:bg-[#d97706] text-white py-2.5 rounded-lg transition font-medium text-sm shadow-md">
-            <LogOut className="mr-2 w-4 h-4" /> Logout
-          </button>
-        </div>
-        {/* Payment Updates */}
-        <div className="mt-6">
-          <div className="font-semibold text-lg flex items-center gap-2 mb-2">
-            <FileText className="w-5 h-5" /> Payment Updates
+            <div>
+              <span className="font-bold text-lg">{stats.unreadNotifications}</span>
+              <span className="ml-2 text-gray-500">Unread</span>
+            </div>
+            <div>
+              <span className="font-bold text-lg">{stats.activeUsers}</span>
+              <span className="ml-2 text-gray-500">Active Users</span>
+            </div>
+            <div>
+              <span className="font-bold text-lg">By Type:</span>
+              {stats.notificationsByType.map(t => (
+                <span key={t.type} className="ml-2 px-2 py-1 rounded bg-gray-100 text-gray-700 text-xs">
+                  {typeLabel[t.type]}: {t.count}
+                </span>
+              ))}
+            </div>
           </div>
-          <div className="bg-white rounded-xl shadow p-0">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Date</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Notification</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paymentUpdates.map((p, i) => (
-                  <tr key={i} className="border-b last:border-b-0">
-                    <td className="px-4 py-3">{p.date}</td>
-                    <td className="px-4 py-3">{p.notification}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-3 py-1 rounded text-xs font-semibold ${statusColor[p.status]}`}>
-                        {p.status}
+        )}
+
+        {/* Notifications List */}
+        <div className="bg-white rounded shadow">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="animate-spin w-8 h-8 text-blue-600" />
+              <span className="ml-3 text-lg">Loading notifications...</span>
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              No notifications found.
+            </div>
+          ) : (
+            <ul>
+              {notifications.map(n => (
+                <li
+                  key={n.id}
+                  className={`flex items-start gap-3 border-b px-4 py-4 hover:bg-blue-50 transition ${
+                    n.is_read ? "opacity-70" : "bg-blue-50"
+                  }`}
+                >
+                  <div className="mt-1">{typeIcon[n.type]}</div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{n.title}</span>
+                      <span className="text-xs text-gray-400">
+                        {new Date(n.created_at).toLocaleString()}
                       </span>
-                    </td>
-                    <td className="px-4 py-3">
+                      <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                        n.is_read ? "bg-gray-100 text-gray-500" : "bg-blue-100 text-blue-700"
+                      }`}>
+                        {n.is_read ? "Read" : "Unread"}
+                      </span>
+                    </div>
+                    <div className="text-gray-700 mt-1">{n.message}</div>
+                    <div className="flex gap-2 mt-2">
+                      {!n.is_read && (
+                        <button
+                          className="text-green-600 hover:underline text-sm"
+                          onClick={() => markAsRead(n.id)}
+                        >
+                          Mark as Read
+                        </button>
+                      )}
                       <button
-                        className={`font-semibold underline text-sm ${
-                          p.action === "View"
-                            ? "text-blue-700"
-                            : p.action === "Retry"
-                            ? "text-yellow-700"
-                            : "text-red-700"
-                        }`}
+                        className="text-red-600 hover:underline text-sm"
+                        onClick={() => deleteNotification(n.id)}
                       >
-                        {p.action}
+                        <Trash2 className="inline w-4 h-4 mr-1" />
+                        Delete
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-      </aside>
+
+        {/* Pagination */}
+        {pagination && pagination.totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <button
+              className="px-3 py-1 rounded bg-gray-200"
+              disabled={page <= 1}
+              onClick={() => setPage(page - 1)}
+            >
+              Prev
+            </button>
+            <span>
+              Page {pagination.currentPage} of {pagination.totalPages}
+            </span>
+            <button
+              className="px-3 py-1 rounded bg-gray-200"
+              disabled={!pagination.hasNext}
+              onClick={() => setPage(page + 1)}
+            >
+              Next
+            </button>
+          </div>
+        )}
+
+        {/* Modal */}
+        {showModal && ReactDOM.createPortal(<BulkNotificationModal />, document.body)}
+      </div>
     </div>
   );
 };

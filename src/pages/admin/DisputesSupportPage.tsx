@@ -19,206 +19,862 @@ import {
   Eye,
   X,
   Fuel,
+  Download,
+  Filter,
+  Mail,
+  CheckSquare,
+  Flag,
+  Trash2,
+  Search,
+  Star,
+  Calendar,
+  TrendingUp,
+  Plus,
+  RefreshCw
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { apiClient } from "@/services/apiClient";
 
-const adminNav = [
-  { icon: <BarChart2 className="w-5 h-5" />, label: "Dashboard", to: "/admin" },
-  { icon: <Users className="w-5 h-5" />, label: "User Management", to: "/admin/users" },
-  { icon: <Car className="w-5 h-5" />, label: "Vehicle Management", to: "/admin/vehicles" },
-  { icon: <ClipboardList className="w-5 h-5" />, label: "Bookings Management", to: "/admin/bookings" },
-  { icon: <PieChart className="w-5 h-5" />, label: "Reports & Analytics", to: "/admin/reports" },
-  { icon: <MessageCircle className="w-5 h-5" />, label: "Disputes & Support", to: "/admin/disputes" },
-  { icon: <Sliders className="w-5 h-5" />, label: "System Settings", to: "/admin/settings" },
-  { icon: <AlertCircle className="w-5 h-5" />, label: "Notifications Center", to: "/admin/notifications" },
-  { icon: <User className="w-5 h-5" />, label: "Profile & Account", to: "/profile" },
-];
-
-// Example data
-const disputes = [
-  {
-    id: "DSP-1034",
-    bookingId: "#BK-2458",
-    customer: { initials: "JK", name: "John kamali" },
-    owner: "Premium Cars Ltd",
-    issue: "Late delivery of vehicle",
-    status: "Open",
-    priority: "High",
-    actions: ["View", "Close"],
-  },
-  {
-    id: "DSP-1034",
-    bookingId: "#BK-2458",
-    customer: { initials: "PK", name: "Prince Kyz" },
-    owner: "City Rentals",
-    issue: "Vehicle condition issues",
-    status: "In progress",
-    priority: "Medium",
-    actions: ["View", "Close"],
-  },
-  {
-    id: "DSP-1034",
-    bookingId: "#BK-2458",
-    customer: { initials: "UT", name: "Uwineza Theo" },
-    owner: "Express Vehicles",
-    issue: "Billing discrepancy",
-    status: "Resolved",
-    priority: "Low",
-    actions: ["View", "Close"],
-  },
-];
-
-const tickets = [
-  {
-    id: "TKT-4552",
-    user: { initials: "JK", name: "John kamali" },
-    subject: "Payment not reflecting",
-    category: "Payment",
-    status: "Open",
-    actions: ["View", "Close"],
-  },
-  {
-    id: "TKT-4552",
-    user: { initials: "UT", name: "Uwineza Theo" },
-    subject: "Account verification issue",
-    category: "Account",
-    status: "In Progress",
-    actions: ["View", "Close"],
-  },
-];
-
-const statusColor: Record<string, string> = {
-  Open: "bg-orange-100 text-orange-700",
-  "In progress": "bg-blue-100 text-blue-700",
-  Resolved: "bg-green-100 text-green-700",
-};
-const priorityColor: Record<string, string> = {
-  High: "bg-red-100 text-red-700",
-  Medium: "bg-yellow-100 text-yellow-700",
-  Low: "bg-green-100 text-green-700",
-};
-const categoryColor: Record<string, string> = {
-  Payment: "bg-blue-700 text-white",
-  Account: "bg-purple-700 text-white",
-};
-
-const ticketStatusColor: Record<string, string> = {
-  Open: "bg-orange-100 text-orange-700",
-  "In Progress": "bg-blue-100 text-blue-700",
-  Resolved: "bg-green-100 text-green-700",
-};
-
-interface Vehicle {
+interface Feedback {
   id: string;
+  rating: number;
+  service_rating?: number;
+  vehicle_condition_rating?: number;
+  comment?: string;
+  created_at: string;
+  updated_at?: string;
+  booking_id: string;
+  customer_id: string;
+  vehicle_id: string;
+  customer_first_name: string;
+  customer_last_name: string;
+  customer_email: string;
   make: string;
   model: string;
   year: number;
-  pricePerDay: number;
-  location: string;
-  seats: number;
-  fuelType: string;
-  image?: string;
-  available: boolean;
+  license_plate: string;
+  start_date: string;
+  end_date: string;
+  total_amount: number;
 }
+
+interface FeedbackAnalytics {
+  overview: {
+    totalFeedback: number;
+    averageRating: number;
+    averageServiceRating: number;
+    averageConditionRating: number;
+    positiveFeedback: number;
+    negativeFeedback: number;
+    withComments: number;
+  };
+  ratingDistribution: Array<{
+    rating: number;
+    count: number;
+  }>;
+  trends: Array<{
+    date: string;
+    feedbackCount: number;
+    averageRating: number;
+  }>;
+  topVehicles?: Array<{
+    id: string;
+    vehicle: string;
+    licensePlate: string;
+    totalReviews: number;
+    averageRating: number;
+    averageServiceRating: number;
+    averageConditionRating: number;
+  }>;
+  recentFeedback: Array<{
+    id: string;
+    rating: number;
+    comment?: string;
+    createdAt: string;
+    vehicle: string;
+    customer: string;
+  }>;
+}
+
+interface Dispute {
+  id: string;
+  bookingId: string;
+  customer: { 
+    id: string;
+    initials: string; 
+    name: string; 
+    email: string;
+  };
+  owner: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  issue: string;
+  description: string;
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string;
+  assignedTo?: string;
+}
+
+interface Ticket {
+  id: string;
+  user: { 
+    id: string;
+    initials: string; 
+    name: string; 
+    email: string;
+  };
+  subject: string;
+  description: string;
+  category: 'payment' | 'account' | 'vehicle' | 'service' | 'technical' | 'other';
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt?: string;
+  assignedTo?: string;
+}
+
+const statusColor: Record<string, string> = {
+  pending: "bg-yellow-100 text-yellow-700",
+  approved: "bg-green-100 text-green-700",
+  flagged: "bg-red-100 text-red-700",
+  rejected: "bg-gray-100 text-gray-700",
+  open: "bg-orange-100 text-orange-700",
+  in_progress: "bg-blue-100 text-blue-700",
+  resolved: "bg-green-100 text-green-700",
+  closed: "bg-gray-100 text-gray-700",
+};
+
+const priorityColor: Record<string, string> = {
+  low: "bg-green-100 text-green-700",
+  medium: "bg-yellow-100 text-yellow-700",
+  high: "bg-red-100 text-red-700",
+  urgent: "bg-red-200 text-red-800",
+};
+
+const categoryColor: Record<string, string> = {
+  payment: "bg-blue-700 text-white",
+  account: "bg-purple-700 text-white",
+  vehicle: "bg-green-700 text-white",
+  service: "bg-orange-700 text-white",
+  technical: "bg-gray-700 text-white",
+  other: "bg-indigo-700 text-white",
+};
 
 const DisputesSupportPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [tab, setTab] = useState<"disputes" | "tickets">("disputes");
+  const [tab, setTab] = useState<"disputes" | "tickets" | "feedback">("disputes");
   const { settings, formatPrice, t } = useSettings();
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [loading, setLoading] = useState(true);
+  
+  // Feedback state
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [feedbackAnalytics, setFeedbackAnalytics] = useState<FeedbackAnalytics | null>(null);
+  const [selectedFeedback, setSelectedFeedback] = useState<string[]>([]);
+  
+  // Disputes state
+  const [disputes, setDisputes] = useState<Dispute[]>([]);
+  const [selectedDisputes, setSelectedDisputes] = useState<string[]>([]);
+  
+  // Tickets state
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [selectedTickets, setSelectedTickets] = useState<string[]>([]);
+  
+  // Common state
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState({
+    status: "",
+    rating: "",
+    dateRange: "",
+    category: "",
+    priority: "",
+    hasComment: "",
+    minRating: "",
+    maxRating: "",
+    vehicleId: "",
+    customerId: "",
+    ownerId: ""
+  });
 
-  useEffect(() => {
-    // Simulate loading vehicles
-    setTimeout(() => {
-      setVehicles([
-        {
-          id: "1",
-          make: "Toyota",
-          model: "RAV4",
-          year: 2023,
-          pricePerDay: 150,
-          location: "Kigali",
-          seats: 5,
-          fuelType: "Gasoline",
-          available: true,
-        },
-        // Add more vehicles...
-      ]);
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0
+  });
+
+  // ==================== FEEDBACK ENDPOINTS ====================
+
+  // Fetch feedback data using /feedback/filtered endpoint
+  const fetchFeedback = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const params = new URLSearchParams();
+      
+      params.append('page', pagination.page.toString());
+      params.append('limit', pagination.limit.toString());
+      
+      // Add all filters
+      if (filters.status) params.append('status', filters.status);
+      if (filters.rating) params.append('minRating', filters.rating);
+      if (filters.minRating) params.append('minRating', filters.minRating);
+      if (filters.maxRating) params.append('maxRating', filters.maxRating);
+      if (filters.hasComment) params.append('hasComment', filters.hasComment);
+      if (filters.vehicleId) params.append('vehicleId', filters.vehicleId);
+      if (filters.customerId) params.append('customerId', filters.customerId);
+      if (filters.ownerId) params.append('ownerId', filters.ownerId);
+      if (searchTerm) params.append('search', searchTerm);
+      
+      // Date range filtering
+      if (filters.dateRange) {
+        const now = new Date();
+        let dateFrom = '';
+        
+        switch (filters.dateRange) {
+          case 'today':
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+            break;
+          case 'week':
+            dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            break;
+          case 'month':
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+            break;
+          case 'quarter':
+            const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+            dateFrom = quarterStart.toISOString();
+            break;
+        }
+        
+        if (dateFrom) {
+          params.append('dateFrom', dateFrom);
+        }
+      }
+
+      console.log('🔍 Fetching feedback with params:', params.toString());
+
+      const response = await apiClient.get(`/feedback/filtered?${params}`);
+      
+      if (response.success) {
+        const data = response.data as { feedback?: Feedback[]; pagination?: { totalFeedback?: number; totalPages?: number } };
+        const feedbackData = data.feedback || [];
+        setFeedback(feedbackData);
+        
+        if (data.pagination && typeof data.pagination === "object") {
+          setPagination(prev => ({
+            ...prev,
+            total: data.pagination?.totalFeedback ?? 0,
+            totalPages: data.pagination?.totalPages ?? 0
+          }));
+        }
+        
+        console.log('✅ Feedback fetched:', feedbackData.length, 'items');
+      } else {
+        setError('Failed to fetch feedback data');
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching feedback:', error);
+      setError(error.message || 'Failed to fetch feedback data');
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
 
-  if (loading) {
-    return (
-      <div className={`min-h-screen ${settings.darkMode ? "bg-gray-900" : "bg-gray-50"}`}>
-        <div className="flex items-center justify-center h-64">
-          <div className={`text-lg ${settings.darkMode ? "text-white" : "text-gray-900"}`}>
-            Loading vehicles...
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Fetch analytics using /feedback/analytics endpoint
+  const fetchAnalytics = async () => {
+    try {
+      console.log('🔍 Fetching feedback analytics...');
+      
+      const params = new URLSearchParams();
+      if (filters.dateRange) {
+        const dayMap: Record<string, string> = {
+          'today': '1',
+          'week': '7',
+          'month': '30',
+          'quarter': '90'
+        };
+        params.append('timeframe', dayMap[filters.dateRange] || '30');
+      }
+      if (filters.vehicleId) params.append('vehicleId', filters.vehicleId);
+      if (filters.ownerId) params.append('ownerId', filters.ownerId);
+
+      const response = await apiClient.get(`/feedback/analytics?${params}`);
+      
+      if (response.success) {
+        setFeedbackAnalytics(response.data as FeedbackAnalytics);
+        console.log('✅ Analytics fetched successfully');
+      }
+    } catch (error) {
+      console.error('❌ Error fetching analytics:', error);
+    }
+  };
+
+  // Bulk feedback actions using /feedback/bulk-action endpoint
+  const handleBulkFeedbackAction = async (action: 'approve' | 'flag' | 'delete', feedbackIds: string[]) => {
+    try {
+      setLoading(true);
+      console.log(`📝 Performing bulk ${action} on ${feedbackIds.length} feedback items`);
+      
+      const response = await apiClient.post('/feedback/bulk-action', {
+        action,
+        feedbackIds,
+        reason: `Admin bulk ${action} operation`
+      });
+
+      if (response.success) {
+        console.log('✅ Bulk action completed successfully');
+        await fetchFeedback();
+        if (tab === 'feedback') await fetchAnalytics();
+        setSelectedFeedback([]);
+        alert(`Successfully ${action}d ${feedbackIds.length} feedback items`);
+      } else {
+        console.error('❌ Bulk action failed:', response.message);
+        alert('Failed to perform bulk action');
+      }
+    } catch (error: any) {
+      console.error('❌ Error performing bulk action:', error);
+      alert(error.message || 'Failed to perform bulk action');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Send reminder using /feedback/remind/:customerId endpoint
+  const handleSendReminder = async (customerId: string) => {
+    try {
+      console.log('📧 Sending feedback reminder to customer:', customerId);
+      
+      const response = await apiClient.post(`/feedback/remind/${customerId}`);
+      
+      if (response.success) {
+        console.log('✅ Reminder sent successfully');
+        const data = response.data as { remindersCount: number; customer: { first_name: string; last_name: string } };
+        alert(`Reminder sent successfully! ${data.remindersCount} reminders sent to ${data.customer.first_name} ${data.customer.last_name}`);
+      } else {
+        alert('Failed to send reminder');
+      }
+    } catch (error: any) {
+      console.error('❌ Error sending reminder:', error);
+      alert(error.message || 'Failed to send reminder');
+    }
+  };
+
+  // Export data using /feedback/export endpoint
+  const handleExport = async (format: 'csv' | 'json') => {
+    try {
+      console.log(`📤 Exporting feedback data as ${format}...`);
+      
+      const params = new URLSearchParams();
+      params.append('format', format);
+      
+      // Add current filters to export
+      if (filters.status) params.append('status', filters.status);
+      if (filters.minRating) params.append('minRating', filters.minRating);
+      if (filters.maxRating) params.append('maxRating', filters.maxRating);
+      if (filters.vehicleId) params.append('vehicleId', filters.vehicleId);
+      if (filters.ownerId) params.append('ownerId', filters.ownerId);
+      
+      // Date range for export
+      if (filters.dateRange) {
+        const now = new Date();
+        let dateFrom = '';
+        
+        switch (filters.dateRange) {
+          case 'today':
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split('T')[0];
+            break;
+          case 'week':
+            dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            break;
+          case 'month':
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            break;
+          case 'quarter':
+            const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+            dateFrom = quarterStart.toISOString().split('T')[0];
+            break;
+        }
+        
+        if (dateFrom) {
+          params.append('dateFrom', dateFrom);
+        }
+      }
+
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/feedback/export?${params}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `feedback-export-${new Date().toISOString().split('T')[0]}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        console.log('✅ Export completed successfully');
+        alert(`Feedback data exported successfully as ${format.toUpperCase()}`);
+      } else {
+        throw new Error('Export failed');
+      }
+    } catch (error) {
+      console.error('❌ Error exporting data:', error);
+      alert('Failed to export data');
+    }
+  };
+
+  // ==================== DISPUTES ENDPOINTS ====================
+
+  // Mock disputes fetch - replace with actual endpoint when available
+  const fetchDisputes = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // TODO: Replace with actual disputes endpoint
+      // const response = await apiClient.get(`/disputes?${params}`);
+      
+      // Mock data for now
+      const mockDisputes: Dispute[] = [
+        {
+          id: "DSP-1034",
+          bookingId: "BK-2458",
+          customer: { 
+            id: "1",
+            initials: "JK", 
+            name: "John Kamali",
+            email: "john.kamali@example.com"
+          },
+          owner: {
+            id: "2",
+            name: "Premium Cars Ltd",
+            email: "owner@premiumcars.com"
+          },
+          issue: "Late delivery of vehicle",
+          description: "Vehicle was delivered 2 hours late without prior notice",
+          status: "open",
+          priority: "high",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      
+      setDisputes(mockDisputes);
+      setPagination(prev => ({
+        ...prev,
+        total: mockDisputes.length,
+        totalPages: 1
+      }));
+      
+    } catch (error: any) {
+      console.error('❌ Error fetching disputes:', error);
+      setError(error.message || 'Failed to fetch disputes data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ==================== TICKETS ENDPOINTS ====================
+
+  // Mock tickets fetch - replace with actual endpoint when available
+  const fetchTickets = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // TODO: Replace with actual support-tickets endpoint
+      // const response = await apiClient.get(`/support-tickets?${params}`);
+      
+      // Mock data for now
+      const mockTickets: Ticket[] = [
+        {
+          id: "TKT-4552",
+          user: { 
+            id: "1",
+            initials: "JK", 
+            name: "John Kamali",
+            email: "john.kamali@example.com"
+          },
+          subject: "Payment not reflecting",
+          description: "Made payment 2 days ago but it's not showing in my account",
+          category: "payment",
+          status: "open",
+          priority: "medium",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      ];
+      
+      setTickets(mockTickets);
+      setPagination(prev => ({
+        ...prev,
+        total: mockTickets.length,
+        totalPages: 1
+      }));
+      
+    } catch (error: any) {
+      console.error('❌ Error fetching tickets:', error);
+      setError(error.message || 'Failed to fetch tickets data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ==================== COMMON FUNCTIONS ====================
+
+  // Format rating stars
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, index) => (
+      <Star
+        key={index}
+        className={`w-4 h-4 ${
+          index < rating ? "text-yellow-400 fill-current" : "text-gray-300"
+        }`}
+      />
+    ));
+  };
+
+  // Refresh data
+  const refreshData = () => {
+    switch (tab) {
+      case 'feedback':
+        fetchFeedback();
+        fetchAnalytics();
+        break;
+      case 'disputes':
+        fetchDisputes();
+        break;
+      case 'tickets':
+        fetchTickets();
+        break;
+    }
+  };
+
+  // Reset filters
+  const resetFilters = () => {
+    setFilters({
+      status: "",
+      rating: "",
+      dateRange: "",
+      category: "",
+      priority: "",
+      hasComment: "",
+      minRating: "",
+      maxRating: "",
+      vehicleId: "",
+      customerId: "",
+      ownerId: ""
+    });
+    setSearchTerm("");
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
+  // Helper function to generate initials
+  const generateInitials = (firstName: string, lastName: string) => {
+    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
+
+  // Effects
+  useEffect(() => {
+    switch (tab) {
+      case 'feedback':
+        fetchFeedback();
+        fetchAnalytics();
+        break;
+      case 'disputes':
+        fetchDisputes();
+        break;
+      case 'tickets':
+        fetchTickets();
+        break;
+    }
+  }, [tab, filters, searchTerm, pagination.page]);
+
+  // Clear selections when tab changes
+  useEffect(() => {
+    setSelectedFeedback([]);
+    setSelectedDisputes([]);
+    setSelectedTickets([]);
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, [tab]);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#2c3e7d] text-white flex flex-col shadow-lg">
-        <div className="px-4 py-6 border-b border-[#3d4f8f]">
-          <h1 className="text-xl font-bold">AutoFleet Hub</h1>
-        </div>
-        <div className="flex items-center gap-3 px-4 py-5 border-b border-[#3d4f8f]">
-          <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden">
-            <User className="w-6 h-6 text-gray-600" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-gray-200">Admin</span>
-            <span className="text-xs text-gray-400">admin@example.com</span>
-          </div>
-        </div>
-        <nav className="flex-1 px-2 py-4">
-          {adminNav.map((item) => (
-            <div
-              key={item.label}
-              className={`flex items-center gap-3 px-4 py-2 rounded-md cursor-pointer
-              ${location.pathname === item.to ? "bg-[#3d4f8f] text-white" : "text-gray-300 hover:bg-[#3d4f8f] hover:text-white"}
-              `}
-              onClick={() => navigate(item.to)}
-            >
-              {item.icon}
-              <span className="text-sm font-medium">{item.label}</span>
-            </div>
-          ))}
-        </nav>
-        <div className="p-3">
-          <button className="w-full flex items-center justify-center bg-[#f59e0b] hover:bg-[#d97706] text-white py-2.5 rounded-lg transition font-medium text-sm shadow-md">
-            <LogOut className="mr-2 w-4 h-4" /> Logout
-          </button>
-        </div>
-      </aside>
+
 
       {/* Main Content */}
       <div className="flex-1 p-8">
-        {/* Top filters and create button */}
-        <div className="flex flex-wrap items-center gap-4 mb-4">
-          <select className="border rounded px-3 py-2 text-sm bg-white">
-            <option>All Status</option>
-            <option>Open</option>
-            <option>In Progress</option>
-            <option>Resolved</option>
-          </select>
-          <select className="border rounded px-3 py-2 text-sm bg-white">
-            <option>Date Range</option>
-            <option>Today</option>
-            <option>This Week</option>
-            <option>This Month</option>
-          </select>
-          <button className="flex items-center gap-2 bg-[#1746a2] hover:bg-[#12367a] text-white px-6 py-2 rounded font-semibold shadow ml-auto">
-            <PlusCircle className="w-5 h-5" /> Create Support Ticket
-          </button>
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Disputes & Support Management</h1>
+              <p className="text-gray-600">Manage disputes, support tickets, and customer feedback</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={refreshData}
+                className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm"
+              >
+                <RefreshCw className="w-4 h-4" /> Refresh
+              </button>
+              <button
+                onClick={resetFilters}
+                className="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              {error}
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Cards - Show only for feedback tab */}
+        {tab === 'feedback' && feedbackAnalytics && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Feedback</p>
+                  <p className="text-2xl font-bold text-gray-900">{feedbackAnalytics.overview.totalFeedback}</p>
+                </div>
+                <MessageCircle className="w-8 h-8 text-blue-600" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Average Rating</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-2xl font-bold text-gray-900">{feedbackAnalytics.overview.averageRating.toFixed(1)}</p>
+                    <div className="flex">{renderStars(Math.round(feedbackAnalytics.overview.averageRating))}</div>
+                  </div>
+                </div>
+                <Star className="w-8 h-8 text-yellow-500" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Positive Feedback</p>
+                  <p className="text-2xl font-bold text-gray-900">{feedbackAnalytics.overview.positiveFeedback}</p>
+                </div>
+                <CheckSquare className="w-8 h-8 text-green-600" />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Negative Feedback</p>
+                  <p className="text-2xl font-bold text-gray-900">{feedbackAnalytics.overview.negativeFeedback}</p>
+                </div>
+                <Flag className="w-8 h-8 text-red-600" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Filters and Actions */}
+        <div className="flex flex-wrap items-center gap-4 mb-4">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder={`Search ${tab}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border rounded-lg text-sm bg-white"
+            />
+          </div>
+
+          {/* Rating Filter (Feedback only) */}
+          {tab === 'feedback' && (
+            <>
+              <select 
+                value={filters.rating}
+                onChange={(e) => setFilters({...filters, rating: e.target.value})}
+                className="border rounded px-3 py-2 text-sm bg-white"
+              >
+                <option value="">All Ratings</option>
+                <option value="5">5 Stars</option>
+                <option value="4">4+ Stars</option>
+                <option value="3">3+ Stars</option>
+                <option value="2">2+ Stars</option>
+                <option value="1">1+ Stars</option>
+              </select>
+
+              <select 
+                value={filters.hasComment}
+                onChange={(e) => setFilters({...filters, hasComment: e.target.value})}
+                className="border rounded px-3 py-2 text-sm bg-white"
+              >
+                <option value="">All Comments</option>
+                <option value="true">With Comments</option>
+                <option value="false">Without Comments</option>
+              </select>
+            </>
+          )}
+
+          {/* Status Filter */}
+          <select 
+            value={filters.status}
+            onChange={(e) => setFilters({...filters, status: e.target.value})}
+            className="border rounded px-3 py-2 text-sm bg-white"
+          >
+            <option value="">All Status</option>
+            {tab === 'feedback' ? (
+              <>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="flagged">Flagged</option>
+                <option value="rejected">Rejected</option>
+              </>
+            ) : (
+              <>
+                <option value="open">Open</option>
+                <option value="in_progress">In Progress</option>
+                <option value="resolved">Resolved</option>
+                <option value="closed">Closed</option>
+              </>
+            )}
+          </select>
+
+          {/* Category/Priority Filter */}
+          {tab === 'feedback' ? (
+            <select 
+              value={filters.rating}
+              onChange={(e) => setFilters({...filters, rating: e.target.value})}
+              className="border rounded px-3 py-2 text-sm bg-white"
+            >
+              <option value="">All Ratings</option>
+              <option value="5">5 Stars</option>
+              <option value="4">4 Stars</option>
+              <option value="3">3 Stars</option>
+              <option value="2">2 Stars</option>
+              <option value="1">1 Star</option>
+            </select>
+          ) : (
+            <>
+              <select 
+                value={filters.category}
+                onChange={(e) => setFilters({...filters, category: e.target.value})}
+                className="border rounded px-3 py-2 text-sm bg-white"
+              >
+                <option value="">All Categories</option>
+                <option value="payment">Payment</option>
+                <option value="account">Account</option>
+                <option value="vehicle">Vehicle</option>
+                <option value="service">Service</option>
+                <option value="technical">Technical</option>
+                <option value="other">Other</option>
+              </select>
+              
+              <select 
+                value={filters.priority}
+                onChange={(e) => setFilters({...filters, priority: e.target.value})}
+                className="border rounded px-3 py-2 text-sm bg-white"
+              >
+                <option value="">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </>
+          )}
+
+          {/* Date Range */}
+          <select 
+            value={filters.dateRange}
+            onChange={(e) => setFilters({...filters, dateRange: e.target.value})}
+            className="border rounded px-3 py-2 text-sm bg-white"
+          >
+            <option value="">All Time</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="quarter">This Quarter</option>
+          </select>
+
+          {/* Export and Create Actions */}
+          <div className="ml-auto flex gap-2">
+            {tab === 'feedback' && (
+              <>
+                <button
+                  onClick={() => handleExport('csv')}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" /> Export CSV
+                </button>
+                <button
+                  onClick={() => handleExport('json')}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" /> Export JSON
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Bulk Actions */}
+        {tab === 'feedback' && selectedFeedback.length > 0 && (
+          <div className="flex gap-2 mb-4 p-3 bg-blue-50 rounded-lg">
+            <button
+              onClick={() => handleBulkFeedbackAction('approve', selectedFeedback)}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm flex items-center gap-2"
+            >
+              <CheckSquare className="w-4 h-4" /> Approve ({selectedFeedback.length})
+            </button>
+            <button
+              onClick={() => handleBulkFeedbackAction('flag', selectedFeedback)}
+              className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded text-sm flex items-center gap-2"
+            >
+              <Flag className="w-4 h-4" /> Flag ({selectedFeedback.length})
+            </button>
+            <button
+              onClick={() => handleBulkFeedbackAction('delete', selectedFeedback)}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" /> Delete ({selectedFeedback.length})
+            </button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex items-center gap-6 mb-4">
@@ -230,7 +886,7 @@ const DisputesSupportPage: React.FC = () => {
             }`}
             onClick={() => setTab("disputes")}
           >
-            Complaints / Disputes
+            Complaints / Disputes ({disputes.length})
           </button>
           <button
             className={`pb-1 font-semibold border-b-2 ${
@@ -240,225 +896,246 @@ const DisputesSupportPage: React.FC = () => {
             }`}
             onClick={() => setTab("tickets")}
           >
-            Support Tickets
+            Support Tickets ({tickets.length})
+          </button>
+          <button
+            className={`pb-1 font-semibold border-b-2 ${
+              tab === "feedback"
+                ? "border-blue-700 text-blue-700"
+                : "border-transparent text-gray-500 hover:text-blue-700"
+            }`}
+            onClick={() => setTab("feedback")}
+          >
+            Customer Feedback ({feedback.length})
           </button>
         </div>
 
         {/* Tab Content */}
-        {tab === "disputes" ? (
+        {tab === "feedback" ? (
+          // Feedback Tab
           <div className="bg-white rounded-xl shadow p-0 border border-gray-300">
-            <div className="font-semibold px-6 py-3 border-b text-gray-700">Active Disputes</div>
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Dispute ID</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Booking ID</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Customer</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Owner/Agency</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Issue Summary</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Priority</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {disputes.map((d, i) => (
-                  <tr key={i} className="border-b last:border-b-0">
-                    <td className="px-4 py-3 font-semibold">{d.id}</td>
-                    <td className="px-4 py-3">{d.bookingId}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-700">
-                          {d.customer.initials}
-                        </span>
-                        <span>{d.customer.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 font-semibold">{d.owner}</td>
-                    <td className="px-4 py-3">{d.issue}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-3 py-1 rounded text-xs font-semibold ${statusColor[d.status]}`}>
-                        {d.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-3 py-1 rounded text-xs font-semibold ${priorityColor[d.priority]}`}>
-                        {d.priority}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 flex gap-2">
-                      <button className="bg-gray-100 hover:bg-blue-100 text-blue-700 p-2 rounded flex items-center gap-1 text-xs">
-                        <Eye className="w-4 h-4" /> View
-                      </button>
-                      <button className="bg-gray-100 hover:bg-red-100 text-red-700 p-2 rounded flex items-center gap-1 text-xs">
-                        <X className="w-4 h-4" /> Close
-                      </button>
-                    </td>
+            <div className="font-semibold px-6 py-3 border-b text-gray-700 flex items-center justify-between">
+              <span>Customer Feedback Management</span>
+              {loading && <div className="text-sm text-blue-600">Loading...</div>}
+            </div>
+            
+            {feedback.length === 0 ? (
+              <div className="text-center py-12">
+                <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">
+                  {loading ? 'Loading feedback...' : 'No feedback found matching your criteria'}
+                </p>
+              </div>
+            ) : (
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="px-4 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={selectedFeedback.length === feedback.length && feedback.length > 0}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedFeedback(feedback.map(f => f.id));
+                          } else {
+                            setSelectedFeedback([]);
+                          }
+                        }}
+                        className="rounded"
+                      />
+                    </th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Customer</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Vehicle</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Ratings</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Comment</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Booking</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Date</th>
+                    <th className="px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {feedback.map((f) => (
+                    <tr key={f.id} className="border-b last:border-b-0">
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedFeedback.includes(f.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedFeedback([...selectedFeedback, f.id]);
+                            } else {
+                              setSelectedFeedback(selectedFeedback.filter(id => id !== f.id));
+                            }
+                          }}
+                          className="rounded"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-700 text-xs">
+                            {generateInitials(f.customer_first_name, f.customer_last_name)}
+                          </span>
+                          <div>
+                            <div className="font-medium">{f.customer_first_name} {f.customer_last_name}</div>
+                            <div className="text-gray-500 text-xs">{f.customer_email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div>
+                          <div className="font-medium">{f.make} {f.model} {f.year}</div>
+                          <div className="text-gray-500 text-xs">{f.license_plate}</div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-500">Overall:</span>
+                            {renderStars(f.rating)}
+                            <span className="text-xs font-medium">{f.rating}/5</span>
+                          </div>
+                          {f.service_rating && (
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-gray-500">Service:</span>
+                              {renderStars(f.service_rating)}
+                              <span className="text-xs">{f.service_rating}/5</span>
+                            </div>
+                          )}
+                          {f.vehicle_condition_rating && (
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-gray-500">Condition:</span>
+                              {renderStars(f.vehicle_condition_rating)}
+                              <span className="text-xs">{f.vehicle_condition_rating}/5</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 max-w-xs">
+                        {f.comment ? (
+                          <p className="truncate text-gray-700" title={f.comment}>
+                            {f.comment}
+                          </p>
+                        ) : (
+                          <span className="text-gray-400 italic">No comment</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div>
+                          <div className="font-medium text-xs">#{f.booking_id}</div>
+                          <div className="text-gray-500 text-xs">
+                            {new Date(f.start_date).toLocaleDateString()} - {new Date(f.end_date).toLocaleDateString()}
+                          </div>
+                          <div className="text-gray-500 text-xs">${f.total_amount}</div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">
+                        {new Date(f.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1">
+                          <button 
+                            className="bg-gray-100 hover:bg-blue-100 text-blue-700 p-1 rounded text-xs"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleSendReminder(f.customer_id)}
+                            className="bg-gray-100 hover:bg-green-100 text-green-700 p-1 rounded text-xs"
+                            title="Send Reminder"
+                          >
+                            <Mail className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleBulkFeedbackAction('approve', [f.id])}
+                            className="bg-gray-100 hover:bg-green-100 text-green-700 p-1 rounded text-xs"
+                            title="Approve"
+                          >
+                            <CheckSquare className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={() => handleBulkFeedbackAction('flag', [f.id])}
+                            className="bg-gray-100 hover:bg-red-100 text-red-700 p-1 rounded text-xs"
+                            title="Flag"
+                          >
+                            <Flag className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        ) : tab === "disputes" ? (
+          // Disputes placeholder - will be implemented when backend is ready
+          <div className="bg-white rounded-xl shadow p-0 border border-gray-300">
+            <div className="font-semibold px-6 py-3 border-b text-gray-700 flex items-center justify-between">
+              <span>Active Disputes</span>
+              {loading && <div className="text-sm text-blue-600">Loading...</div>}
+            </div>
+            <div className="text-center py-12">
+              <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">Disputes management coming soon...</p>
+            </div>
           </div>
         ) : (
+          // Tickets placeholder - will be implemented when backend is ready
           <div className="bg-white rounded-xl shadow p-0 border border-gray-300">
-            <div className="font-semibold px-6 py-3 border-b text-gray-700">Support Tickets</div>
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Ticket ID</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">User</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Subject</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Category</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tickets.map((t, i) => (
-                  <tr key={i} className="border-b last:border-b-0">
-                    <td className="px-4 py-3 font-semibold">{t.id}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center font-bold text-green-700">
-                          {t.user.initials}
-                        </span>
-                        <span>{t.user.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">{t.subject}</td>
-                    <td className="px-4 py-3">
-                      <span className={`px-3 py-1 rounded text-xs font-semibold ${categoryColor[t.category]}`}>
-                        {t.category}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-3 py-1 rounded text-xs font-semibold ${ticketStatusColor[t.status]}`}>
-                        {t.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 flex gap-2">
-                      <button className="bg-gray-100 hover:bg-blue-100 text-blue-700 p-2 rounded flex items-center gap-1 text-xs">
-                        <Eye className="w-4 h-4" /> View
-                      </button>
-                      <button className="bg-gray-100 hover:bg-red-100 text-red-700 p-2 rounded flex items-center gap-1 text-xs">
-                        <X className="w-4 h-4" /> Close
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="font-semibold px-6 py-3 border-b text-gray-700 flex items-center justify-between">
+              <span>Support Tickets</span>
+              {loading && <div className="text-sm text-blue-600">Loading...</div>}
+            </div>
+            <div className="text-center py-12">
+              <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">Support tickets management coming soon...</p>
+            </div>
           </div>
         )}
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Available Vehicles</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {vehicles.map((vehicle) => (
-              <div
-                key={vehicle.id}
-                className={`rounded-lg shadow-lg overflow-hidden ${
-                  settings.darkMode ? "bg-gray-800" : "bg-white"
-                }`}
+
+        {/* Pagination */}
+        {pagination.totalPages > 1 && (
+          <div className="flex items-center justify-between mt-6">
+            <div className="text-sm text-gray-700">
+              Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} results
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
-                <div className="h-48 bg-gray-300 flex items-center justify-center">
-                  <Car className={`w-16 h-16 ${settings.darkMode ? "text-gray-600" : "text-gray-400"}`} />
-                </div>
-
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3
-                        className={`text-lg font-semibold ${
-                          settings.darkMode ? "text-white" : "text-gray-900"
-                        }`}
-                      >
-                        {vehicle.make} {vehicle.model}
-                      </h3>
-                      <p
-                        className={`text-sm ${
-                          settings.darkMode ? "text-gray-400" : "text-gray-600"
-                        }`}
-                      >
-                        {vehicle.year}
-                      </p>
-                    </div>
-                    <div
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        vehicle.available
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                      }`}
-                    >
-                      {vehicle.available ? "Available" : "Unavailable"}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center space-x-2">
-                      <MessageCircle className={`w-4 h-4 ${settings.darkMode ? "text-gray-400" : "text-gray-500"}`} />
-                      <span
-                        className={`text-sm ${
-                          settings.darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        {vehicle.location}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Users className={`w-4 h-4 ${settings.darkMode ? "text-gray-400" : "text-gray-500"}`} />
-                      <span
-                        className={`text-sm ${
-                          settings.darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        {vehicle.seats} seats
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Fuel className={`w-4 h-4 ${settings.darkMode ? "text-gray-400" : "text-gray-500"}`} />
-                      <span
-                        className={`text-sm ${
-                          settings.darkMode ? "text-gray-300" : "text-gray-700"
-                        }`}
-                      >
-                        {vehicle.fuelType}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <span
-                        className={`text-2xl font-bold ${
-                          settings.darkMode ? "text-white" : "text-gray-900"
-                        }`}
-                      >
-                        {formatPrice(vehicle.pricePerDay)}
-                      </span>
-                      <span
-                        className={`text-sm ${
-                          settings.darkMode ? "text-gray-400" : "text-gray-600"
-                        }`}
-                      >
-                        /day
-                      </span>
-                    </div>
-                    <button
-                      disabled={!vehicle.available}
-                      className={`px-4 py-2 rounded-lg font-medium transition ${
-                        vehicle.available
-                          ? "bg-blue-600 text-white hover:bg-blue-700"
-                          : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      }`}
-                    >
-                      {vehicle.available ? "Book Now" : "Unavailable"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+                Previous
+              </button>
+              
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                const page = i + 1;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page)}
+                    className={`px-3 py-1 text-sm border rounded ${
+                      pagination.page === page 
+                        ? 'bg-blue-600 text-white border-blue-600' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+              
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page === pagination.totalPages}
+                className="px-3 py-1 text-sm border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

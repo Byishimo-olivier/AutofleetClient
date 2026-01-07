@@ -81,14 +81,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsLoading(true);
       const response = await authService.login(email, password);
       
-      if (response.success && response.data) {
-        const { user: userData, token: userToken } = response.data;
-        setUser(userData);
-        setToken(userToken);
-        
+      if (response.success && response.user && response.token) {
+        setUser(response.user);
+        setToken(response.token);
+
         // Store in localStorage
-        localStorage.setItem('autofleet_token', userToken);
-        localStorage.setItem('autofleet_user', JSON.stringify(userData));
+        localStorage.setItem('autofleet_token', response.token);
+        localStorage.setItem('autofleet_user', JSON.stringify(response.user));
       } else {
         throw new Error(response.message || 'Login failed');
       }

@@ -1,119 +1,407 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MessageCircle, X, Send, Bot, User, Minimize2, Navigation, Globe2, Mic } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useChatBot } from '../../hooks/useChatBot';
-import ChatMessage from './ChatMessage';
-import ChatInput from './ChatInput';
-import ChatSuggestions from './ChatSuggestions';
+import { useSettings } from '@/contexts/SettingContxt';
+import { chatBotAPI } from '@/services/chatBotAPI';
 
-interface ChatBotProps {
-  className?: string;
+interface Message {
+  id: string;
+  text: string;
+  sender: 'user' | 'bot';
+  timestamp: Date;
+  type?: 'text' | 'navigation' | 'error' | 'confirmation';
+  suggestions?: string[];
+  navigationUrl?: string;
 }
 
-const ChatBot: React.FC<ChatBotProps> = ({ className = '' }) => {
+interface ChatBotProps {
+  position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
+  theme?: 'blue' | 'green' | 'purple';
+}
+
+const LANGUAGES = ['English', 'Spanish', 'French', 'German'];
+const ROLES = ['Customer', 'Fleet Owner', 'Admin'];
+
+const ChatBot: React.FC<ChatBotProps> = ({ 
+  position = 'bottom-right',
+  theme = 'blue' 
+}) => {
+  const { settings } = useSettings();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [sessionId] = useState(() => `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  const [aiProvider, setAiProvider] = useState<string>('');
+  const [language, setLanguage] = useState<string>('English');
+  const [role, setRole] = useState<string>('Customer');
+  const [personalized, setPersonalized] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
-  
-  const {
-    messages,
-    isTyping,
-    sendMessage,
-    clearHistory,
-    isConnected
-  } = useChatBot();
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Get AI provider info on mount
+  useEffect(() => {
+    setAiProvider(chatBotAPI.getAIProvider());
+  }, []);
+
+  // Initial welcome message
+  useEffect(() => {
+    if (isOpen && messages.length === 0) {
+      const welcomeMessage: Message = {
+        id: '1',
+        text: `Hi! I'm your AutoFleet AI assistant${aiProvider !== 'keyword-fallback' ? ` powered by ${aiProvider.toUpperCase()}` : ''}.\n\nSelect your role and language to personalize your experience.`,
+        sender: 'bot',
+        timestamp: new Date(),
+        type: 'text',
+        suggestions: ROLES
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, [isOpen, messages.length, aiProvider]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
+  // Handle sending messages
+  const handleSendMessage = async (text: string) => {
+    if (!text.trim() || isTyping) return;
 
-  const handleSendMessage = async (message: string) => {
-    await sendMessage(message);
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      text: text.trim(),
+      sender: 'user',
+      timestamp: new Date(),
+      type: 'text'
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsTyping(true);
+
+    // Cancel any previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+
+    try {
+      // Enhanced prompt with role/language/personalization
+      const prompt = `[Role: ${role}] [Language: ${language}] [Personalized: ${personalized}] ${text.trim()}`;
+      const response = await chatBotAPI.sendMessage(
+        prompt,
+        sessionId,
+        abortControllerRef.current.signal
+      );
+
+      // Booking guidance and recommendations
+      let suggestions = response.suggestions;
+      if (role === 'Customer' && /rent|book|vehicle/i.test(text)) {
+        suggestions = ['SUV for 3 days', 'Sedan for 1 week', 'Electric car options', 'Show available vehicles'];
+      }
+      // Admin/owner analytics
+      if ((role === 'Fleet Owner' || role === 'Admin') && /dashboard|metrics|trend|utilization|feedback/i.test(text)) {
+        suggestions = ['Summarize rental trends', 'Show underutilized vehicles', 'Analyze feedback', 'Peak rental periods'];
+      }
+      // Feedback analysis
+      if (/feedback|review|complaint|rating/i.test(text)) {
+        suggestions = ['Summarize feedback', 'Show common complaints', 'Customer satisfaction patterns'];
+      }
+
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: response.message,
+        sender: 'bot',
+        timestamp: new Date(),
+        type: response.type || 'text',
+        suggestions: suggestions,
+        navigationUrl: response.navigationUrl
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+
+    } catch (error: any) {
+      console.error('❌ ChatBot API error:', error);
+      
+      if (error.name === 'AbortError') {
+        console.log('🚫 Request was cancelled');
+        return;
+      }
+
+      // Add error message
+      const errorMessage: Message = {
+        id: (Date.now() + 2).toString(),
+        text: "I'm having trouble connecting right now. Please try again in a moment! 😊",
+        sender: 'bot',
+        timestamp: new Date(),
+        type: 'error',
+        suggestions: ['Try again', 'Browse vehicles', 'Get support']
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsTyping(false);
+      abortControllerRef.current = null;
+    }
   };
 
+  // Handle suggestion clicks (roles, booking, etc.)
   const handleSuggestionClick = (suggestion: string) => {
+    if (ROLES.includes(suggestion)) {
+      setRole(suggestion);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          text: `Role set to ${suggestion}. Please select your preferred language.`,
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'confirmation',
+          suggestions: LANGUAGES
+        }
+      ]);
+      return;
+    }
+    if (LANGUAGES.includes(suggestion)) {
+      setLanguage(suggestion);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          text: `Language set to ${suggestion}. How can I assist you today?`,
+          sender: 'bot',
+          timestamp: new Date(),
+          type: 'confirmation',
+          suggestions: getRoleSuggestions(role)
+        }
+      ]);
+      return;
+    }
     handleSendMessage(suggestion);
   };
 
-  const handleNavigation = (url: string) => {
-    navigate(url);
-    setIsOpen(false); // Close chat after navigation
+  // Role-based quick suggestions
+  const getRoleSuggestions = (role: string) => {
+    switch (role) {
+      case 'Customer':
+        return ['Browse vehicles', 'View my bookings', 'Pricing info', 'Get support', 'Rent an SUV'];
+      case 'Fleet Owner':
+        return ['View dashboard', 'Rental trends', 'Utilization report', 'Feedback analysis'];
+      case 'Admin':
+        return ['System metrics', 'Peak rental periods', 'Underutilized vehicles', 'Review feedback'];
+      default:
+        return ['Help', 'Browse vehicles'];
+    }
   };
 
-  const suggestions = [
-    "Browse vehicles",
-    "My bookings", 
-    "Dashboard",
-    "Support",
-    "Add vehicle",
-    "Admin panel"
-  ];
+  // Voice input placeholder (future enhancement)
+  const handleVoiceInput = () => {
+    setMessages(prev => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        text: "Voice input is coming soon! For now, please type your message.",
+        sender: 'bot',
+        timestamp: new Date(),
+        type: 'confirmation'
+      }
+    ]);
+  };
+
+  // Handle navigation
+  const handleNavigation = (url: string) => {
+    console.log('🧭 Navigating to:', url);
+    navigate(url);
+    
+    // Add confirmation message
+    const confirmMessage: Message = {
+      id: Date.now().toString(),
+      text: `Great! I'm taking you to ${url}. Is there anything else I can help you with?`,
+      sender: 'bot',
+      timestamp: new Date(),
+      type: 'text',
+      suggestions: ['Yes, help me more', 'Browse vehicles', 'My bookings', 'Support']
+    };
+    
+    setMessages(prev => [...prev, confirmMessage]);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  // Position classes
+  const positionClasses = {
+    'bottom-right': 'bottom-4 right-4',
+    'bottom-left': 'bottom-4 left-4',
+    'top-right': 'top-4 right-4',
+    'top-left': 'top-4 left-4'
+  };
+
+  const themeClasses = {
+    blue: 'bg-blue-600 hover:bg-blue-700',
+    green: 'bg-green-600 hover:bg-green-700',
+    purple: 'bg-purple-600 hover:bg-purple-700'
+  };
+
+  const getProviderIcon = () => {
+    switch (aiProvider) {
+      case 'openai': return '🤖';
+      case 'gemini': return '🔮';
+      case 'claude': return '🧠';
+      default: return '💬';
+    }
+  };
 
   if (!isOpen) {
     return (
-      <div className={`fixed bottom-4 right-4 z-50 ${className}`}>
+      <div className={`fixed ${positionClasses[position]} z-50`}>
         <button
           onClick={() => setIsOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110"
-          aria-label="Open chat"
+          className={`${themeClasses[theme]} text-white p-4 rounded-full shadow-lg transition-all duration-300 hover:scale-110 flex items-center justify-center group`}
+          aria-label="Open AI chat assistant"
         >
           <MessageCircle className="w-6 h-6" />
+          {chatBotAPI.isAIAvailable() && (
+            <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              {getProviderIcon()}
+            </div>
+          )}
         </button>
       </div>
     );
   }
 
   return (
-    <div className={`fixed bottom-4 right-4 z-50 ${className}`}>
-      <div className={`bg-white rounded-lg shadow-2xl border border-gray-200 transition-all duration-300 ${
-        isMinimized ? 'h-14' : 'h-96 w-80'
+    <div className={`fixed ${positionClasses[position]} z-50`}>
+      <div className={`${settings?.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-lg shadow-2xl border transition-all duration-300 ${
+        isMinimized ? 'w-80 h-16' : 'w-96 h-[600px]'
       }`}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-blue-600 text-white rounded-t-lg">
-          <div className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5" />
-            <span className="font-semibold">AutoFleet Assistant</span>
+        <div className={`${themeClasses[theme]} text-white p-4 rounded-t-lg flex items-center justify-between`}>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+              <Bot className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-semibold">AutoFleet AI Assistant</h3>
+              <p className="text-xs opacity-90">
+                {isTyping ? 'AI is thinking...' : `Powered by ${aiProvider.toUpperCase()} | ${role} | ${language}`}
+              </p>
+            </div>
           </div>
-          <button
-            onClick={() => setIsOpen(false)}
-            className="text-white hover:text-gray-200 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleVoiceInput}
+              className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
+              aria-label="Voice input"
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setPersonalized(!personalized)}
+              className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
+              aria-label="Toggle personalized"
+            >
+              <Globe2 className={`w-4 h-4 ${personalized ? 'text-yellow-400' : 'text-white'}`} />
+            </button>
+            <button
+              onClick={() => setIsMinimized(!isMinimized)}
+              className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
+              aria-label={isMinimized ? 'Expand chat' : 'Minimize chat'}
+            >
+              <Minimize2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                setIsOpen(false);
+                // Clear context when closing
+                chatBotAPI.clearContext();
+                setMessages([]);
+              }}
+              className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
+              aria-label="Close chat"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {!isMinimized && (
           <>
             {/* Messages */}
-            <div className="h-64 overflow-y-auto p-4 space-y-3">
-              {messages.length === 0 && (
-                <div className="text-center text-gray-500 py-8">
-                  <MessageCircle className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                  <p className="text-sm">Hi! I'm your AutoFleet assistant.</p>
-                  <p className="text-xs">I can help you navigate and answer questions!</p>
-                </div>
-              )}
-              
+            <div className="h-96 overflow-y-auto p-4 space-y-4">
               {messages.map((message) => (
-                <ChatMessage 
-                  key={message.id} 
-                  message={message} 
-                  onNavigate={handleNavigation}
-                />
+                <div key={message.id} className={`flex items-start gap-2 ${message.sender === 'bot' ? 'justify-start' : 'justify-end'}`}>
+                  {message.sender === 'bot' && (
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      message.type === 'error' ? 'bg-red-100' : 'bg-blue-100'
+                    }`}>
+                      <Bot className={`w-4 h-4 ${message.type === 'error' ? 'text-red-600' : 'text-blue-600'}`} />
+                    </div>
+                  )}
+                  
+                  <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
+                    message.sender === 'bot' 
+                      ? message.type === 'error'
+                        ? 'bg-red-50 text-red-800 border border-red-200'
+                        : settings?.darkMode 
+                          ? 'bg-gray-700 text-gray-100' 
+                          : 'bg-gray-100 text-gray-800'
+                      : themeClasses[theme].replace('hover:', '') + ' text-white'
+                  }`}>
+                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                    
+                    {/* Navigation button */}
+                    {message.navigationUrl && (
+                      <button
+                        onClick={() => handleNavigation(message.navigationUrl!)}
+                        className="mt-2 flex items-center gap-1 text-xs bg-white bg-opacity-20 hover:bg-opacity-30 px-2 py-1 rounded transition-colors"
+                      >
+                        <Navigation className="w-3 h-3" />
+                        Go there
+                      </button>
+                    )}
+                    
+                    <p className="text-xs opacity-70 mt-1">
+                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  
+                  {message.sender === 'user' && (
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${themeClasses[theme].replace('hover:', '')}`}>
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                </div>
               ))}
               
               {isTyping && (
-                <div className="flex items-center gap-2 text-gray-500">
-                  <MessageCircle className="w-4 h-4" />
-                  <div className="flex gap-1">
-                    <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" />
-                    <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                    <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Bot className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div className={`${settings?.darkMode ? 'bg-gray-700' : 'bg-gray-100'} rounded-lg p-3`}>
+                    <div className="flex gap-1 items-center">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      <span className="text-xs text-gray-500 ml-2">AI thinking...</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -121,32 +409,61 @@ const ChatBot: React.FC<ChatBotProps> = ({ className = '' }) => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Suggestions */}
-            {messages.length === 0 && (
+            {/* Quick Suggestions */}
+            {messages.length > 0 && messages[messages.length - 1].suggestions && !isTyping && (
               <div className="px-4 pb-2">
-                <ChatSuggestions 
-                  suggestions={suggestions.slice(0, 3)} 
-                  onSuggestionClick={handleSuggestionClick}
-                />
+                <p className="text-xs text-gray-500 mb-2">Quick actions:</p>
+                <div className="flex flex-wrap gap-2">
+                  {messages[messages.length - 1].suggestions!.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className={`text-xs px-3 py-1 rounded-full transition-colors ${
+                        settings?.darkMode 
+                          ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
             {/* Input */}
-            <div className="border-t border-gray-200 p-4">
-              <ChatInput 
-                onSendMessage={handleSendMessage}
-                disabled={isTyping || !isConnected}
-                placeholder={isConnected ? "Ask me anything or request navigation..." : "Connecting..."}
-              />
-              
-              {messages.length > 0 && (
+            <div className={`p-4 border-t ${settings?.darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage(inputValue)}
+                  placeholder={`Ask me anything about AutoFleet... (${role}, ${language})`}
+                  disabled={isTyping}
+                  className={`flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-50 ${
+                    settings?.darkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                  }`}
+                />
                 <button
-                  onClick={clearHistory}
-                  className="text-xs text-gray-500 hover:text-gray-700 mt-2 transition-colors"
+                  onClick={() => handleSendMessage(inputValue)}
+                  disabled={!inputValue.trim() || isTyping}
+                  className={`${themeClasses[theme]} text-white p-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center`}
+                  aria-label="Send message"
                 >
-                  Clear conversation
+                  <Send className="w-4 h-4" />
                 </button>
-              )}
+              </div>
+              {/* Security/privacy reminder */}
+              <div className="mt-2 text-center">
+                <span className="text-xs text-gray-400">
+                  {chatBotAPI.isAIAvailable()
+                    ? <>Powered by {aiProvider.toUpperCase()} AI {getProviderIcon()} | Your data is protected</>
+                    : 'Using keyword responses'}
+                </span>
+              </div>
             </div>
           </>
         )}

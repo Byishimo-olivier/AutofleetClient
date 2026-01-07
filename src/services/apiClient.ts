@@ -9,7 +9,12 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
-import { ApiResponse } from '../types';
+interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -20,154 +25,130 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
-  private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem('autofleet_token');
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-    };
-  }
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
+    const url = `${this.baseURL}${endpoint}`;
 
-  private async handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+
+    // If body is FormData, do not set Content-Type (let browser set it)
+    const isFormData = (typeof FormData !== 'undefined') && options.body instanceof FormData;
+    let headers: Record<string, string> = {};
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    if (
+      options.headers &&
+      typeof options.headers === 'object' &&
+      !(options.headers instanceof Headers) &&
+      !Array.isArray(options.headers)
+    ) {
+      Object.assign(headers, options.headers);
+    }
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json';
+    } else {
+      // Remove Content-Type if present (shouldn't be, but just in case)
+      if ('Content-Type' in headers) {
+        delete headers['Content-Type'];
+      }
+    }
+
+    const config: RequestInit = {
+      headers,
+      ...options,
+    };
+
     try {
+      console.log(`🌐 Making ${config.method || 'GET'} request to:`, url);
+
+      const response = await fetch(url, config);
       const data = await response.json();
-      
+
       if (!response.ok) {
-        return {
-          success: false,
-          message: data.message || data.error || 'An error occurred',
-          error: data.error || 'Request failed',
+        // Handle 401 Unauthorized - token expired or invalid
+        if (response.status === 401) {
+          console.log('🔑 Authentication failed - clearing token');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+
+          // Don't redirect here, let the component handle it
+          throw {
+            status: 401,
+            message: data.message || 'Authentication failed',
+          };
+        }
+
+        // Handle other HTTP errors
+        throw {
+          status: response.status,
+          message: data.message || `HTTP ${response.status}`,
         };
       }
 
+      console.log(`✅ ${config.method || 'GET'} ${endpoint} successful:`, data);
       return data;
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Failed to parse response',
-        error: 'Network error',
-      };
+    } catch (error: any) {
+      console.error(`❌ ${config.method || 'GET'} ${endpoint} failed:`, error);
+
+      // Network errors
+      if (!error.status) {
+        throw {
+          status: 0,
+          message: 'Network error - please check your connection',
+        };
+      }
+
+      throw error;
     }
   }
 
+  // GET request
   async get<T>(endpoint: string): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'GET',
-        headers: this.getAuthHeaders(),
-      });
-
-      return this.handleResponse<T>(response);
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Network error',
-        error: 'Failed to connect to server',
-      };
-    }
+    return this.request<T>(endpoint, { method: 'GET' });
   }
 
+  // POST request
   async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'POST',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify(data),
-      });
-
-      return this.handleResponse<T>(response);
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Network error',
-        error: 'Failed to connect to server',
-      };
+    let body: any = undefined;
+    if (data instanceof FormData) {
+      body = data;
+    } else if (data !== undefined) {
+      body = JSON.stringify(data);
     }
+    return this.request<T>(endpoint, {
+      method: 'POST',
+      body,
+    });
   }
 
+  // PUT request
   async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'PUT',
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify(data),
-      });
-
-      return this.handleResponse<T>(response);
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Network error',
-        error: 'Failed to connect to server',
-      };
-    }
+    return this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    });
   }
 
+  // DELETE request
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    try {
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'DELETE',
-        headers: this.getAuthHeaders(),
-      });
-
-      return this.handleResponse<T>(response);
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Network error',
-        error: 'Failed to connect to server',
-      };
-    }
+    return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
-  async postFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
-    try {
-      const token = localStorage.getItem('autofleet_token');
-      const headers: HeadersInit = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'POST',
-        headers,
-        body: formData,
-      });
-
-      return this.handleResponse<T>(response);
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Network error',
-        error: 'Failed to connect to server',
-      };
-    }
-  }
-
-  async putFormData<T>(endpoint: string, formData: FormData): Promise<ApiResponse<T>> {
-    try {
-      const token = localStorage.getItem('autofleet_token');
-      const headers: HeadersInit = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
-      const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'PUT',
-        headers,
-        body: formData,
-      });
-
-      return this.handleResponse<T>(response);
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Network error',
-        error: 'Failed to connect to server',
-      };
-    }
+  // PATCH request
+  async patch<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      method: 'PATCH',
+      body: data ? JSON.stringify(data) : undefined,
+    });
   }
 }
 
+// Create and export the API client instance
 export const apiClient = new ApiClient(API_BASE_URL);
 

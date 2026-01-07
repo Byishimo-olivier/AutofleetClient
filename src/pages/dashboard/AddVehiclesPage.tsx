@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import SidebarLayout from '@/components/layout/SidebarLayout';
-import { Car } from 'lucide-react';
+import { Car, CheckCircle, XCircle } from 'lucide-react';
 import { apiClient } from "@/services/apiClient";
 import { useSettings } from '@/contexts/SettingContxt';
 
@@ -13,6 +12,12 @@ interface Vehicle {
   bookings: number;
   daily_rate: number; // keep as daily_rate
   license_plate: string;
+  images?: string[]; // <-- Add this line
+  locationAddress?: string;
+  locationLat?: string;
+  locationLng?: string;
+  location_lat?: string;
+  location_lng?: string;
 }
 
 const initialForm = {
@@ -43,15 +48,24 @@ const VehiclesPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const [status, setStatus] = useState('');
 
   useEffect(() => {
     fetchVehicles();
   }, []);
 
+  // Update fetchVehicles to use filters
   const fetchVehicles = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/vehicles');
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      if (category && category !== 'All Categories') params.append('category', category.toLowerCase());
+      if (status && status !== 'All Status') params.append('status', status.toLowerCase());
+      const response = await apiClient.get(`/vehicles?${params.toString()}`);
       const data = response.data as { vehicles: Vehicle[] };
       setVehicles(data.vehicles || []);
     } catch (error) {
@@ -61,6 +75,12 @@ const VehiclesPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Fetch when filters change
+  useEffect(() => {
+    fetchVehicles();
+    // eslint-disable-next-line
+  }, [search, category, status]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -103,67 +123,46 @@ const VehiclesPage: React.FC = () => {
       listing_type: form.listing_type.trim(),
       selling_price: form.selling_price.trim(),
       daily_rate: form.dailyRate.trim(),
+      status: 'available', // <-- ADD THIS LINE
     };
 
     try {
-      // 3️⃣ Create vehicle
-      interface VehiclePostResponse {
-        data?: {
-          vehicleId?: string | number;
-          [key: string]: any;
-        };
-        vehicleId?: string | number;
-        id?: string | number;
-        [key: string]: any;
+      let vehicleId = editingId;
+      if (editingId) {
+        // Edit mode: update vehicle
+        await apiClient.put(`/vehicles/${editingId}`, vehicleData);
+      } else {
+        // Add mode: create vehicle
+        const res: any = await apiClient.post('/vehicles', vehicleData);
+        vehicleId =
+          res.data?.data?.vehicleId ||
+          res.data?.vehicleId ||
+          res.data?.id ||
+          res.vehicleId ||
+          null;
+        if (!vehicleId) throw new Error('Vehicle ID not returned from backend.');
       }
 
-      const res = await apiClient.post<VehiclePostResponse>('/vehicles', vehicleData);
-      console.log("✅ Backend response:", res.data);
-
-      // Safely extract vehicleId
-      const vehicleId =
-        res.data?.data?.vehicleId ||
-        res.data?.vehicleId ||
-        res.data?.id ||
-        (res as any).vehicleId ||
-        null;
-
-      if (!vehicleId) {
-        console.error("❌ No vehicleId found in response:", res.data);
-        throw new Error('Vehicle ID not returned from backend.');
-      }
-
-      // 4️⃣ Upload images if any - USE postFormData instead of post!
-      if (form.images.length > 0) {
-        console.log(`📤 Uploading ${form.images.length} images for vehicle ${vehicleId}`);
-        
+      // Upload images if any (optional: only on add or always)
+      if (form.images.length > 0 && vehicleId) {
         const imgForm = new FormData();
-        form.images.forEach((file, idx) => {
-          console.log(`Adding file ${idx + 1}: ${file.name}, size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
-          imgForm.append('images', file); // Key MUST be 'images' (plural)
+        form.images.forEach((file) => {
+          imgForm.append('images', file);
         });
-
-        // 🔥 USE postFormData instead of post - this method doesn't set Content-Type!
-        const uploadRes = await apiClient.postFormData(`/vehicles/upload/${vehicleId}`, imgForm);
-        
-        if (!uploadRes.success) {
-          throw new Error(uploadRes.message || 'Failed to upload images');
-        }
-
-        console.log('✅ Images uploaded successfully:', uploadRes.data);
+        await apiClient.post(`/vehicle-images/upload/${vehicleId}`, imgForm);
       }
 
-      // ✅ Done
       setShowModal(false);
       setForm(initialForm);
+      setEditingId(null); // Reset edit mode
       fetchVehicles();
     } catch (err: any) {
       const errorMsg =
         err?.response?.data?.message ||
         err?.message ||
-        'Failed to add vehicle. Please check your input.';
+        'Failed to add/update vehicle. Please check your input.';
       setUploadError(errorMsg);
-      console.error('Add vehicle error:', err);
+      console.error('Add/update vehicle error:', err);
     }
   };
 
@@ -187,6 +186,52 @@ const VehiclesPage: React.FC = () => {
     );
   };
 
+  const handleToggleStatus = async (vehicle: Vehicle) => {
+    const newStatus = vehicle.status === 'available' ? 'inactive' : 'available';
+    try {
+      await apiClient.put(`/vehicles/${vehicle.id}`, { status: newStatus });
+      fetchVehicles(); // Refresh list
+    } catch (err) {
+      alert('Failed to update vehicle status.');
+    }
+  };
+
+  const handleDeleteVehicle = async (vehicleId: number) => {
+    if (!window.confirm("Are you sure you want to delete this vehicle?")) return;
+    try {
+      await apiClient.delete(`/vehicles/${vehicleId}`);
+      fetchVehicles();
+    } catch (err) {
+      alert("Failed to delete vehicle.");
+    }
+  };
+
+  const handleEditVehicle = (vehicle: Vehicle) => {
+    setForm({
+      ...initialForm,
+      make: vehicle.make || '',
+      model: vehicle.model || '',
+      year: '', // Set if you have year in Vehicle
+      plateNumber: vehicle.license_plate || '',
+      category: vehicle.type || '',
+      color: '', // Set if you have color in Vehicle
+      seats: '', // Set if you have seats in Vehicle
+      transmission: '', // Set if you have transmission in Vehicle
+      fuelType: '', // Set if you have fuelType in Vehicle
+      dailyRate: vehicle.daily_rate ? String(vehicle.daily_rate) : '',
+      description: '', // Set if you have description in Vehicle
+      features: '', // Set if you have features in Vehicle
+      images: [],
+      locationLat: '', // Set if you have locationLat in Vehicle
+      locationLng: '', // Set if you have locationLng in Vehicle
+      locationAddress: vehicle.locationAddress || '',
+      listing_type: '', // Set if you have listing_type in Vehicle
+      selling_price: '', // Set if you have selling_price in Vehicle
+    });
+    setEditingId(vehicle.id); // <-- Track which vehicle is being edited
+    setShowModal(true);
+  };
+
   if (loading) {
     return (
       <div className={`min-h-screen ${settings.darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -200,443 +245,515 @@ const VehiclesPage: React.FC = () => {
   }
 
   return (
-    <SidebarLayout>
-      <div className="p-8 bg-gray-50 min-h-screen">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Vehicle Management</h1>
-            <p className="text-gray-600 mt-1">Manage your fleet of vehicles</p>
-          </div>
-          <button
-            className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded-lg font-semibold flex items-center"
-            onClick={() => setShowModal(true)}
-          >
-            <Car className="w-5 h-5 mr-2" /> Add Vehicle
-          </button>
+    <div className="p-8 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800">Vehicle Management</h1>
+          <p className="text-gray-600 mt-1">Manage your fleet of vehicles</p>
         </div>
+        <button
+          className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded-lg font-semibold flex items-center"
+          onClick={() => setShowModal(true)}
+        >
+          <Car className="w-5 h-5 mr-2" /> Add Vehicle
+        </button>
+      </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-4 mb-6">
-          <input
-            type="text"
-            placeholder="Search vehicles..."
-            className="px-4 py-2 border border-gray-300 rounded-lg w-64"
-          />
-          <select className="px-4 py-2 border border-gray-300 rounded-lg">
-            <option>All Categories</option>
-            <option>Sedan</option>
-            <option>SUV</option>
-            <option>Van</option>
-            <option>Truck</option>
-          </select>
-          <select className="px-4 py-2 border border-gray-300 rounded-lg">
-            <option>All Status</option>
-            <option>Available</option>
-            <option>Rented</option>
-            <option>Maintenance</option>
-          </select>
-        </div>
+      {/* Filters */}
+      <div className="flex items-center gap-4 mb-6">
+        <input
+          type="text"
+          placeholder="Search vehicles..."
+          className="px-4 py-2 border border-gray-300 rounded-lg w-64"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        <select
+          className="px-4 py-2 border border-gray-300 rounded-lg"
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+        >
+          <option>All Categories</option>
+          <option>Sedan</option>
+          <option>SUV</option>
+          <option>Van</option>
+          <option>Truck</option>
+        </select>
+        <select
+          className="px-4 py-2 border border-gray-300 rounded-lg"
+          value={status}
+          onChange={e => setStatus(e.target.value)}
+        >
+          <option>All Status</option>
+          <option>Available</option>
+          <option>Rented</option>
+          <option>Maintenance</option>
+        </select>
+      </div>
 
-        {/* Vehicles Table */}
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="min-w-full">
-            <thead className="bg-gray-50">
+      {/* Vehicles Table */}
+      <div className="bg-white rounded-lg shadow overflow-x-auto">
+        <table className="min-w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Vehicle</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Type</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Bookings</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Price/Day</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Location</th>
+              <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {loading ? (
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Vehicle</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Bookings</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Price/Day</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Actions</th>
+                <td colSpan={6} className="text-center py-8 text-gray-500">Loading vehicles...</td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-gray-500">Loading vehicles...</td>
-                </tr>
-              ) : vehicles.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-gray-500">No vehicles found.</td>
-                </tr>
-              ) : (
-                vehicles.map((vehicle) => (
-                  <tr key={vehicle.id} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 flex items-center gap-3">
-                      <Car className="w-5 h-5 text-gray-400" />
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {vehicle.make} {vehicle.model}
-                        </div>
-                        <div className="text-xs text-gray-500">{vehicle.license_plate}</div>
+            ) : vehicles.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="text-center py-8 text-gray-500">No vehicles found.</td>
+              </tr>
+            ) : (
+              vehicles.map((vehicle) => (
+                <tr key={vehicle.id} className="hover:bg-gray-50 transition">
+                  <td className="px-6 py-4 flex items-center gap-3">
+                    <div className="w-16 h-12 bg-gray-300 rounded-lg mr-3 overflow-hidden flex items-center justify-center">
+                      {vehicle.images && vehicle.images.length > 0 ? (
+                        <img
+                          src={
+                            vehicle.images[0].startsWith('http://') || vehicle.images[0].startsWith('https://')
+                              ? vehicle.images[0]
+                              : `http://localhost:5000/${vehicle.images[0].replace(/^\/+/, '')}`
+                          }
+                          alt={`${vehicle.make} ${vehicle.model}`}
+                          className="w-full h-full object-cover"
+                          onError={e => {
+                            (e.target as HTMLImageElement).src = '/placeholder.png';
+                          }}
+                        />
+                      ) : (
+                        <Car className="w-5 h-5 text-gray-400" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {vehicle.make} {vehicle.model}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {vehicle.type ? vehicle.type.charAt(0).toUpperCase() + vehicle.type.slice(1) : ''}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          vehicle.status === 'available'
-                            ? 'bg-green-100 text-green-700'
-                            : vehicle.status === 'rented'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                        }`}
+                      <div className="text-xs text-gray-500">{vehicle.license_plate}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {vehicle.type ? vehicle.type.charAt(0).toUpperCase() + vehicle.type.slice(1) : ''}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        vehicle.status === 'available'
+                          ? 'bg-green-100 text-green-700'
+                          : vehicle.status === 'rented'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-yellow-100 text-yellow-700'
+                      }`}
+                    >
+                      {vehicle.status ? vehicle.status.charAt(0).toUpperCase() + vehicle.status.slice(1) : ''}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-700">{vehicle.bookings || 0}</td>
+                  <td className="px-6 py-4 text-gray-700">${vehicle.daily_rate}</td>
+                  <td className="px-6 py-4 text-gray-700">
+                    <div>{vehicle.locationAddress}</div>
+                    {/* GPS Navigation Button under location */}
+                    {(vehicle.locationLat || vehicle.location_lat) && (vehicle.locationLng || vehicle.location_lng) && (
+                      <button
+                        className="mt-1 flex items-center gap-1 text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 hover:bg-blue-200"
+                        title="Navigate to Vehicle Location"
+                        onClick={() => {
+                          const lat = vehicle.locationLat || vehicle.location_lat;
+                          const lng = vehicle.locationLng || vehicle.location_lng;
+                          const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                          window.open(url, '_blank');
+                        }}
                       >
-                        {vehicle.status ? vehicle.status.charAt(0).toUpperCase() + vehicle.status.slice(1) : ''}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">{vehicle.bookings || 0}</td>
-                    <td className="px-6 py-4 text-gray-700">${vehicle.daily_rate}</td>
-                    <td className="px-6 py-4 flex gap-3">
-                      <button className="text-blue-600 hover:underline text-xs">Edit</button>
-                      <button className="text-red-600 hover:underline text-xs">Delete</button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Pagination */}
-        <div className="flex justify-end mt-4">
-          <nav className="inline-flex rounded-md shadow-sm">
-            <button className="px-3 py-1 border border-gray-300 bg-white text-gray-700 rounded-l hover:bg-gray-100">1</button>
-            <button className="px-3 py-1 border-t border-b border-gray-300 bg-white text-gray-700 hover:bg-gray-100">2</button>
-            <button className="px-3 py-1 border border-gray-300 bg-white text-gray-700 rounded-r hover:bg-gray-100">3</button>
-          </nav>
-        </div>
-
-        {/* Add Vehicle Modal */}
-        {showModal && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center"
-            style={{
-              background: "rgba(0,0,0,0.5)",
-              backdropFilter: "blur(2px)",
-            }}
-          >
-            <div
-              className="bg-white rounded-xl shadow-lg w-full max-w-xl max-h-[90vh] overflow-y-auto p-8 relative"
-              style={{ boxSizing: 'border-box' }}
-            >
-              <button
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl"
-                onClick={() => {
-                  setShowModal(false);
-                  setForm(initialForm);
-                  setUploadError(null);
-                }}
-                aria-label="Close"
-              >
-                &times;
-              </button>
-              <h2 className="text-lg font-bold mb-4">Add New Vehicle</h2>
-              
-              {uploadError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                  {uploadError}
-                </div>
-              )}
-
-              <form onSubmit={handleAddVehicle}>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  {/* Make */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Make *</label>
-                    <input 
-                      name="make" 
-                      value={form.make} 
-                      onChange={handleInputChange} 
-                      className="w-full border px-3 py-2 rounded" 
-                      placeholder="e.g., Toyota" 
-                      required 
-                    />
-                  </div>
-                  {/* Model */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Model *</label>
-                    <input 
-                      name="model" 
-                      value={form.model} 
-                      onChange={handleInputChange} 
-                      className="w-full border px-3 py-2 rounded" 
-                      placeholder="e.g., Corolla" 
-                      required 
-                    />
-                  </div>
-                  {/* Year */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Year *</label>
-                    <input 
-                      name="year" 
-                      type="number"
-                      min="1900"
-                      max="2030"
-                      value={form.year} 
-                      onChange={handleInputChange} 
-                      className="w-full border px-3 py-2 rounded" 
-                      placeholder="e.g., 2022" 
-                      required 
-                    />
-                  </div>
-                  {/* Plate Number */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Plate Number *</label>
-                    <input 
-                      name="plateNumber" 
-                      value={form.plateNumber} 
-                      onChange={handleInputChange} 
-                      className="w-full border px-3 py-2 rounded" 
-                      placeholder="e.g., RAC 007D" 
-                      required 
-                    />
-                  </div>
-                  {/* Category */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Category *</label>
-                    <select 
-                      name="category" 
-                      value={form.category} 
-                      onChange={handleInputChange} 
-                      className="w-full border px-3 py-2 rounded" 
-                      required
-                    >
-                      <option value="">Select Category</option>
-                      <option value="sedan">Sedan</option>
-                      <option value="suv">SUV</option>
-                      <option value="van">Van</option>
-                      <option value="truck">Truck</option>
-                    </select>
-                  </div>
-                  {/* Color */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Color</label>
-                    <input
-                      name="color"
-                      value={form.color}
-                      onChange={handleInputChange}
-                      className="w-full border px-3 py-2 rounded"
-                      placeholder="e.g., Red"
-                    />
-                  </div>
-                  {/* Seats */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Seats</label>
-                    <input
-                      name="seats"
-                      type="number"
-                      min="1"
-                      max="12"
-                      value={form.seats}
-                      onChange={handleInputChange}
-                      className="w-full border px-3 py-2 rounded"
-                      placeholder="e.g., 5"
-                    />
-                  </div>
-                  {/* Transmission */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Transmission</label>
-                    <select
-                      name="transmission"
-                      value={form.transmission}
-                      onChange={handleInputChange}
-                      className="w-full border px-3 py-2 rounded"
-                    >
-                      <option value="automatic">Automatic</option>
-                      <option value="manual">Manual</option>
-                    </select>
-                  </div>
-                  {/* Fuel Type */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Fuel Type</label>
-                    <select
-                      name="fuelType"
-                      value={form.fuelType}
-                      onChange={handleInputChange}
-                      className="w-full border px-3 py-2 rounded"
-                    >
-                      <option value="gasoline">Gasoline</option>
-                      <option value="diesel">Diesel</option>
-                      <option value="electric">Electric</option>
-                      <option value="hybrid">Hybrid</option>
-                    </select>
-                  </div>
-                  {/* Listing Type */}
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Listing Type *</label>
-                    <select
-                      name="listing_type"
-                      value={form.listing_type}
-                      onChange={handleInputChange}
-                      className="w-full border px-3 py-2 rounded"
-                      required
-                    >
-                      <option value="rent">Rent</option>
-                      <option value="sale">Sale</option>
-                    </select>
-                  </div>
-                  {/* Features */}
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium mb-1">Features (comma separated)</label>
-                    <input
-                      name="features"
-                      value={form.features}
-                      onChange={handleInputChange}
-                      className="w-full border px-3 py-2 rounded"
-                      placeholder="e.g., Air Conditioning, Bluetooth, GPS"
-                    />
-                  </div>
-                  {/* Location Latitude and Longitude */}
-                  <div className="col-span-2 flex gap-2 items-end">
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium mb-1">Location Latitude</label>
-                      <input
-                        name="locationLat"
-                        type="number"
-                        step="any"
-                        value={form.locationLat}
-                        onChange={handleInputChange}
-                        className="w-full border px-3 py-2 rounded"
-                        placeholder="e.g., -1.9441"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium mb-1">Location Longitude</label>
-                      <input
-                        name="locationLng"
-                        type="number"
-                        step="any"
-                        value={form.locationLng}
-                        onChange={handleInputChange}
-                        className="w-full border px-3 py-2 rounded"
-                        placeholder="e.g., 30.0619"
-                      />
-                    </div>
+                        GPS Navigate
+                      </button>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 flex gap-3">
                     <button
-                      type="button"
-                      onClick={handleDetectLocation}
-                      className="h-10 px-4 mb-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                      style={{ whiteSpace: 'nowrap' }}
+                      className="text-blue-600 hover:underline text-xs"
+                      onClick={() => handleEditVehicle(vehicle)}
                     >
-                      Show Me Location
+                      Edit
                     </button>
-                  </div>
-                  {/* Location Address */}
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium mb-1">Location Address</label>
-                    <input
-                      name="locationAddress"
-                      value={form.locationAddress}
-                      onChange={handleInputChange}
-                      className="w-full border px-3 py-2 rounded"
-                      placeholder="e.g., Kigali, Rwanda"
-                    />
-                  </div>
-                </div>
-                {/* Description */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1">Description</label>
-                  <textarea 
-                    name="description" 
-                    value={form.description} 
+                    <button
+                      className="text-red-600 hover:underline text-xs"
+                      onClick={() => handleDeleteVehicle(vehicle.id)}
+                    >
+                      Delete
+                    </button>
+                    <button
+                      className={`flex items-center gap-1 text-xs px-2 py-1 rounded 
+                        ${vehicle.status === 'available' ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+                      onClick={() => handleToggleStatus(vehicle)}
+                      title={vehicle.status === 'available' ? 'Mark as Unavailable' : 'Mark as Available'}
+                    >
+                      {vehicle.status === 'available' ? (
+                        <>
+                          <XCircle className="w-4 h-4" /> Unavailable
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4" /> Available
+                        </>
+                      )}
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      
+      {/* Pagination */}
+      <div className="flex justify-end mt-4">
+        <nav className="inline-flex rounded-md shadow-sm">
+          <button className="px-3 py-1 border border-gray-300 bg-white text-gray-700 rounded-l hover:bg-gray-100">1</button>
+          <button className="px-3 py-1 border-t border-b border-gray-300 bg-white text-gray-700 hover:bg-gray-100">2</button>
+          <button className="px-3 py-1 border border-gray-300 bg-white text-gray-700 rounded-r hover:bg-gray-100">3</button>
+        </nav>
+      </div>
+
+      {/* Add Vehicle Modal */}
+      {showModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{
+            background: "rgba(0,0,0,0.5)",
+            backdropFilter: "blur(2px)",
+          }}
+        >
+          <div
+            className="bg-white rounded-xl shadow-lg w-full max-w-xl max-h-[90vh] overflow-y-auto p-8 relative"
+            style={{ boxSizing: 'border-box' }}
+          >
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl"
+              onClick={() => {
+                setShowModal(false);
+                setForm(initialForm);
+                setUploadError(null);
+                setEditingId(null); // Reset edit mode
+              }}
+              aria-label="Close"
+            >
+              &times;
+            </button>
+            <h2 className="text-lg font-bold mb-4">Add New Vehicle</h2>
+            
+            {uploadError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                {uploadError}
+              </div>
+            )}
+
+            <form onSubmit={handleAddVehicle}>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                {/* Make */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Make *</label>
+                  <input 
+                    name="make" 
+                    value={form.make} 
                     onChange={handleInputChange} 
                     className="w-full border px-3 py-2 rounded" 
-                    placeholder="Brief description of the vehicle ..." 
-                    rows={2} 
+                    placeholder="e.g., Toyota" 
+                    required 
                   />
                 </div>
-                {/* Images */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1">Vehicle Images * (1-5 images)</label>
-                  <div className="border-dashed border-2 border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center">
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/png,image/jpeg,image/jpg,image/gif"
-                      onChange={handleImageChange}
-                      id="vehicle-images"
-                    />
-                    <label htmlFor="vehicle-images" className="cursor-pointer flex flex-col items-center">
-                      <span className="text-3xl text-gray-400 mb-2">📷</span>
-                      <span className="text-gray-500 text-sm">Click to upload images or drag and drop</span>
-                      <span className="text-xs text-gray-400 mt-1">PNG, JPG, GIF up to 10MB each (max 5 images)</span>
-                    </label>
-                    {form.images.length > 0 && (
-                      <div className="mt-3 w-full">
-                        <p className="text-sm font-medium text-gray-700 mb-2">{form.images.length} image(s) selected:</p>
-                        <div className="space-y-1">
-                          {form.images.map((file, idx) => (
-                            <div key={idx} className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
-                              {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                {/* Model */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Model *</label>
+                  <input 
+                    name="model" 
+                    value={form.model} 
+                    onChange={handleInputChange} 
+                    className="w-full border px-3 py-2 rounded" 
+                    placeholder="e.g., Corolla" 
+                    required 
+                  />
                 </div>
-                {/* Price per Day or Selling Price */}
-                {form.listing_type === 'rent' && (
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1">Price per Day ($) *</label>
-                    <input 
-                      name="dailyRate" 
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={form.dailyRate} 
-                      onChange={handleInputChange} 
-                      className="w-full border px-3 py-2 rounded" 
-                      placeholder="e.g., 45" 
-                      required={form.listing_type === 'rent'}
-                    />
-                  </div>
-                )}
-                {form.listing_type === 'sale' && (
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium mb-1">Selling Price ($) *</label>
+                {/* Year */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Year *</label>
+                  <input 
+                    name="year" 
+                    type="number"
+                    min="1900"
+                    max="2030"
+                    value={form.year} 
+                    onChange={handleInputChange} 
+                    className="w-full border px-3 py-2 rounded" 
+                    placeholder="e.g., 2022" 
+                    required 
+                  />
+                </div>
+                {/* Plate Number */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Plate Number *</label>
+                  <input 
+                    name="plateNumber" 
+                    value={form.plateNumber} 
+                    onChange={handleInputChange} 
+                    className="w-full border px-3 py-2 rounded" 
+                    placeholder="e.g., RAC 007D" 
+                    required 
+                  />
+                </div>
+                {/* Category */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Category *</label>
+                  <select 
+                    name="category" 
+                    value={form.category} 
+                    onChange={handleInputChange} 
+                    className="w-full border px-3 py-2 rounded" 
+                    required
+                  >
+                    <option value="">Select Category</option>
+                    <option value="sedan">Sedan</option>
+                    <option value="suv">SUV</option>
+                    <option value="van">Van</option>
+                    <option value="truck">Truck</option>
+                  </select>
+                </div>
+                {/* Color */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Color</label>
+                  <input
+                    name="color"
+                    value={form.color}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
+                    placeholder="e.g., Red"
+                  />
+                </div>
+                {/* Seats */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Seats</label>
+                  <input
+                    name="seats"
+                    type="number"
+                    min="1"
+                    max="12"
+                    value={form.seats}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
+                    placeholder="e.g., 5"
+                  />
+                </div>
+                {/* Transmission */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Transmission</label>
+                  <select
+                    name="transmission"
+                    value={form.transmission}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
+                  >
+                    <option value="automatic">Automatic</option>
+                    <option value="manual">Manual</option>
+                  </select>
+                </div>
+                {/* Fuel Type */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Fuel Type</label>
+                  <select
+                    name="fuelType"
+                    value={form.fuelType}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
+                  >
+                    <option value="gasoline">Gasoline</option>
+                    <option value="diesel">Diesel</option>
+                    <option value="electric">Electric</option>
+                    <option value="hybrid">Hybrid</option>
+                  </select>
+                </div>
+                {/* Listing Type */}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Listing Type *</label>
+                  <select
+                    name="listing_type"
+                    value={form.listing_type}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
+                    required
+                  >
+                    <option value="rent">Rent</option>
+                    <option value="sale">Sale</option>
+                  </select>
+                </div>
+                {/* Features */}
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-1">Features (comma separated)</label>
+                  <input
+                    name="features"
+                    value={form.features}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
+                    placeholder="e.g., Air Conditioning, Bluetooth, GPS"
+                  />
+                </div>
+                {/* Location Latitude and Longitude */}
+                <div className="col-span-2 flex gap-2 items-end">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium mb-1">Location Latitude</label>
                     <input
-                      name="selling_price"
+                      name="locationLat"
                       type="number"
-                      min="0"
-                      step="0.01"
-                      value={form.selling_price}
+                      step="any"
+                      value={form.locationLat}
                       onChange={handleInputChange}
                       className="w-full border px-3 py-2 rounded"
-                      placeholder="e.g., 15000"
-                      required={form.listing_type === 'sale'}
+                      placeholder="e.g., -1.9441"
                     />
                   </div>
-                )}
-                <div className="flex justify-end gap-3">
-                  <button 
-                    type="button" 
-                    className="px-6 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300" 
-                    onClick={() => {
-                      setShowModal(false);
-                      setForm(initialForm);
-                      setUploadError(null);
-                    }}
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium mb-1">Location Longitude</label>
+                    <input
+                      name="locationLng"
+                      type="number"
+                      step="any"
+                      value={form.locationLng}
+                      onChange={handleInputChange}
+                      className="w-full border px-3 py-2 rounded"
+                      placeholder="e.g., 30.0619"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDetectLocation}
+                    className="h-10 px-4 mb-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    style={{ whiteSpace: 'nowrap' }}
                   >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="px-6 py-2 rounded bg-blue-700 text-white font-semibold hover:bg-blue-800"
-                  >
-                    Add Vehicle
+                    Show Me Location
                   </button>
                 </div>
-              </form>
-            </div>
+                {/* Location Address */}
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-1">Location Address</label>
+                  <input
+                    name="locationAddress"
+                    value={form.locationAddress}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
+                    placeholder="e.g., Kigali, Rwanda"
+                  />
+                </div>
+              </div>
+              {/* Description */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Description</label>
+                <textarea 
+                  name="description" 
+                  value={form.description} 
+                  onChange={handleInputChange} 
+                  className="w-full border px-3 py-2 rounded" 
+                  placeholder="Brief description of the vehicle ..." 
+                  rows={2} 
+                />
+              </div>
+              {/* Images */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Vehicle Images * (1-5 images)</label>
+                <div className="border-dashed border-2 border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/png,image/jpeg,image/jpg,image/gif"
+                    onChange={handleImageChange}
+                    id="vehicle-images"
+                  />
+                  <label htmlFor="vehicle-images" className="cursor-pointer flex flex-col items-center">
+                    <span className="text-3xl text-gray-400 mb-2">📷</span>
+                    <span className="text-gray-500 text-sm">Click to upload images or drag and drop</span>
+                    <span className="text-xs text-gray-400 mt-1">PNG, JPG, GIF up to 10MB each (max 5 images)</span>
+                  </label>
+                  {form.images.length > 0 && (
+                    <div className="mt-3 w-full">
+                      <p className="text-sm font-medium text-gray-700 mb-2">{form.images.length} image(s) selected:</p>
+                      <div className="space-y-1">
+                        {form.images.map((file, idx) => (
+                          <div key={idx} className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                            {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {/* Price per Day or Selling Price */}
+              {form.listing_type === 'rent' && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">Price per Day ($) *</label>
+                  <input 
+                    name="dailyRate" 
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.dailyRate} 
+                    onChange={handleInputChange} 
+                    className="w-full border px-3 py-2 rounded" 
+                    placeholder="e.g., 45" 
+                    required={form.listing_type === 'rent'}
+                  />
+                </div>
+              )}
+              {form.listing_type === 'sale' && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-1">Selling Price ($) *</label>
+                  <input
+                    name="selling_price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.selling_price}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
+                    placeholder="e.g., 15000"
+                    required={form.listing_type === 'sale'}
+                  />
+                </div>
+              )}
+              <div className="flex justify-end gap-3">
+                <button 
+                  type="button" 
+                  className="px-6 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300" 
+                  onClick={() => {
+                    setShowModal(false);
+                    setForm(initialForm);
+                    setUploadError(null);
+                    setEditingId(null); // Reset edit mode
+                  }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-6 py-2 rounded bg-blue-700 text-white font-semibold hover:bg-blue-800"
+                >
+                  Add Vehicle
+                </button>
+              </div>
+            </form>
           </div>
-        )}
-      </div>
-    </SidebarLayout>
+        </div>
+      )}
+    </div>
   );
 };
 

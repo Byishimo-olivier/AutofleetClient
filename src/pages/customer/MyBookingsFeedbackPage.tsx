@@ -74,6 +74,7 @@ interface Feedback {
   start_date: string;
   end_date: string;
   total_amount: number;
+  images?: string[] | string; // Added images property
 }
 
 const MIN_FEEDBACK_LENGTH = 20;
@@ -129,9 +130,9 @@ const MyBookingsFeedbackPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const response = await apiClient.get('/bookings');
+      const response = await apiClient.get<{ bookings: Booking[] }>('/bookings');
 
-      if (response && response.success && response.data && Array.isArray(response.data.bookings)) {
+      if (response && response.success && response.data && Array.isArray(response.data?.bookings)) {
         const bookingsData = response.data.bookings.map((booking: Booking) => {
           // Parse images if they're a string
           if (booking.images && typeof booking.images === 'string') {
@@ -374,19 +375,45 @@ const MyBookingsFeedbackPage: React.FC = () => {
   const getImageUrl = (img: string | undefined) => {
     if (!img) return "/placeholder.png";
     if (img.startsWith("http://") || img.startsWith("https://")) return img;
-    const normalizedImg = img.startsWith("/") ? img : `/${img}`;
-    return `${STATIC_BASE_URL}${normalizedImg}`;
+    if (!img.startsWith("/uploads/vehicles/")) {
+      return `${STATIC_BASE_URL}/uploads/vehicles/${img.replace(/^\/+/, "")}`;
+    }
+    return `${STATIC_BASE_URL}${img}`;
+  };
+
+  const getMainImage = (item: Booking | Feedback) => {
+    let images: string[] = [];
+    if (Array.isArray(item.images)) {
+      images = item.images;
+    } else if (typeof item.images === "string") {
+      try {
+        images = JSON.parse(item.images);
+      } catch {
+        images = [];
+      }
+    }
+    if (images.length > 0) {
+      return getImageUrl(images[0]);
+    }
+    return "/placeholder.png";
+  };
+
+  const parseVehicleImages = (images: any) => {
+    let parsedImages: string[] = [];
+    try {
+      if (Array.isArray(images)) {
+        parsedImages = images;
+      } else if (images && typeof images === 'string' && images.trim() !== '') {
+        parsedImages = JSON.parse(images);
+      }
+    } catch {
+      parsedImages = [];
+    }
+    return parsedImages;
   };
 
   const getVehicleName = (item: Booking | Feedback) => {
     return `${item.make} ${item.model} ${item.year}`;
-  };
-
-  const getMainImage = (booking: Booking) => {
-    if (Array.isArray(booking.images) && booking.images.length > 0) {
-      return getImageUrl(booking.images[0]);
-    }
-    return "/placeholder.png";
   };
 
   const formatDate = (dateString: string) => {
@@ -565,14 +592,27 @@ const MyBookingsFeedbackPage: React.FC = () => {
                 key={booking.id}
                 className="bg-white rounded-xl shadow px-6 py-4 flex flex-col md:flex-row items-center md:items-stretch gap-4"
               >
-                <img
-                  src={getMainImage(booking)}
-                  alt={getVehicleName(booking)}
-                  className="w-28 h-20 object-cover rounded border"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/placeholder.png";
-                  }}
-                />
+                <div className="w-28 h-20 bg-gray-300 rounded-lg mr-3 overflow-hidden flex items-center justify-center border">
+                  {Array.isArray(booking.images) && booking.images.length > 0 ? (
+                    <img
+                      src={getImageUrl(booking.images[0])}
+                      alt={getVehicleName(booking)}
+                      className="w-full h-full object-cover"
+                      onError={e => {
+                        (e.target as HTMLImageElement).src = '/placeholder.png';
+                      }}
+                    />
+                  ) : (
+                    <img
+                      src={getMainImage(booking)}
+                      alt={getVehicleName(booking)}
+                      className="w-full h-full object-cover"
+                      onError={e => {
+                        (e.target as HTMLImageElement).src = '/placeholder.png';
+                      }}
+                    />
+                  )}
+                </div>
                 <div className="flex-1 flex flex-col md:flex-row gap-4">
                   <div className="flex-1">
                     <div className="font-semibold">{getVehicleName(booking)}</div>
@@ -584,7 +624,10 @@ const MyBookingsFeedbackPage: React.FC = () => {
                   </div>
                   <div className="flex-1">
                     <div className="text-xs">
-                      <span className="font-semibold">Location:</span> {booking.pickup_location}
+                      <span className="font-semibold">Location:</span>{" "}
+                      {booking.pickup_location && booking.pickup_location !== "N/A"
+                        ? booking.pickup_location
+                        : booking.location_address || "N/A"}
                     </div>
                     <div className="text-xs mt-2">
                       <span className="font-semibold">Pickup:</span> {formatDate(booking.start_date)}
@@ -648,11 +691,26 @@ const MyBookingsFeedbackPage: React.FC = () => {
                 key={feedback.id}
                 className="bg-white rounded-xl shadow px-6 py-4 flex flex-col md:flex-row items-center md:items-stretch gap-4"
               >
-                <div className="w-28 h-20 bg-gray-200 rounded border flex items-center justify-center">
-                  <div className="text-gray-500 text-xs text-center">
-                    <div className="font-semibold">{feedback.make}</div>
-                    <div>{feedback.model}</div>
-                  </div>
+                <div className="w-28 h-20 bg-gray-300 rounded-lg mr-3 overflow-hidden flex items-center justify-center border">
+                  {Array.isArray(feedback.images) && feedback.images.length > 0 ? (
+                    <img
+                      src={getImageUrl(feedback.images[0])}
+                      alt={getVehicleName(feedback)}
+                      className="w-full h-full object-cover"
+                      onError={e => {
+                        (e.target as HTMLImageElement).src = '/placeholder.png';
+                      }}
+                    />
+                  ) : (
+                    <img
+                      src={getMainImage(feedback)}
+                      alt={getVehicleName(feedback)}
+                      className="w-full h-full object-cover"
+                      onError={e => {
+                        (e.target as HTMLImageElement).src = '/placeholder.png';
+                      }}
+                    />
+                  )}
                 </div>
 
                 <div className="flex-1 flex flex-col md:flex-row gap-4">

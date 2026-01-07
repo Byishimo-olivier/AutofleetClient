@@ -4,8 +4,6 @@ import {
   ClipboardList,
   Car,
   Users,
-  User,
-  LogOut,
   Plus,
   FileText,
   Settings,
@@ -13,11 +11,11 @@ import {
   UserPlus,
   PieChart,
   MessageCircle,
-  Shield,
   Sliders,
   AlertCircle,
+  User,
 } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSettings } from '@/contexts/SettingContxt';
 import { apiClient } from '@/services/apiClient';
 import {
@@ -119,7 +117,6 @@ const defaultTopRented = [
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { settings, formatPrice, t } = useSettings();
 
   // State for API data
@@ -296,48 +293,9 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className={`flex min-h-screen ${settings.darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      {/* Sidebar */}
-      <aside className={`w-64 ${settings.darkMode ? 'bg-gray-800' : 'bg-[#2c3e7d]'} text-white flex flex-col shadow-lg`}>
-        <div className={`px-4 py-6 border-b ${settings.darkMode ? 'border-gray-700' : 'border-[#3d4f8f]'}`}>
-          <h1 className="text-xl font-bold">AutoFleet Hub</h1>
-        </div>
-        <div className={`flex items-center gap-3 px-4 py-5 border-b ${settings.darkMode ? 'border-gray-700' : 'border-[#3d4f8f]'}`}>
-          <div className={`w-12 h-12 rounded-full ${settings.darkMode ? 'bg-gray-600' : 'bg-gray-300'} flex items-center justify-center overflow-hidden`}>
-            <User className={`w-6 h-6 ${settings.darkMode ? 'text-gray-300' : 'text-gray-600'}`} />
-          </div>
-          <div className="flex flex-col">
-            <span className={`text-sm font-semibold ${settings.darkMode ? 'text-gray-200' : 'text-gray-200'}`}>Admin</span>
-            <span className={`text-xs ${settings.darkMode ? 'text-gray-400' : 'text-gray-400'}`}>admin@example.com</span>
-          </div>
-        </div>
-        <nav className="flex-1 px-2 py-4">
-          {adminNav.map((item) => (
-            <div
-              key={item.label}
-              className={`flex items-center gap-3 px-4 py-2 rounded-md cursor-pointer
-              ${location.pathname === item.to 
-                ? settings.darkMode ? "bg-gray-700 text-white" : "bg-[#3d4f8f] text-white"
-                : settings.darkMode ? "text-gray-300 hover:bg-gray-700 hover:text-white" : "text-gray-300 hover:bg-[#3d4f8f] hover:text-white"
-              }
-              `}
-              onClick={() => navigate(item.to)}
-            >
-              {item.icon}
-              <span className="text-sm font-medium">{item.label}</span>
-            </div>
-          ))}
-        </nav>
-        <div className="p-3">
-          <button className="w-full flex items-center justify-center bg-[#f59e0b] hover:bg-[#d97706] text-white py-2.5 rounded-lg transition font-medium text-sm shadow-md">
-            <LogOut className="mr-2 w-4 h-4" /> {t.logout || "Logout"}
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 p-8">
-        {/* Top search bar */}
+    <div className={`flex-1 ${settings.darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
+      {/* Top search bar */}
+      <div className="p-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex-1 flex items-center">
             <input
@@ -458,12 +416,13 @@ const AdminDashboard: React.FC = () => {
                     stroke="#f59e0b"
                     strokeWidth={3}
                     dot={{ r: 4 }}
-                    name="Revenue (RWF)" // Changed to RWF
+                    name="Revenue (RWF)"
                   />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
+          
           {/* Top 5 Rented Vehicles */}
           <div className={`rounded-xl shadow-lg p-6 ${settings.darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className={`font-semibold mb-3 ${settings.darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
