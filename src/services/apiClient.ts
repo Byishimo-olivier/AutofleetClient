@@ -34,14 +34,22 @@ class ApiClient {
   private baseURL: string;
 
   constructor(baseURL: string) {
-    this.baseURL = baseURL;
+    // Remove trailing slash if present
+    this.baseURL = baseURL.endsWith('/') ? baseURL.slice(0, -1) : baseURL;
+
+    // Check if baseURL includes /api, if not, it might be misconfigured
+    if (!this.baseURL.includes('/api')) {
+      console.warn('⚠️ API_BASE_URL does not seem to include "/api". Requests might fail if the backend expects this prefix.');
+    }
   }
 
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
-    const url = `${this.baseURL}${endpoint}`;
+    // Ensure endpoint starts with a slash
+    const formattedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${this.baseURL}${formattedEndpoint}`;
 
     // Get token from localStorage
     const token = localStorage.getItem('autofleet_token');
