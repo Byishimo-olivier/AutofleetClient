@@ -157,24 +157,24 @@ const AdminDashboard: React.FC = () => {
         if (dashboardRes.success && dashboardRes.data) {
           const data = dashboardRes.data as DashboardStats;
           console.log('Dashboard API response:', data); // Debug log
-          
+
           // Extract values from the nested objects
           const totalBookings = parseInt(data.totalBookings?.value as string || "0");
           const totalRevenue = parseFloat(data.totalRevenue?.value as string || "0");
           const activeVehicles = parseInt(data.activeVehicles?.value as string || "0");
           const activeUsers = parseInt(data.activeUsers?.value as string || "0");
-          
+
           // Extract growth percentages from the change strings
           const extractPercentage = (changeStr: string | undefined) => {
             if (!changeStr) return 0;
             const match = changeStr.match(/([+-]?\d+\.?\d*)%/);
             return match ? parseFloat(match[1]) : 0;
           };
-          
+
           const bookingsGrowth = extractPercentage(data.totalBookings?.change);
           const revenueGrowth = extractPercentage(data.totalRevenue?.change);
           const utilizationPercent = extractPercentage(data.activeVehicles?.change);
-          
+
           // Calculate new users from the change string
           const extractNewUsers = (changeStr: string | undefined) => {
             if (!changeStr) return 0;
@@ -182,7 +182,7 @@ const AdminDashboard: React.FC = () => {
             return match ? parseInt(match[1]) : 0;
           };
           const newUsers = extractNewUsers(data.activeUsers?.change);
-          
+
           // Format revenue in Rwandan Francs
           const formatRwandanPrice = (amount: number) => {
             return new Intl.NumberFormat('rw-RW', {
@@ -192,7 +192,7 @@ const AdminDashboard: React.FC = () => {
               maximumFractionDigits: 0,
             }).format(amount);
           };
-          
+
           // Update stats with real data while preserving design
           setStats([
             {
@@ -226,20 +226,20 @@ const AdminDashboard: React.FC = () => {
         const trendsRes = await apiClient.get('/admin/stats/trends?period=8');
         if (trendsRes.success && trendsRes.data) {
           console.log('Trends API response:', trendsRes.data); // Debug log
-          
+
           // Map the trends data to match our chart format
-            interface TrendItem {
+          interface TrendItem {
             month: string;
             bookings: number;
             revenue: number;
-            }
+          }
 
-            const formattedTrends: TrendItem[] = (trendsRes.data as Array<{ month: string; bookings: string | number; revenue: string | number }>).map(item => ({
+          const formattedTrends: TrendItem[] = (trendsRes.data as Array<{ month: string; bookings: string | number; revenue: string | number }>).map(item => ({
             month: item.month,
             bookings: parseInt(item.bookings as string) || 0,
             revenue: parseFloat(item.revenue as string) || 0
-            }));
-          
+          }));
+
           setTrendsData(formattedTrends);
         }
 
@@ -247,23 +247,23 @@ const AdminDashboard: React.FC = () => {
         const topVehiclesRes = await apiClient.get('/admin/stats/top-vehicles?limit=5');
         if (topVehiclesRes.success && topVehiclesRes.data) {
           console.log('Top vehicles API response:', topVehiclesRes.data); // Debug log
-          
+
           const colors = [
             "bg-red-200 text-red-700",
-            "bg-blue-200 text-blue-700", 
+            "bg-blue-200 text-blue-700",
             "bg-green-200 text-green-700",
             "bg-yellow-200 text-yellow-700",
             "bg-purple-200 text-purple-700"
           ];
-          
+
           // Handle different possible response structures
           let vehiclesData = topVehiclesRes.data;
-          
+
           // If the response is wrapped in another object, unwrap it
           if (vehiclesData && typeof vehiclesData === 'object' && Array.isArray((vehiclesData as any)?.vehicles)) {
             vehiclesData = (vehiclesData as any).vehicles;
           }
-          
+
           // Ensure we have an array
           if (Array.isArray(vehiclesData) && vehiclesData.length > 0) {
             const apiTopVehicles = vehiclesData.map((vehicle, index) => ({
@@ -271,7 +271,7 @@ const AdminDashboard: React.FC = () => {
               color: colors[index] || colors[0],
               bookings: parseInt(vehicle.bookings || vehicle.totalBookings || vehicle.total_bookings || 0)
             }));
-            
+
             setTopRented(apiTopVehicles);
           } else {
             console.log('No valid vehicle data found, keeping defaults');
@@ -301,11 +301,10 @@ const AdminDashboard: React.FC = () => {
             <input
               type="text"
               placeholder="Search ..."
-              className={`px-4 py-2 rounded-lg border focus:outline-none focus:ring w-80 shadow-sm ${
-                settings.darkMode
+              className={`px-4 py-2 rounded-lg border focus:outline-none focus:ring w-80 shadow-sm ${settings.darkMode
                   ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-              }`}
+                }`}
             />
           </div>
           <div className="flex items-center gap-4">
@@ -351,11 +350,10 @@ const AdminDashboard: React.FC = () => {
             {quickActions.map((action, i) => (
               <button
                 key={i}
-                className={`flex flex-col items-center justify-center border-2 ${action.border} rounded-lg py-6 shadow transition ${
-                  settings.darkMode 
-                    ? 'bg-gray-800 hover:bg-gray-700' 
+                className={`flex flex-col items-center justify-center border-2 ${action.border} rounded-lg py-6 shadow transition ${settings.darkMode
+                    ? 'bg-gray-800 hover:bg-gray-700'
                     : 'bg-white hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 {action.icon}
                 <span className={`mt-3 font-semibold text-base ${settings.darkMode ? 'text-gray-200' : 'text-gray-900'}`}>
@@ -381,7 +379,7 @@ const AdminDashboard: React.FC = () => {
                   <XAxis dataKey="month" stroke={settings.darkMode ? '#9ca3af' : '#6b7280'} />
                   <YAxis yAxisId="left" stroke={settings.darkMode ? '#9ca3af' : '#6b7280'} />
                   <YAxis yAxisId="right" orientation="right" stroke={settings.darkMode ? '#9ca3af' : '#6b7280'} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{
                       backgroundColor: settings.darkMode ? '#374151' : '#ffffff',
                       border: `1px solid ${settings.darkMode ? '#4b5563' : '#e5e7eb'}`,
@@ -422,7 +420,7 @@ const AdminDashboard: React.FC = () => {
               </ResponsiveContainer>
             </div>
           </div>
-          
+
           {/* Top 5 Rented Vehicles */}
           <div className={`rounded-xl shadow-lg p-6 ${settings.darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className={`font-semibold mb-3 ${settings.darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
