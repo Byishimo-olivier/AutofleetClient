@@ -27,20 +27,17 @@ if (isProd && !envApiUrl) {
   );
 }
 
-export const API_BASE_URL = envApiUrl || 'http://localhost:5000/api';
-export const STATIC_BASE_URL = API_BASE_URL.replace('/api', '');
+const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Remove trailing slash and any accidental /api suffix for the static base
+export const STATIC_BASE_URL = rawBaseUrl.replace(/\/+$/, '').replace(/\/api$/i, '');
+// Consistently add /api for the API base
+export const API_BASE_URL = `${STATIC_BASE_URL}/api`;
 
 class ApiClient {
   private baseURL: string;
 
   constructor(baseURL: string) {
-    // Remove trailing slash if present
-    this.baseURL = baseURL.endsWith('/') ? baseURL.slice(0, -1) : baseURL;
-
-    // Check if baseURL includes /api, if not, it might be misconfigured
-    if (!this.baseURL.includes('/api')) {
-      console.warn('⚠️ API_BASE_URL does not seem to include "/api". Requests might fail if the backend expects this prefix.');
-    }
+    this.baseURL = baseURL;
   }
 
   private async request<T>(
