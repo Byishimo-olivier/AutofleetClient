@@ -16,7 +16,18 @@ interface ApiResponse<T = any> {
   error?: string;
 }
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const isProd = import.meta.env.PROD;
+const envApiUrl = import.meta.env.VITE_API_URL;
+
+if (isProd && !envApiUrl) {
+  console.warn(
+    '⚠️ VITE_API_URL is not defined in production environment. ' +
+    'The app will likely fail to connect to the backend. ' +
+    'Please ensure VITE_API_URL is set in your deployment platform (Vercel/Render).'
+  );
+}
+
+export const API_BASE_URL = envApiUrl || 'http://localhost:5000/api';
 export const STATIC_BASE_URL = API_BASE_URL.replace('/api', '');
 
 class ApiClient {

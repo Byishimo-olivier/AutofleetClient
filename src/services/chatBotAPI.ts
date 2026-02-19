@@ -93,7 +93,14 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
       console.log('🤖 Using Anthropic Claude');
     }
     else {
-      console.log('⚠️ No AI API key found, using fallback responses');
+      if (import.meta.env.PROD) {
+        console.warn(
+          '⚠️ No AI API keys found in production. The chatbot will use keyword-based fallback responses. ' +
+          'To enable AI, please add VITE_OPENAI_API_KEY, VITE_GOOGLE_API_KEY, or VITE_ANTHROPIC_API_KEY in your deployment platform.'
+        );
+      } else {
+        console.log('⚠️ No AI API key found, using fallback responses');
+      }
     }
   }
 
