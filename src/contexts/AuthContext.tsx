@@ -55,12 +55,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               setUser(null);
             }
           })
-          .catch(() => {
-            // Token is invalid, clear storage
-            localStorage.removeItem('autofleet_token');
-            localStorage.removeItem('autofleet_user');
-            setToken(null);
-            setUser(null);
+          .catch((err) => {
+            console.error('Failed to verify session:', err);
+            // Only clear storage if it's explicitly a 401/unauthorized error
+            // (Assumes authService.getProfile check matches this)
+            if (err.status === 401) {
+              localStorage.removeItem('autofleet_token');
+              localStorage.removeItem('autofleet_user');
+              setToken(null);
+              setUser(null);
+            }
           })
           .finally(() => {
             setIsLoading(false);
@@ -80,7 +84,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       const response = await authService.login(email, password);
-      
+
       if (response.success && response.user && response.token) {
         setUser(response.user);
         setToken(response.token);
@@ -103,12 +107,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       const response = await authService.register(userData);
-      
+
       if (response.success && response.data) {
         const { user: newUser, token: userToken } = response.data;
         setUser(newUser);
         setToken(userToken);
-        
+
         // Store in localStorage
         localStorage.setItem('autofleet_token', userToken);
         localStorage.setItem('autofleet_user', JSON.stringify(newUser));
@@ -133,7 +137,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateProfile = async (userData: Partial<User>): Promise<void> => {
     try {
       const response = await authService.updateProfile(userData);
-      
+
       if (response.success) {
         // Fetch updated profile
         const profileResponse = await authService.getProfile();

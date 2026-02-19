@@ -123,7 +123,7 @@ export default function CustomerDashboard() {
     return (
         <div className={settings.darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>
             {/* Navigation Bar */}
-            
+
             {/* Hero Section with Search */}
             <section className="bg-gradient-to-br from-[#2c4a9d] to-[#1e3a7d] text-white py-16 px-4">
                 <div className="max-w-6xl mx-auto">
@@ -249,18 +249,18 @@ export default function CustomerDashboard() {
                     <p className="text-gray-600">
                         Choose from our premium fleet of well-maintained vehicles
                     </p>
-                    
+
                 </div>
 
 
-                    <div className="flex justify-end mt-8">
+                <div className="flex justify-end mt-8">
                     <Link
-    to="/vehicles"
-    className="text-blue font-semibold px-8 py-3 rounded-lg shadow-lg transition inline-block"
-  >
-    View All Vehicles
-  </Link>
-                    </div>
+                        to="/vehicles"
+                        className="text-blue font-semibold px-8 py-3 rounded-lg shadow-lg transition inline-block"
+                    >
+                        View All Vehicles
+                    </Link>
+                </div>
 
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -284,11 +284,10 @@ export default function CustomerDashboard() {
                                             onError={e => { (e.target as HTMLImageElement).src = "/placeholder.png"; }}
                                         />
                                         <span
-                                            className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold ${
-                                                vehicle.status === "Available"
+                                            className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold ${vehicle.status === "Available"
                                                     ? "bg-green-500 text-white"
                                                     : "bg-red-500 text-white"
-                                            }`}
+                                                }`}
                                         >
                                             {vehicle.status}
                                         </span>
@@ -322,7 +321,7 @@ export default function CustomerDashboard() {
                                         <div className="flex items-end justify-between mb-4">
                                             <div>
                                                 <span className="text-3xl font-bold text-gray-800">
-                                                    {isForSale ? `$${vehicle.selling_price}` : `$${vehicle.price}`}
+                                                    {isForSale ? formatPrice(vehicle.selling_price) : formatPrice(vehicle.price)}
                                                 </span>
                                                 <span className="text-gray-500 text-sm ml-1">
                                                     {isForSale ? "" : "per day"}
@@ -334,7 +333,7 @@ export default function CustomerDashboard() {
                                         <button
                                             className="w-full bg-[#2c4a9d] hover:bg-[#1e3a7d] text-white font-semibold py-3 rounded-lg transition shadow-md"
                                             onClick={() => navigate(`/Booking/${vehicle.id}`, {
-                                                state: { vehicle } 
+                                                state: { vehicle }
                                             })}
                                         >
                                             {isForSale ? "BUY IT" : "Book Now"}
@@ -361,11 +360,10 @@ export default function CustomerDashboard() {
                             <button
                                 key={i + 1}
                                 onClick={() => setCurrentPage(i + 1)}
-                                className={`w-10 h-10 rounded-lg font-semibold transition ${
-                                    currentPage === i + 1
+                                className={`w-10 h-10 rounded-lg font-semibold transition ${currentPage === i + 1
                                         ? "bg-[#2c4a9d] text-white"
                                         : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                                }`}
+                                    }`}
                             >
                                 {i + 1}
                             </button>

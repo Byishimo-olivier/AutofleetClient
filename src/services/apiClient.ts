@@ -32,7 +32,7 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
 
     // Get token from localStorage
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('autofleet_token');
 
     // If body is FormData, do not set Content-Type (let browser set it)
     const isFormData = (typeof FormData !== 'undefined') && options.body instanceof FormData;
@@ -74,8 +74,8 @@ class ApiClient {
         // Handle 401 Unauthorized - token expired or invalid
         if (response.status === 401) {
           console.log('🔑 Authentication failed - clearing token');
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+          localStorage.removeItem('autofleet_token');
+          localStorage.removeItem('autofleet_user');
 
           // Don't redirect here, let the component handle it
           throw {

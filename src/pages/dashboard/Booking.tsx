@@ -158,7 +158,7 @@ const BookingPage: React.FC = () => {
       }).toString();
 
       const res = await apiClient.get<{ bookings: Booking[]; pagination: any }>(`/bookings?${params}`);
-      
+
       if (res.success && res.data) {
         setBookings(res.data.bookings || []);
         setTotalPages(res.data.pagination?.totalPages || 1);
@@ -269,7 +269,7 @@ const BookingPage: React.FC = () => {
 
   const getBookingAmount = (booking: Booking) => {
     const amount = booking.amount || booking.total_amount || 0;
-    return formatPrice ? formatPrice(amount) : `$${amount}`;
+    return formatPrice ? formatPrice(amount) : `₣${amount}`;
   };
 
   const getDuration = (booking: Booking) => {
@@ -322,11 +322,10 @@ const BookingPage: React.FC = () => {
             <input
               type="text"
               placeholder="Search bookings by ID, customer, or vehicle..."
-              className={`pl-10 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 w-96 shadow-sm transition-colors ${
-                settings?.darkMode 
-                  ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400' 
+              className={`pl-10 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 w-96 shadow-sm transition-colors ${settings?.darkMode
+                  ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400'
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-              }`}
+                }`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -334,30 +333,26 @@ const BookingPage: React.FC = () => {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className={`ml-4 p-3 rounded-lg transition-colors ${
-              settings?.darkMode
+            className={`ml-4 p-3 rounded-lg transition-colors ${settings?.darkMode
                 ? 'bg-gray-800 hover:bg-gray-700 text-white'
                 : 'bg-white hover:bg-gray-50 text-gray-700'
-            } border shadow-sm disabled:opacity-50`}
+              } border shadow-sm disabled:opacity-50`}
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
         </div>
-        
+
         <div className="flex items-center gap-4">
-          <button className={`p-3 rounded-lg shadow-sm transition-colors ${
-            settings?.darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'
-          }`}>
+          <button className={`p-3 rounded-lg shadow-sm transition-colors ${settings?.darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'
+            }`}>
             <Bell className="w-4 h-4" />
           </button>
-          <button className={`p-3 rounded-lg shadow-sm transition-colors ${
-            settings?.darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'
-          }`}>
+          <button className={`p-3 rounded-lg shadow-sm transition-colors ${settings?.darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'
+            }`}>
             <Globe className="w-4 h-4" />
           </button>
-          <div className={`rounded-lg px-4 py-2 flex items-center gap-2 shadow-sm ${
-            settings?.darkMode ? 'bg-gray-800' : 'bg-white'
-          }`}>
+          <div className={`rounded-lg px-4 py-2 flex items-center gap-2 shadow-sm ${settings?.darkMode ? 'bg-gray-800' : 'bg-white'
+            }`}>
             <span className="text-sm font-medium">EN</span>
             <ChevronDown className="w-4 h-4 text-gray-400" />
           </div>
@@ -366,9 +361,8 @@ const BookingPage: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-        <div className={`rounded-xl shadow-sm p-6 transition-colors ${
-          settings?.darkMode ? 'bg-gray-800' : 'bg-white'
-        }`}>
+        <div className={`rounded-xl shadow-sm p-6 transition-colors ${settings?.darkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
           <div className="flex items-center gap-4">
             <div className="bg-blue-100 rounded-full p-3">
               <ClipboardList className="w-6 h-6 text-blue-600" />
@@ -380,9 +374,8 @@ const BookingPage: React.FC = () => {
           </div>
         </div>
 
-        <div className={`rounded-xl shadow-sm p-6 transition-colors ${
-          settings?.darkMode ? 'bg-gray-800' : 'bg-white'
-        }`}>
+        <div className={`rounded-xl shadow-sm p-6 transition-colors ${settings?.darkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
           <div className="flex items-center gap-4">
             <div className="bg-green-100 rounded-full p-3">
               <Car className="w-6 h-6 text-green-600" />
@@ -394,9 +387,8 @@ const BookingPage: React.FC = () => {
           </div>
         </div>
 
-        <div className={`rounded-xl shadow-sm p-6 transition-colors ${
-          settings?.darkMode ? 'bg-gray-800' : 'bg-white'
-        }`}>
+        <div className={`rounded-xl shadow-sm p-6 transition-colors ${settings?.darkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
           <div className="flex items-center gap-4">
             <div className="bg-yellow-100 rounded-full p-3">
               <Clock className="w-6 h-6 text-yellow-600" />
@@ -408,23 +400,21 @@ const BookingPage: React.FC = () => {
           </div>
         </div>
 
-        <div className={`rounded-xl shadow-sm p-6 transition-colors ${
-          settings?.darkMode ? 'bg-gray-800' : 'bg-white'
-        }`}>
+        <div className={`rounded-xl shadow-sm p-6 transition-colors ${settings?.darkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
           <div className="flex items-center gap-4">
             <div className="bg-purple-100 rounded-full p-3">
               <DollarSign className="w-6 h-6 text-purple-600" />
             </div>
             <div>
               <p className="text-sm text-gray-500 font-medium">Total Revenue</p>
-              <p className="text-2xl font-bold">{formatPrice ? formatPrice(stats.totalRevenue) : `$${stats.totalRevenue.toLocaleString()}`}</p>
+              <p className="text-2xl font-bold">{formatPrice ? formatPrice(stats.totalRevenue) : `₣${stats.totalRevenue.toLocaleString()}`}</p>
             </div>
           </div>
         </div>
 
-        <div className={`rounded-xl shadow-sm p-6 transition-colors ${
-          settings?.darkMode ? 'bg-gray-800' : 'bg-white'
-        }`}>
+        <div className={`rounded-xl shadow-sm p-6 transition-colors ${settings?.darkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
           <div className="flex items-center gap-4">
             <div className="bg-indigo-100 rounded-full p-3">
               <BarChart2 className="w-6 h-6 text-indigo-600" />
@@ -438,9 +428,8 @@ const BookingPage: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className={`rounded-xl shadow-sm p-6 mb-6 transition-colors ${
-        settings?.darkMode ? 'bg-gray-800' : 'bg-white'
-      }`}>
+      <div className={`rounded-xl shadow-sm p-6 mb-6 transition-colors ${settings?.darkMode ? 'bg-gray-800' : 'bg-white'
+        }`}>
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-gray-500" />
@@ -451,22 +440,20 @@ const BookingPage: React.FC = () => {
             <Calendar className="w-4 h-4 text-gray-500" />
             <input
               type="date"
-              className={`border rounded-lg px-3 py-2 text-sm outline-none transition-colors ${
-                settings?.darkMode 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
+              className={`border rounded-lg px-3 py-2 text-sm outline-none transition-colors ${settings?.darkMode
+                  ? 'bg-gray-700 border-gray-600 text-white'
                   : 'bg-gray-50 border-gray-300 text-gray-900'
-              }`}
+                }`}
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
             />
             <span className="text-gray-400 text-sm">to</span>
             <input
               type="date"
-              className={`border rounded-lg px-3 py-2 text-sm outline-none transition-colors ${
-                settings?.darkMode 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
+              className={`border rounded-lg px-3 py-2 text-sm outline-none transition-colors ${settings?.darkMode
+                  ? 'bg-gray-700 border-gray-600 text-white'
                   : 'bg-gray-50 border-gray-300 text-gray-900'
-              }`}
+                }`}
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
             />
@@ -477,13 +464,12 @@ const BookingPage: React.FC = () => {
               <button
                 key={filter}
                 type="button"
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  status === filter
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${status === filter
                     ? "bg-blue-600 text-white shadow-md"
                     : settings?.darkMode
                       ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                  }`}
                 onClick={() => handleStatusChange(filter)}
               >
                 {filter}
@@ -494,9 +480,8 @@ const BookingPage: React.FC = () => {
       </div>
 
       {/* Bookings Table */}
-      <div className={`rounded-xl shadow-sm overflow-hidden transition-colors ${
-        settings?.darkMode ? 'bg-gray-800' : 'bg-white'
-      }`}>
+      <div className={`rounded-xl shadow-sm overflow-hidden transition-colors ${settings?.darkMode ? 'bg-gray-800' : 'bg-white'
+        }`}>
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead className={`${settings?.darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
@@ -627,11 +612,10 @@ const BookingPage: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                    settings?.darkMode
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${settings?.darkMode
                       ? 'bg-gray-700 hover:bg-gray-600 text-white'
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
+                    }`}
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 >
@@ -642,13 +626,12 @@ const BookingPage: React.FC = () => {
                   return (
                     <button
                       key={page}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        currentPage === page
+                      className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === page
                           ? "bg-blue-600 text-white"
                           : settings?.darkMode
                             ? "bg-gray-700 hover:bg-gray-600 text-white"
                             : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                      }`}
+                        }`}
                       onClick={() => setCurrentPage(page)}
                     >
                       {page}
@@ -656,11 +639,10 @@ const BookingPage: React.FC = () => {
                   );
                 })}
                 <button
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                    settings?.darkMode
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${settings?.darkMode
                       ? 'bg-gray-700 hover:bg-gray-600 text-white'
                       : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  }`}
+                    }`}
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 >

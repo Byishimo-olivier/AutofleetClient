@@ -41,14 +41,14 @@ const statusColor: Record<string, string> = {
 
 const SupportPage: React.FC = () => {
   const { settings, formatPrice, t } = useSettings();
-  
+
   const [expanded, setExpanded] = useState<number | null>(null);
   const [subject, setSubject] = useState("booking");
   const [bookingId, setBookingId] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // State for API data
   const [faqs, setFaqs] = useState<GroupedFAQs>({});
   const [faqCategories, setFaqCategories] = useState<string[]>([]);
@@ -111,7 +111,7 @@ const SupportPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!description.trim() || description.length < 10) {
       alert('Please provide a description of at least 10 characters');
       return;
@@ -124,11 +124,11 @@ const SupportPage: React.FC = () => {
       formData.append('subject', subject);
       formData.append('description', description);
       formData.append('category', subject);
-      
+
       if (bookingId.trim()) {
         formData.append('booking_id', bookingId);
       }
-      
+
       if (file) {
         formData.append('attachment', file);
       }
@@ -136,7 +136,7 @@ const SupportPage: React.FC = () => {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/support/requests`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('autofleet_token') || localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('autofleet_token')}`
         },
         body: formData
       });
@@ -145,12 +145,12 @@ const SupportPage: React.FC = () => {
 
       if (result.success) {
         alert(`Support request submitted successfully! Ticket ID: ${result.data.ticketId}`);
-        
+
         // Reset form
         setDescription("");
         setBookingId("");
         setFile(null);
-        
+
         // Refresh support requests
         fetchSupportRequests();
       } else {
@@ -173,7 +173,7 @@ const SupportPage: React.FC = () => {
   };
 
   const formatStatus = (status: string) => {
-    return status.split('_').map(word => 
+    return status.split('_').map(word =>
       word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ');
   };
@@ -328,21 +328,21 @@ const SupportPage: React.FC = () => {
             <div className="bg-white rounded-xl shadow p-4">
               <div className="font-semibold mb-2">Quick Contact</div>
               <div className="space-y-2 text-sm">
-                <a 
+                <a
                   href="tel:+250783227490"
                   className="border rounded px-3 py-2 flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer"
                 >
                   <span className="font-semibold">Call Support</span>
                   <span className="ml-auto text-blue-700">+250 (783) 227-490</span>
                 </a>
-                <a 
+                <a
                   href="mailto:oliverbyo34@gmail.com?subject=Support Request - AutoFleet&body=Hello AutoFleet Support Team,%0D%0A%0D%0AI need assistance with:%0D%0A%0D%0APlease describe your issue here..."
                   className="border rounded px-3 py-2 flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer"
                 >
                   <span className="font-semibold">Email Support</span>
                   <span className="ml-auto text-blue-700 text-xs">support@autofleet.com</span>
                 </a>
-                <button 
+                <button
                   onClick={() => window.Intercom && window.Intercom('show')}
                   className="w-full border rounded px-3 py-2 flex items-center gap-2 hover:bg-blue-50 hover:border-blue-300 transition-colors cursor-pointer"
                 >

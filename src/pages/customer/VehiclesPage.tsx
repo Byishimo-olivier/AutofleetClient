@@ -270,11 +270,12 @@ export default function CustomerDashboard() {
                                             onError={e => { (e.target as HTMLImageElement).src = "/placeholder.png"; }}
                                         />
                                         <span
-                                            className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold ${
-                                                vehicle.status === "Available"
-                                                    ? "bg-green-500 text-white"
-                                                    : "bg-red-500 text-white"
-                                            }`}
+                                            className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold ${vehicle.status === "Available"
+                                                ? "bg-green-500 text-white"
+                                                : vehicle.status === "Rented" || vehicle.status === "Sold"
+                                                    ? "bg-red-600 text-white"
+                                                    : "bg-yellow-500 text-white"
+                                                }`}
                                         >
                                             {vehicle.status}
                                         </span>
@@ -306,7 +307,7 @@ export default function CustomerDashboard() {
                                         <div className="flex items-end justify-between mb-4">
                                             <div>
                                                 <span className="text-3xl font-bold text-gray-800">
-                                                    {isForSale ? `$${vehicle.selling_price}` : `$${vehicle.price}`}
+                                                    {isForSale ? formatPrice(vehicle.selling_price) : formatPrice(vehicle.price)}
                                                 </span>
                                                 <span className="text-gray-500 text-sm ml-1">
                                                     {isForSale ? "" : "per day"}
@@ -316,12 +317,20 @@ export default function CustomerDashboard() {
 
                                         {/* Action Button */}
                                         <button
-                                            className="w-full bg-[#2c4a9d] hover:bg-[#1e3a7d] text-white font-semibold py-3 rounded-lg transition shadow-md"
-                                            onClick={() => navigate(`/customer/booking/${vehicle.id}`, { 
-                                                state: { vehicle } 
-                                            })}
+                                            className={`w-full font-semibold py-3 rounded-lg transition shadow-md ${vehicle.status === "Rented" || vehicle.status === "Sold"
+                                                ? "bg-gray-400 cursor-not-allowed"
+                                                : "bg-[#2c4a9d] hover:bg-[#1e3a7d] text-white"
+                                                }`}
+                                            onClick={() => {
+                                                if (vehicle.status !== "Rented" && vehicle.status !== "Sold") {
+                                                    navigate(`/customer/booking/${vehicle.id}`, {
+                                                        state: { vehicle }
+                                                    });
+                                                }
+                                            }}
+                                            disabled={vehicle.status === "Rented" || vehicle.status === "Sold"}
                                         >
-                                            {isForSale ? "BUY IT" : "Book Now"}
+                                            {vehicle.status === "Rented" ? "RENTED" : vehicle.status === "Sold" ? "SOLD" : (isForSale ? "BUY IT" : "Book Now")}
                                         </button>
                                     </div>
                                 </div>
@@ -345,11 +354,10 @@ export default function CustomerDashboard() {
                             <button
                                 key={i + 1}
                                 onClick={() => setCurrentPage(i + 1)}
-                                className={`w-10 h-10 rounded-lg font-semibold transition ${
-                                    currentPage === i + 1
-                                        ? "bg-[#2c4a9d] text-white"
-                                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                                }`}
+                                className={`w-10 h-10 rounded-lg font-semibold transition ${currentPage === i + 1
+                                    ? "bg-[#2c4a9d] text-white"
+                                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                    }`}
                             >
                                 {i + 1}
                             </button>

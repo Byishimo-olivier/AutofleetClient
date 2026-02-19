@@ -91,13 +91,13 @@ const ReportsAnalyticsPage: React.FC = () => {
     utilizationChange: '+0%',
     ratingChange: '+0%',
   });
-  
+
   const [rentalTrends, setRentalTrends] = useState<RentalTrend[]>([]);
   const [fleetUtilization, setFleetUtilization] = useState<FleetUtilization[]>([]);
   const [revenueByCategory, setRevenueByCategory] = useState<RevenueCategory[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [owners, setOwners] = useState<Owner[]>([]);
-  
+
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [selectedOwner, setSelectedOwner] = useState('');
@@ -111,13 +111,13 @@ const ReportsAnalyticsPage: React.FC = () => {
   // Safe price formatting function
   const safeFormatPrice = (price: number | undefined | null): string => {
     if (price === undefined || price === null || isNaN(Number(price))) {
-      return '$0.00';
+      return '₣0';
     }
     try {
       return formatPrice(Number(price));
     } catch (error) {
       console.error('Error formatting price:', error);
-      return `$${Number(price).toFixed(2)}`;
+      return `₣${Number(price).toLocaleString()}`;
     }
   };
 
@@ -145,7 +145,7 @@ const ReportsAnalyticsPage: React.FC = () => {
       console.log('Fetching vehicles for stats calculation...');
       const response = await apiClient.get('/vehicles/admin/all?limit=1000');
       console.log('Vehicles for stats response:', response);
-      
+
       if (response.success && response.data) {
         const data = (response.data && typeof response.data === 'object' && 'data' in response.data)
           ? (response.data as { data: any }).data
@@ -167,7 +167,7 @@ const ReportsAnalyticsPage: React.FC = () => {
       console.log('Fetching bookings for stats calculation...');
       const response = await apiClient.get('/bookings/admin/all?limit=1000');
       console.log('Bookings for stats response:', response);
-      
+
       if (response.success && response.data) {
         const data = (response.data && typeof response.data === 'object' && 'data' in response.data)
           ? (response.data as { data: any }).data
@@ -206,8 +206,8 @@ const ReportsAnalyticsPage: React.FC = () => {
     const ratingsFromBookings = bookingsList
       .map(b => Number(b.rating || 0))
       .filter(r => r > 0);
-    
-    const averageRating = ratingsFromBookings.length > 0 
+
+    const averageRating = ratingsFromBookings.length > 0
       ? ratingsFromBookings.reduce((sum, rating) => sum + rating, 0) / ratingsFromBookings.length
       : 4.5; // Default rating if no ratings found
 
@@ -242,9 +242,9 @@ const ReportsAnalyticsPage: React.FC = () => {
         const data = response.data && typeof response.data === 'object' && 'data' in response.data
           ? (response.data as { data: any }).data
           : response.data;
-        
+
         console.log('Dashboard stats data structure:', data);
-        
+
         // FIXED: Handle nested object structure from backend
         let totalRentals = 0;
         let totalRevenue = 0;
@@ -275,7 +275,7 @@ const ReportsAnalyticsPage: React.FC = () => {
         } else {
           averageRating = Number(data.averageRating || data.average_rating || 0);
         }
-        
+
         const stats = {
           totalRentals,
           totalRevenue,
@@ -286,9 +286,9 @@ const ReportsAnalyticsPage: React.FC = () => {
           utilizationChange: String(data.utilizationChange || data.utilization_change || '+0%'),
           ratingChange: String(data.ratingChange || data.rating_change || '+0%'),
         };
-        
+
         console.log('Processed dashboard stats:', stats);
-        
+
         // If all stats are 0 or NaN, use fallback calculation
         if (isNaN(stats.totalRentals) || (stats.totalRentals === 0 && stats.totalRevenue === 0 && stats.fleetUtilization === 0)) {
           console.log('API stats are invalid/0, using fallback calculation...');
@@ -324,7 +324,7 @@ const ReportsAnalyticsPage: React.FC = () => {
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      
+
       let label = '';
       if (timeframe === 'daily') {
         label = date.toLocaleDateString('en-US', { weekday: 'short' });
@@ -370,7 +370,7 @@ const ReportsAnalyticsPage: React.FC = () => {
           ? (response.data as { data: any }).data
           : response.data;
         const trends = Array.isArray(data) ? data : data.trends || [];
-        
+
         if (trends.length > 0) {
           setRentalTrends(trends.map((item: any, index: number) => ({
             day: item.day || item.label || item.period || `Day ${index + 1}`,
@@ -413,7 +413,7 @@ const ReportsAnalyticsPage: React.FC = () => {
           ? (response.data as { data: any }).data
           : response.data;
         const utilization = Array.isArray(data) ? data : data.utilization || [];
-        
+
         if (utilization.length > 0) {
           setFleetUtilization(utilization.map((item: any) => ({
             category: item.category || item.name || item.vehicle_category || '',
@@ -458,7 +458,7 @@ const ReportsAnalyticsPage: React.FC = () => {
           ? (response.data as { data: any }).data
           : response.data;
         const revenue = Array.isArray(data) ? data : data.categories || [];
-        
+
         if (revenue.length > 0) {
           setRevenueByCategory(revenue.map((item: any) => ({
             category: item.category || item.name || item.vehicle_category || '',
@@ -502,7 +502,7 @@ const ReportsAnalyticsPage: React.FC = () => {
           ? (response.data as { data: any }).data
           : response.data;
         const methods = Array.isArray(data) ? data : data.methods || [];
-        
+
         if (methods.length > 0) {
           setPaymentMethods(methods.map((item: any) => ({
             method: item.method || item.name || item.payment_method || '',
@@ -538,7 +538,7 @@ const ReportsAnalyticsPage: React.FC = () => {
         fetchVehiclesForStats(),
         fetchBookingsForStats()
       ]);
-      
+
       // Then fetch stats and charts
       await Promise.all([
         fetchDashboardStats(),
@@ -566,7 +566,7 @@ const ReportsAnalyticsPage: React.FC = () => {
           ? (response.data as { data: any }).data
           : response.data;
         const usersList = Array.isArray(data) ? data : data.users || [];
-        
+
         // Filter for owners or vehicle owners
         interface OwnerUser {
           id: number;
@@ -586,7 +586,7 @@ const ReportsAnalyticsPage: React.FC = () => {
             name: `${owner.first_name || ''} ${owner.last_name || ''}`.trim() || owner.name || owner.email,
             email: owner.email,
           }));
-        
+
         setOwners(ownersList);
       } else {
         setOwners([]);
@@ -613,29 +613,29 @@ const ReportsAnalyticsPage: React.FC = () => {
   // Enhanced effects to trigger fallback when data is available
   useEffect(() => {
     console.log('Effect triggered - vehicles:', vehicles.length, 'bookings:', bookings.length);
-    
+
     if (vehicles.length > 0 && bookings.length > 0) {
       console.log('Both vehicles and bookings available, checking charts...');
-      
+
       // If charts are empty but we have data, generate fallbacks
       if (rentalTrends.length === 0) {
         console.log('Generating rental trends fallback...');
         const fallbackTrends = generateFallbackRentalTrends(bookings, trendsTimeframe);
         setRentalTrends(fallbackTrends);
       }
-      
+
       if (fleetUtilization.length === 0) {
         console.log('Generating fleet utilization fallback...');
         const fallbackUtilization = generateFallbackFleetUtilization(vehicles);
         setFleetUtilization(fallbackUtilization);
       }
-      
+
       if (revenueByCategory.length === 0) {
         console.log('Generating revenue by category fallback...');
         const fallbackRevenue = generateFallbackRevenueByCategory(bookings, vehicles);
         setRevenueByCategory(fallbackRevenue);
       }
-      
+
       if (paymentMethods.length === 0) {
         console.log('Generating payment methods fallback...');
         const fallbackPayments = generateFallbackPaymentMethods(bookings);
@@ -877,34 +877,34 @@ const ReportsAnalyticsPage: React.FC = () => {
   return (
     <div className={`flex min-h-screen ${settings.darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
       {/* Sidebar */}
-      
+
 
       {/* Main Content */}
       <div className="flex-1 p-8">
 
-          {/* Report Header */}
-          <ReportHeader
-            title="Reports & Analytics"
-            user={settings?.user?.name || "Unknown User"}
-            time={new Date().toLocaleString()}
-            logoUrl={logo}
-          />
+        {/* Report Header */}
+        <ReportHeader
+          title="Reports & Analytics"
+          user={settings?.user?.name || "Unknown User"}
+          time={new Date().toLocaleString()}
+          logoUrl={logo}
+        />
 
-          {/* Top controls */}
-          <div className="flex items-center justify-between mb-6">
-            <button 
-              onClick={loadAllData}
-              disabled={loading}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow disabled:opacity-50"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-          </div>
+        {/* Top controls */}
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={loadAllData}
+            disabled={loading}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium shadow disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-4 mb-6">
-          <select 
+          <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
             className="border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white text-gray-900 shadow-sm min-w-[140px] font-medium"
@@ -914,8 +914,8 @@ const ReportsAnalyticsPage: React.FC = () => {
             <option value="quarter">This Quarter</option>
             <option value="year">This Year</option>
           </select>
-          
-          <select 
+
+          <select
             value={selectedOwner}
             onChange={(e) => setSelectedOwner(e.target.value)}
             className="border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white text-gray-900 shadow-sm min-w-[160px] font-medium"
@@ -928,12 +928,12 @@ const ReportsAnalyticsPage: React.FC = () => {
             ))}
           </select>
 
-          <button 
+          <button
             onClick={handleExport}
             disabled={exportLoading}
             className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold shadow ml-auto disabled:opacity-50"
           >
-            <Download className="w-5 h-5" /> 
+            <Download className="w-5 h-5" />
             {exportLoading ? 'Exporting...' : 'Export CSV'}
           </button>
         </div>
@@ -996,33 +996,30 @@ const ReportsAnalyticsPage: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-700 text-lg">Rental Trends</h3>
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={() => setTrendsTimeframe('daily')}
-                  className={`px-3 py-1 rounded text-xs font-semibold ${
-                    trendsTimeframe === 'daily' 
-                      ? 'bg-blue-100 text-blue-700' 
+                  className={`px-3 py-1 rounded text-xs font-semibold ${trendsTimeframe === 'daily'
+                      ? 'bg-blue-100 text-blue-700'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   Daily
                 </button>
-                <button 
+                <button
                   onClick={() => setTrendsTimeframe('weekly')}
-                  className={`px-3 py-1 rounded text-xs font-semibold ${
-                    trendsTimeframe === 'weekly' 
-                      ? 'bg-blue-100 text-blue-700' 
+                  className={`px-3 py-1 rounded text-xs font-semibold ${trendsTimeframe === 'weekly'
+                      ? 'bg-blue-100 text-blue-700'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   Weekly
                 </button>
-                <button 
+                <button
                   onClick={() => setTrendsTimeframe('monthly')}
-                  className={`px-3 py-1 rounded text-xs font-semibold ${
-                    trendsTimeframe === 'monthly' 
-                      ? 'bg-blue-100 text-blue-700' 
+                  className={`px-3 py-1 rounded text-xs font-semibold ${trendsTimeframe === 'monthly'
+                      ? 'bg-blue-100 text-blue-700'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   Monthly
                 </button>
@@ -1080,7 +1077,7 @@ const ReportsAnalyticsPage: React.FC = () => {
                   <div className="text-xs mt-1 text-red-500">
                     Issue: Vehicles status might be "Approved" instead of "approved"
                   </div>
-                  <button 
+                  <button
                     onClick={() => {
                       console.log('Manually regenerating fleet utilization...');
                       const fallbackUtilization = generateFallbackFleetUtilization(vehicles);
@@ -1093,7 +1090,7 @@ const ReportsAnalyticsPage: React.FC = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Show raw data for debugging */}
             {fleetUtilization.length > 0 && (
               <div className="mt-4 text-xs text-gray-600">

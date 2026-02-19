@@ -52,8 +52,8 @@ const Sidebar: React.FC = () => {
 
   // Check if token exists and is valid
   const checkAuthentication = () => {
-    const token = localStorage.getItem('token');
-    
+    const token = localStorage.getItem('autofleet_token');
+
     if (!token) {
       console.log('🔄 No token found, redirecting to login...');
       setIsAuthenticated(false);
@@ -64,21 +64,21 @@ const Sidebar: React.FC = () => {
       // Check if token is expired
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Date.now() / 1000;
-      
+
       if (payload.exp && payload.exp < currentTime) {
         console.log('🔄 Token expired, redirecting to login...');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        localStorage.removeItem('autofleet_token');
+        localStorage.removeItem('autofleet_user');
         setIsAuthenticated(false);
         return false;
       }
-      
+
       setIsAuthenticated(true);
       return true;
     } catch (error) {
       console.error('❌ Invalid token format:', error);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem('autofleet_token');
+      localStorage.removeItem('autofleet_user');
       setIsAuthenticated(false);
       return false;
     }
@@ -89,15 +89,15 @@ const Sidebar: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('🔍 Fetching admin user profile...');
-      
+
       const response = await apiClient.get('/auth/profile');
-      
+
       if (response.success) {
         setUserProfile(response.data as UserProfile);
         console.log('✅ Admin user profile fetched successfully:', response.data);
-        
+
         // Store user profile in localStorage for quick access
         localStorage.setItem('user', JSON.stringify(response.data));
       } else {
@@ -107,7 +107,7 @@ const Sidebar: React.FC = () => {
     } catch (error: any) {
       console.error('❌ Error fetching user profile:', error);
       setError(error.message || 'Failed to fetch profile');
-      
+
       // If unauthorized, clear auth and redirect
       if (error.status === 401 || error.status === 403) {
         console.log('🔄 Unauthorized access, clearing auth...');
@@ -125,22 +125,22 @@ const Sidebar: React.FC = () => {
   const handleLogout = async () => {
     try {
       console.log('🔄 Admin logging out...');
-      
+
       // Optional: Call logout endpoint if you have one
       try {
         await apiClient.post('/auth/logout');
       } catch (logoutError) {
         console.log('⚠️ Logout endpoint not available or failed');
       }
-      
+
       // Clear local storage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      
+
       // Reset state
       setUserProfile(null);
       setIsAuthenticated(false);
-      
+
       console.log('✅ Admin logout successful');
       navigate('/login');
     } catch (error) {
@@ -157,7 +157,7 @@ const Sidebar: React.FC = () => {
   // Initial authentication check
   useEffect(() => {
     const isAuth = checkAuthentication();
-    
+
     if (isAuth) {
       // Try to load user from localStorage first
       const storedUser = localStorage.getItem('user');
@@ -171,7 +171,7 @@ const Sidebar: React.FC = () => {
           localStorage.removeItem('user');
         }
       }
-      
+
       // Always fetch fresh profile data
       fetchUserProfile();
     }
@@ -183,7 +183,7 @@ const Sidebar: React.FC = () => {
       const timer = setTimeout(() => {
         navigate('/login', { replace: true });
       }, 100);
-      
+
       return () => clearTimeout(timer);
     }
   }, [isAuthenticated, navigate]);
@@ -249,7 +249,7 @@ const Sidebar: React.FC = () => {
             </div>
             <div className="flex-1">
               <div className="text-sm font-semibold text-red-300">Profile Error</div>
-              <button 
+              <button
                 onClick={retryFetch}
                 className="text-xs text-blue-300 hover:text-blue-200 underline"
               >
@@ -299,7 +299,7 @@ const Sidebar: React.FC = () => {
               {new Date().toLocaleDateString()}
             </div>
           </div>
-          
+
           <div className="bg-white/10 rounded-lg p-2">
             <div className="text-xs text-gray-300 mb-1">Account Info</div>
             <div className="flex justify-between text-xs">
@@ -330,10 +330,10 @@ const Sidebar: React.FC = () => {
           <div
             key={item.label}
             className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200 mb-1
-            ${location.pathname === item.to 
-              ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105" 
-              : "text-gray-300 hover:bg-[#3d4f8f] hover:text-white hover:transform hover:scale-105"
-            }`}
+            ${location.pathname === item.to
+                ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105"
+                : "text-gray-300 hover:bg-[#3d4f8f] hover:text-white hover:transform hover:scale-105"
+              }`}
             onClick={() => navigate(item.to)}
           >
             <div className={`p-1 rounded ${location.pathname === item.to ? 'bg-white/20' : ''}`}>
@@ -347,21 +347,21 @@ const Sidebar: React.FC = () => {
       {/* User Actions */}
       <div className="px-3 pb-3 space-y-2">
         {/* Profile Settings Button */}
-        <button 
+        <button
           onClick={() => navigate('/profile')}
           className="w-full flex items-center justify-center bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition font-medium text-sm"
         >
           <Settings className="mr-2 w-4 h-4" /> Settings
         </button>
-        
+
         {/* Logout Button */}
-        <button 
+        <button
           onClick={handleLogout}
           className="w-full flex items-center justify-center bg-[#f59e0b] hover:bg-[#d97706] text-white py-2.5 rounded-lg transition font-medium text-sm shadow-md"
         >
           <LogOut className="mr-2 w-4 h-4" /> Logout
         </button>
-        
+
         {/* Footer info */}
         <div className="text-center pt-2">
           <div className="text-xs text-gray-500">

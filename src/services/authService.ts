@@ -15,24 +15,24 @@ export const authService = {
   login: async (email: string, password: string) => {
     try {
       const response = await apiClient.post<AuthResponse>('/auth/login', { email, password });
-      
+
       if (response.success && response.data) {
         const { token, user } = response.data;
-        
+
         // Store token and user data
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        
+        localStorage.setItem('autofleet_token', token);
+        localStorage.setItem('autofleet_user', JSON.stringify(user));
+
         // Trigger storage event for navbar updates
         window.dispatchEvent(new Event('storage'));
-        
+
         return {
           success: true,
           user: user,
           token: token
         };
       }
-      
+
       return {
         success: false,
         message: response.message || 'Login failed'
@@ -49,14 +49,14 @@ export const authService = {
   async register(userData: RegisterForm): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await apiClient.post<AuthResponse>('/auth/register', userData);
-      
+
       if (response.success && response.data) {
         // Store token and user data consistently
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('autofleet_token', response.data.token);
+        localStorage.setItem('autofleet_user', JSON.stringify(response.data.user));
         console.log('✅ Registration successful, token stored');
       }
-      
+
       return {
         ...response,
         message: response.message ?? '',
@@ -71,13 +71,13 @@ export const authService = {
   async getProfile(): Promise<ApiResponse<User>> {
     try {
       const response = await apiClient.get<User>('/auth/profile');
-      
+
       if (response.success && response.data) {
         // Update stored user data
-        localStorage.setItem('user', JSON.stringify(response.data));
+        localStorage.setItem('autofleet_user', JSON.stringify(response.data));
         console.log('✅ Profile fetched and updated in storage');
       }
-      
+
       return {
         ...response,
         message: response.message ?? '',
@@ -92,13 +92,13 @@ export const authService = {
   async updateProfile(userData: Partial<User>): Promise<ApiResponse<null>> {
     try {
       const response = await apiClient.put<null>('/auth/profile', userData);
-      
+
       if (response.success) {
         // Refresh profile data after successful update
         await this.getProfile();
         console.log('✅ Profile updated successfully');
       }
-      
+
       return {
         ...response,
         message: response.message ?? '',
@@ -116,11 +116,11 @@ export const authService = {
         currentPassword,
         newPassword,
       });
-      
+
       if (response.success) {
         console.log('✅ Password changed successfully');
       }
-      
+
       return {
         ...response,
         message: response.message ?? '',
@@ -135,11 +135,11 @@ export const authService = {
   async forgotPassword(email: string): Promise<ApiResponse<null>> {
     try {
       const response = await apiClient.post<null>('/auth/forgot-password', { email });
-      
+
       if (response.success) {
         console.log('✅ Password reset email sent');
       }
-      
+
       return {
         ...response,
         message: response.message ?? '',
@@ -157,11 +157,11 @@ export const authService = {
         token,
         newPassword,
       });
-      
+
       if (response.success) {
         console.log('✅ Password reset successful');
       }
-      
+
       return {
         ...response,
         message: response.message ?? '',
@@ -176,11 +176,11 @@ export const authService = {
   async resendWelcomeEmail(): Promise<ApiResponse<null>> {
     try {
       const response = await apiClient.post<null>('/auth/resend-welcome');
-      
+
       if (response.success) {
         console.log('✅ Welcome email resent successfully');
       }
-      
+
       return {
         ...response,
         message: response.message ?? '',
@@ -195,11 +195,11 @@ export const authService = {
   async testEmail(emailType: 'welcome' | 'login' | 'password_change' | 'test' = 'test'): Promise<ApiResponse<any>> {
     try {
       const response = await apiClient.post<any>('/auth/test-email', { emailType });
-      
+
       if (response.success) {
         console.log('✅ Test email sent successfully');
       }
-      
+
       return {
         ...response,
         message: response.message ?? '',
@@ -212,8 +212,8 @@ export const authService = {
 
   // Check if user is authenticated
   isAuthenticated(): boolean {
-    const token = localStorage.getItem('token');
-    
+    const token = localStorage.getItem('autofleet_token');
+
     if (!token) {
       return false;
     }
@@ -222,13 +222,13 @@ export const authService = {
       // Check if token is expired
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Date.now() / 1000;
-      
+
       if (payload.exp && payload.exp < currentTime) {
         console.log('🔄 Token expired, clearing storage');
         this.logout();
         return false;
       }
-      
+
       return true;
     } catch (error) {
       console.error('❌ Invalid token format:', error);
@@ -240,9 +240,9 @@ export const authService = {
   // Get current user from localStorage
   getCurrentUser: () => {
     try {
-      const token = localStorage.getItem('token');
-      const user = localStorage.getItem('user');
-      
+      const token = localStorage.getItem('autofleet_token');
+      const user = localStorage.getItem('autofleet_user');
+
       if (token && user) {
         return JSON.parse(user);
       }
@@ -255,22 +255,22 @@ export const authService = {
 
   // Get current token
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return localStorage.getItem('autofleet_token');
   },
 
   // Logout user
   logout: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    
+    localStorage.removeItem('autofleet_token');
+    localStorage.removeItem('autofleet_user');
+
     // Trigger storage event for navbar updates
     window.dispatchEvent(new Event('storage'));
   },
 
   // Clear authentication data (for cases where logout API isn't needed)
   clearAuth(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('autofleet_token');
+    localStorage.removeItem('autofleet_user');
     console.log('✅ Authentication data cleared');
   },
 
@@ -278,13 +278,13 @@ export const authService = {
   async refreshToken(): Promise<ApiResponse<AuthResponse>> {
     try {
       const response = await apiClient.post<AuthResponse>('/auth/refresh');
-      
+
       if (response.success && response.data) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('autofleet_token', response.data.token);
+        localStorage.setItem('autofleet_user', JSON.stringify(response.data.user));
         console.log('✅ Token refreshed successfully');
       }
-      
+
       return {
         ...response,
         message: response.message ?? '',

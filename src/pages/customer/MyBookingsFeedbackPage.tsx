@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { X, Star, Upload } from "lucide-react";
 import { apiClient } from "@/services/apiClient";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const STATIC_BASE_URL = API_BASE_URL.replace('/api', '');
 
 // Types for backend data structure
 interface Vehicle {
@@ -89,7 +87,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
   const [vehicleConditionRating, setVehicleConditionRating] = useState(0);
   const [comment, setComment] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
-  
+
   // State for real data
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
@@ -101,9 +99,9 @@ const MyBookingsFeedbackPage: React.FC = () => {
   useEffect(() => {
     const getUserId = () => {
       try {
-        // Look for both 'token' and 'autofleet_token' keys
-        const token = localStorage.getItem('token') || localStorage.getItem('autofleet_token');
-        
+        // Use 'autofleet_token' key
+        const token = localStorage.getItem('autofleet_token');
+
         if (token) {
           const payload = JSON.parse(atob(token.split('.')[1]));
           const extractedUserId = payload.id || payload.userId;
@@ -133,18 +131,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
       const response = await apiClient.get<{ bookings: Booking[] }>('/bookings');
 
       if (response && response.success && response.data && Array.isArray(response.data?.bookings)) {
-        const bookingsData = response.data.bookings.map((booking: Booking) => {
-          // Parse images if they're a string
-          if (booking.images && typeof booking.images === 'string') {
-            try {
-              booking.images = JSON.parse(booking.images);
-            } catch (e) {
-              booking.images = [];
-            }
-          }
-          return booking;
-        });
-
+        const bookingsData = response.data.bookings;
         setBookings(bookingsData);
       } else {
         setError('Failed to fetch bookings');
@@ -171,7 +158,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
 
       if (response && response.success) {
         const feedbackData = response.data;
-        
+
         if (Array.isArray(feedbackData)) {
           setFeedbacks(feedbackData);
         } else {
@@ -182,7 +169,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error fetching feedbacks:', err);
-      
+
       if (err.response?.status === 403) {
         setError('Access denied to view feedbacks');
       } else if (err.response?.status === 404) {
@@ -198,19 +185,10 @@ const MyBookingsFeedbackPage: React.FC = () => {
   const fetchBookingById = async (bookingId: string): Promise<Booking | null> => {
     try {
       const response = await apiClient.get(`/bookings/${bookingId}`);
-      
+
       if (response && response.success && response.data) {
         const booking = response.data as Booking;
-        
-        // Parse images if they're a string
-        if (booking.images && typeof booking.images === 'string') {
-          try {
-            booking.images = JSON.parse(booking.images);
-          } catch (e) {
-            booking.images = [];
-          }
-        }
-        
+
         return booking;
       }
       return null;
@@ -256,12 +234,12 @@ const MyBookingsFeedbackPage: React.FC = () => {
     setComment("");
     setPhoto(null);
     setSelectedBooking(null);
-    
+
     // Fetch bookings first, then show modal
     if (bookings.length === 0) {
       await fetchBookings();
     }
-    
+
     setShowCreateFeedbackModal(true);
   };
 
@@ -283,7 +261,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedBooking || rating === 0 || comment.length < MIN_FEEDBACK_LENGTH) {
       return;
     }
@@ -322,7 +300,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
 
   const handleCreateFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedBooking || rating === 0 || comment.length < MIN_FEEDBACK_LENGTH) {
       alert('Please select a booking, provide a rating, and write at least 20 characters of feedback.');
       return;
@@ -372,26 +350,18 @@ const MyBookingsFeedbackPage: React.FC = () => {
     }
   };
 
-  const getImageUrl = (img: string | undefined) => {
+  const getImageUrl = (img: string | null | undefined) => {
     if (!img) return "/placeholder.png";
     if (img.startsWith("http://") || img.startsWith("https://")) return img;
-    if (!img.startsWith("/uploads/vehicles/")) {
-      return `${STATIC_BASE_URL}/uploads/vehicles/${img.replace(/^\/+/, "")}`;
-    }
-    return `${STATIC_BASE_URL}${img}`;
+    // Always ensure a single leading slash
+    const normalizedImg = img.startsWith("/") ? img : `/${img}`;
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    const STATIC_BASE_URL = API_BASE_URL.replace('/api', '');
+    return `${STATIC_BASE_URL}${normalizedImg}`;
   };
 
   const getMainImage = (item: Booking | Feedback) => {
-    let images: string[] = [];
-    if (Array.isArray(item.images)) {
-      images = item.images;
-    } else if (typeof item.images === "string") {
-      try {
-        images = JSON.parse(item.images);
-      } catch {
-        images = [];
-      }
-    }
+    const images = parseVehicleImages(item.images);
     if (images.length > 0) {
       return getImageUrl(images[0]);
     }
@@ -454,9 +424,8 @@ const MyBookingsFeedbackPage: React.FC = () => {
             className="focus:outline-none"
           >
             <Star
-              className={`w-7 h-7 ${
-                rating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-              }`}
+              className={`w-7 h-7 ${rating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                }`}
               fill={rating >= star ? "#facc15" : "none"}
             />
           </button>
@@ -466,14 +435,14 @@ const MyBookingsFeedbackPage: React.FC = () => {
     </div>
   );
 
-  const StarRatingComponent = ({ 
-    rating, 
-    onRatingChange, 
-    label, 
-    required = false 
-  }: { 
-    rating: number; 
-    onRatingChange: (rating: number) => void; 
+  const StarRatingComponent = ({
+    rating,
+    onRatingChange,
+    label,
+    required = false
+  }: {
+    rating: number;
+    onRatingChange: (rating: number) => void;
     label: string;
     required?: boolean;
   }) => (
@@ -490,9 +459,8 @@ const MyBookingsFeedbackPage: React.FC = () => {
             className="focus:outline-none hover:scale-110 transition-transform"
           >
             <Star
-              className={`w-8 h-8 ${
-                rating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-              }`}
+              className={`w-8 h-8 ${rating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                }`}
               fill={rating >= star ? "#facc15" : "none"}
             />
           </button>
@@ -539,21 +507,19 @@ const MyBookingsFeedbackPage: React.FC = () => {
       <main className="flex-1 max-w-4xl mx-auto py-10">
         <div className="flex justify-center mb-6 gap-8">
           <button
-            className={`pb-2 font-semibold border-b-2 ${
-              tab === "booking"
-                ? "border-blue-700 text-blue-700"
-                : "border-transparent text-gray-500 hover:text-blue-700"
-            }`}
+            className={`pb-2 font-semibold border-b-2 ${tab === "booking"
+              ? "border-blue-700 text-blue-700"
+              : "border-transparent text-gray-500 hover:text-blue-700"
+              }`}
             onClick={() => setTab("booking")}
           >
             My Booking
           </button>
           <button
-            className={`pb-2 font-semibold border-b-2 ${
-              tab === "feedback"
-                ? "border-blue-700 text-blue-700"
-                : "border-transparent text-gray-500 hover:text-blue-700"
-            }`}
+            className={`pb-2 font-semibold border-b-2 ${tab === "feedback"
+              ? "border-blue-700 text-blue-700"
+              : "border-transparent text-gray-500 hover:text-blue-700"
+              }`}
             onClick={() => setTab("feedback")}
           >
             My Feedback
@@ -593,25 +559,21 @@ const MyBookingsFeedbackPage: React.FC = () => {
                 className="bg-white rounded-xl shadow px-6 py-4 flex flex-col md:flex-row items-center md:items-stretch gap-4"
               >
                 <div className="w-28 h-20 bg-gray-300 rounded-lg mr-3 overflow-hidden flex items-center justify-center border">
-                  {Array.isArray(booking.images) && booking.images.length > 0 ? (
-                    <img
-                      src={getImageUrl(booking.images[0])}
-                      alt={getVehicleName(booking)}
-                      className="w-full h-full object-cover"
-                      onError={e => {
-                        (e.target as HTMLImageElement).src = '/placeholder.png';
-                      }}
-                    />
-                  ) : (
-                    <img
-                      src={getMainImage(booking)}
-                      alt={getVehicleName(booking)}
-                      className="w-full h-full object-cover"
-                      onError={e => {
-                        (e.target as HTMLImageElement).src = '/placeholder.png';
-                      }}
-                    />
-                  )}
+                  {(() => {
+                    const images = parseVehicleImages(booking.images);
+                    const firstImage = images && images.length > 0 ? images[0] : null;
+                    const imageUrl = getImageUrl(firstImage);
+                    return (
+                      <img
+                        src={imageUrl}
+                        alt={getVehicleName(booking)}
+                        className="w-full h-full object-cover"
+                        onError={e => {
+                          (e.target as HTMLImageElement).src = '/placeholder.png';
+                        }}
+                      />
+                    );
+                  })()}
                 </div>
                 <div className="flex-1 flex flex-col md:flex-row gap-4">
                   <div className="flex-1">
@@ -660,7 +622,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
                     View Details
                   </button>
                   {booking.status === "confirmed" || booking.status === "active" ? (
-                    <button 
+                    <button
                       className="bg-gray-100 px-4 py-2 rounded font-semibold text-red-700 border border-gray-200 hover:bg-red-100"
                       onClick={() => cancelBooking(booking.id)}
                     >
@@ -692,25 +654,21 @@ const MyBookingsFeedbackPage: React.FC = () => {
                 className="bg-white rounded-xl shadow px-6 py-4 flex flex-col md:flex-row items-center md:items-stretch gap-4"
               >
                 <div className="w-28 h-20 bg-gray-300 rounded-lg mr-3 overflow-hidden flex items-center justify-center border">
-                  {Array.isArray(feedback.images) && feedback.images.length > 0 ? (
-                    <img
-                      src={getImageUrl(feedback.images[0])}
-                      alt={getVehicleName(feedback)}
-                      className="w-full h-full object-cover"
-                      onError={e => {
-                        (e.target as HTMLImageElement).src = '/placeholder.png';
-                      }}
-                    />
-                  ) : (
-                    <img
-                      src={getMainImage(feedback)}
-                      alt={getVehicleName(feedback)}
-                      className="w-full h-full object-cover"
-                      onError={e => {
-                        (e.target as HTMLImageElement).src = '/placeholder.png';
-                      }}
-                    />
-                  )}
+                  {(() => {
+                    const images = parseVehicleImages(feedback.images);
+                    const firstImage = images && images.length > 0 ? images[0] : null;
+                    const imageUrl = getImageUrl(firstImage);
+                    return (
+                      <img
+                        src={imageUrl}
+                        alt={getVehicleName(feedback)}
+                        className="w-full h-full object-cover"
+                        onError={e => {
+                          (e.target as HTMLImageElement).src = '/placeholder.png';
+                        }}
+                      />
+                    );
+                  })()}
                 </div>
 
                 <div className="flex-1 flex flex-col md:flex-row gap-4">
@@ -743,9 +701,8 @@ const MyBookingsFeedbackPage: React.FC = () => {
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star
                               key={star}
-                              className={`w-3 h-3 ${
-                                feedback.rating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-                              }`}
+                              className={`w-3 h-3 ${feedback.rating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                                }`}
                               fill={feedback.rating >= star ? "#facc15" : "none"}
                             />
                           ))}
@@ -753,7 +710,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
                         <span className="text-xs text-gray-600">({feedback.rating}/5)</span>
                       </div>
                     </div>
-                    
+
                     {feedback.service_rating && (
                       <div className="text-xs">
                         <span className="font-semibold">Service:</span>{" "}
@@ -762,9 +719,8 @@ const MyBookingsFeedbackPage: React.FC = () => {
                             {[1, 2, 3, 4, 5].map((star) => (
                               <Star
                                 key={star}
-                                className={`w-3 h-3 ${
-                                  feedback.service_rating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-                                }`}
+                                className={`w-3 h-3 ${feedback.service_rating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+                                  }`}
                                 fill={feedback.service_rating >= star ? "#facc15" : "none"}
                               />
                             ))}
@@ -782,7 +738,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col gap-2 items-end">
-                  <button 
+                  <button
                     className="bg-gray-100 px-4 py-2 rounded font-semibold text-gray-700 border border-gray-200 hover:bg-gray-200"
                     onClick={() => {
                       alert(`Feedback: ${feedback.comment}`);
@@ -790,7 +746,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
                   >
                     View Details
                   </button>
-                  <button 
+                  <button
                     className="bg-blue-700 px-4 py-2 rounded font-semibold text-white hover:bg-blue-900"
                     onClick={() => {
                       alert('Edit feedback functionality can be added here');
@@ -825,7 +781,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Select Booking <span className="text-red-500">*</span>
                 </label>
-                
+
                 {bookings.length === 0 ? (
                   <div className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-500">
                     No bookings available
@@ -838,12 +794,12 @@ const MyBookingsFeedbackPage: React.FC = () => {
                       const bookingId = e.target.value;
                       console.log('Dropdown changed, value:', bookingId);
                       console.log('Available bookings:', bookings);
-                      
+
                       if (bookingId) {
                         // Try both string and number comparison
                         const booking = bookings.find(b => String(b.id) === String(bookingId));
                         console.log('Found booking:', booking);
-                        
+
                         if (booking) {
                           setSelectedBooking(booking);
                         }
@@ -863,13 +819,13 @@ const MyBookingsFeedbackPage: React.FC = () => {
                       ))}
                   </select>
                 )}
-                
+
                 {bookings.length === 0 && (
                   <div className="text-sm text-red-500 mt-2">
                     No bookings found. Please make sure you have bookings in your account.
                   </div>
                 )}
-                
+
                 {bookings.length > 0 && bookings.filter(booking => !feedbacks.find(f => f.booking_id === booking.id)).length === 0 && (
                   <div className="text-sm text-yellow-600 mt-2">
                     All your bookings already have feedback submitted.
@@ -902,9 +858,9 @@ const MyBookingsFeedbackPage: React.FC = () => {
                 {/* Rate Your Experience */}
                 <div className="mb-6">
                   <h3 className="text-lg font-medium text-gray-800 mb-4">Rate Your Experience</h3>
-                  <StarRatingComponent 
-                    rating={rating} 
-                    onRatingChange={setRating} 
+                  <StarRatingComponent
+                    rating={rating}
+                    onRatingChange={setRating}
                     label="Overall Rating"
                     required={true}
                   />
@@ -1006,22 +962,22 @@ const MyBookingsFeedbackPage: React.FC = () => {
               </div>
             </div>
             <form onSubmit={handleSubmit}>
-              <StarRating 
-                rating={rating} 
-                onRatingChange={setRating} 
-                label="Overall Rating *" 
+              <StarRating
+                rating={rating}
+                onRatingChange={setRating}
+                label="Overall Rating *"
               />
-              
-              <StarRating 
-                rating={serviceRating} 
-                onRatingChange={setServiceRating} 
-                label="Service Rating (Optional)" 
+
+              <StarRating
+                rating={serviceRating}
+                onRatingChange={setServiceRating}
+                label="Service Rating (Optional)"
               />
-              
-              <StarRating 
-                rating={vehicleConditionRating} 
-                onRatingChange={setVehicleConditionRating} 
-                label="Vehicle Condition Rating (Optional)" 
+
+              <StarRating
+                rating={vehicleConditionRating}
+                onRatingChange={setVehicleConditionRating}
+                label="Vehicle Condition Rating (Optional)"
               />
 
               <div className="mb-4">

@@ -99,10 +99,10 @@ interface FeedbackAnalytics {
 interface Dispute {
   id: string;
   bookingId: string;
-  customer: { 
+  customer: {
     id: string;
-    initials: string; 
-    name: string; 
+    initials: string;
+    name: string;
     email: string;
   };
   owner: {
@@ -122,10 +122,10 @@ interface Dispute {
 
 interface Ticket {
   id: string;
-  user: { 
+  user: {
     id: string;
-    initials: string; 
-    name: string; 
+    initials: string;
+    name: string;
     email: string;
   };
   subject: string;
@@ -171,20 +171,20 @@ const DisputesSupportPage: React.FC = () => {
   const location = useLocation();
   const [tab, setTab] = useState<"disputes" | "tickets" | "feedback">("disputes");
   const { settings, formatPrice, t } = useSettings();
-  
+
   // Feedback state
   const [feedback, setFeedback] = useState<Feedback[]>([]);
   const [feedbackAnalytics, setFeedbackAnalytics] = useState<FeedbackAnalytics | null>(null);
   const [selectedFeedback, setSelectedFeedback] = useState<string[]>([]);
-  
+
   // Disputes state
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [selectedDisputes, setSelectedDisputes] = useState<string[]>([]);
-  
+
   // Tickets state
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedTickets, setSelectedTickets] = useState<string[]>([]);
-  
+
   // Common state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -219,10 +219,10 @@ const DisputesSupportPage: React.FC = () => {
       setLoading(true);
       setError(null);
       const params = new URLSearchParams();
-      
+
       params.append('page', pagination.page.toString());
       params.append('limit', pagination.limit.toString());
-      
+
       // Add all filters
       if (filters.status) params.append('status', filters.status);
       if (filters.rating) params.append('minRating', filters.rating);
@@ -233,12 +233,12 @@ const DisputesSupportPage: React.FC = () => {
       if (filters.customerId) params.append('customerId', filters.customerId);
       if (filters.ownerId) params.append('ownerId', filters.ownerId);
       if (searchTerm) params.append('search', searchTerm);
-      
+
       // Date range filtering
       if (filters.dateRange) {
         const now = new Date();
         let dateFrom = '';
-        
+
         switch (filters.dateRange) {
           case 'today':
             dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
@@ -254,7 +254,7 @@ const DisputesSupportPage: React.FC = () => {
             dateFrom = quarterStart.toISOString();
             break;
         }
-        
+
         if (dateFrom) {
           params.append('dateFrom', dateFrom);
         }
@@ -263,12 +263,12 @@ const DisputesSupportPage: React.FC = () => {
       console.log('🔍 Fetching feedback with params:', params.toString());
 
       const response = await apiClient.get(`/feedback/filtered?${params}`);
-      
+
       if (response.success) {
         const data = response.data as { feedback?: Feedback[]; pagination?: { totalFeedback?: number; totalPages?: number } };
         const feedbackData = data.feedback || [];
         setFeedback(feedbackData);
-        
+
         if (data.pagination && typeof data.pagination === "object") {
           setPagination(prev => ({
             ...prev,
@@ -276,7 +276,7 @@ const DisputesSupportPage: React.FC = () => {
             totalPages: data.pagination?.totalPages ?? 0
           }));
         }
-        
+
         console.log('✅ Feedback fetched:', feedbackData.length, 'items');
       } else {
         setError('Failed to fetch feedback data');
@@ -293,7 +293,7 @@ const DisputesSupportPage: React.FC = () => {
   const fetchAnalytics = async () => {
     try {
       console.log('🔍 Fetching feedback analytics...');
-      
+
       const params = new URLSearchParams();
       if (filters.dateRange) {
         const dayMap: Record<string, string> = {
@@ -308,7 +308,7 @@ const DisputesSupportPage: React.FC = () => {
       if (filters.ownerId) params.append('ownerId', filters.ownerId);
 
       const response = await apiClient.get(`/feedback/analytics?${params}`);
-      
+
       if (response.success) {
         setFeedbackAnalytics(response.data as FeedbackAnalytics);
         console.log('✅ Analytics fetched successfully');
@@ -323,7 +323,7 @@ const DisputesSupportPage: React.FC = () => {
     try {
       setLoading(true);
       console.log(`📝 Performing bulk ${action} on ${feedbackIds.length} feedback items`);
-      
+
       const response = await apiClient.post('/feedback/bulk-action', {
         action,
         feedbackIds,
@@ -352,9 +352,9 @@ const DisputesSupportPage: React.FC = () => {
   const handleSendReminder = async (customerId: string) => {
     try {
       console.log('📧 Sending feedback reminder to customer:', customerId);
-      
+
       const response = await apiClient.post(`/feedback/remind/${customerId}`);
-      
+
       if (response.success) {
         console.log('✅ Reminder sent successfully');
         const data = response.data as { remindersCount: number; customer: { first_name: string; last_name: string } };
@@ -372,22 +372,22 @@ const DisputesSupportPage: React.FC = () => {
   const handleExport = async (format: 'csv' | 'json') => {
     try {
       console.log(`📤 Exporting feedback data as ${format}...`);
-      
+
       const params = new URLSearchParams();
       params.append('format', format);
-      
+
       // Add current filters to export
       if (filters.status) params.append('status', filters.status);
       if (filters.minRating) params.append('minRating', filters.minRating);
       if (filters.maxRating) params.append('maxRating', filters.maxRating);
       if (filters.vehicleId) params.append('vehicleId', filters.vehicleId);
       if (filters.ownerId) params.append('ownerId', filters.ownerId);
-      
+
       // Date range for export
       if (filters.dateRange) {
         const now = new Date();
         let dateFrom = '';
-        
+
         switch (filters.dateRange) {
           case 'today':
             dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split('T')[0];
@@ -403,13 +403,13 @@ const DisputesSupportPage: React.FC = () => {
             dateFrom = quarterStart.toISOString().split('T')[0];
             break;
         }
-        
+
         if (dateFrom) {
           params.append('dateFrom', dateFrom);
         }
       }
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('autofleet_token');
       const response = await fetch(`/api/feedback/export?${params}`, {
         method: 'GET',
         headers: {
@@ -428,7 +428,7 @@ const DisputesSupportPage: React.FC = () => {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        
+
         console.log('✅ Export completed successfully');
         alert(`Feedback data exported successfully as ${format.toUpperCase()}`);
       } else {
@@ -447,18 +447,18 @@ const DisputesSupportPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // TODO: Replace with actual disputes endpoint
       // const response = await apiClient.get(`/disputes?${params}`);
-      
+
       // Mock data for now
       const mockDisputes: Dispute[] = [
         {
           id: "DSP-1034",
           bookingId: "BK-2458",
-          customer: { 
+          customer: {
             id: "1",
-            initials: "JK", 
+            initials: "JK",
             name: "John Kamali",
             email: "john.kamali@example.com"
           },
@@ -475,14 +475,14 @@ const DisputesSupportPage: React.FC = () => {
           updatedAt: new Date().toISOString()
         }
       ];
-      
+
       setDisputes(mockDisputes);
       setPagination(prev => ({
         ...prev,
         total: mockDisputes.length,
         totalPages: 1
       }));
-      
+
     } catch (error: any) {
       console.error('❌ Error fetching disputes:', error);
       setError(error.message || 'Failed to fetch disputes data');
@@ -498,17 +498,17 @@ const DisputesSupportPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // TODO: Replace with actual support-tickets endpoint
       // const response = await apiClient.get(`/support-tickets?${params}`);
-      
+
       // Mock data for now
       const mockTickets: Ticket[] = [
         {
           id: "TKT-4552",
-          user: { 
+          user: {
             id: "1",
-            initials: "JK", 
+            initials: "JK",
             name: "John Kamali",
             email: "john.kamali@example.com"
           },
@@ -521,14 +521,14 @@ const DisputesSupportPage: React.FC = () => {
           updatedAt: new Date().toISOString()
         }
       ];
-      
+
       setTickets(mockTickets);
       setPagination(prev => ({
         ...prev,
         total: mockTickets.length,
         totalPages: 1
       }));
-      
+
     } catch (error: any) {
       console.error('❌ Error fetching tickets:', error);
       setError(error.message || 'Failed to fetch tickets data');
@@ -544,9 +544,8 @@ const DisputesSupportPage: React.FC = () => {
     return Array.from({ length: 5 }, (_, index) => (
       <Star
         key={index}
-        className={`w-4 h-4 ${
-          index < rating ? "text-yellow-400 fill-current" : "text-gray-300"
-        }`}
+        className={`w-4 h-4 ${index < rating ? "text-yellow-400 fill-current" : "text-gray-300"
+          }`}
       />
     ));
   };
@@ -725,9 +724,9 @@ const DisputesSupportPage: React.FC = () => {
           {/* Rating Filter (Feedback only) */}
           {tab === 'feedback' && (
             <>
-              <select 
+              <select
                 value={filters.rating}
-                onChange={(e) => setFilters({...filters, rating: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, rating: e.target.value })}
                 className="border rounded px-3 py-2 text-sm bg-white"
               >
                 <option value="">All Ratings</option>
@@ -738,9 +737,9 @@ const DisputesSupportPage: React.FC = () => {
                 <option value="1">1+ Stars</option>
               </select>
 
-              <select 
+              <select
                 value={filters.hasComment}
-                onChange={(e) => setFilters({...filters, hasComment: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, hasComment: e.target.value })}
                 className="border rounded px-3 py-2 text-sm bg-white"
               >
                 <option value="">All Comments</option>
@@ -751,9 +750,9 @@ const DisputesSupportPage: React.FC = () => {
           )}
 
           {/* Status Filter */}
-          <select 
+          <select
             value={filters.status}
-            onChange={(e) => setFilters({...filters, status: e.target.value})}
+            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             className="border rounded px-3 py-2 text-sm bg-white"
           >
             <option value="">All Status</option>
@@ -776,9 +775,9 @@ const DisputesSupportPage: React.FC = () => {
 
           {/* Category/Priority Filter */}
           {tab === 'feedback' ? (
-            <select 
+            <select
               value={filters.rating}
-              onChange={(e) => setFilters({...filters, rating: e.target.value})}
+              onChange={(e) => setFilters({ ...filters, rating: e.target.value })}
               className="border rounded px-3 py-2 text-sm bg-white"
             >
               <option value="">All Ratings</option>
@@ -790,9 +789,9 @@ const DisputesSupportPage: React.FC = () => {
             </select>
           ) : (
             <>
-              <select 
+              <select
                 value={filters.category}
-                onChange={(e) => setFilters({...filters, category: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, category: e.target.value })}
                 className="border rounded px-3 py-2 text-sm bg-white"
               >
                 <option value="">All Categories</option>
@@ -803,10 +802,10 @@ const DisputesSupportPage: React.FC = () => {
                 <option value="technical">Technical</option>
                 <option value="other">Other</option>
               </select>
-              
-              <select 
+
+              <select
                 value={filters.priority}
-                onChange={(e) => setFilters({...filters, priority: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
                 className="border rounded px-3 py-2 text-sm bg-white"
               >
                 <option value="">All Priorities</option>
@@ -819,9 +818,9 @@ const DisputesSupportPage: React.FC = () => {
           )}
 
           {/* Date Range */}
-          <select 
+          <select
             value={filters.dateRange}
-            onChange={(e) => setFilters({...filters, dateRange: e.target.value})}
+            onChange={(e) => setFilters({ ...filters, dateRange: e.target.value })}
             className="border rounded px-3 py-2 text-sm bg-white"
           >
             <option value="">All Time</option>
@@ -879,31 +878,28 @@ const DisputesSupportPage: React.FC = () => {
         {/* Tabs */}
         <div className="flex items-center gap-6 mb-4">
           <button
-            className={`pb-1 font-semibold border-b-2 ${
-              tab === "disputes"
+            className={`pb-1 font-semibold border-b-2 ${tab === "disputes"
                 ? "border-blue-700 text-blue-700"
                 : "border-transparent text-gray-500 hover:text-blue-700"
-            }`}
+              }`}
             onClick={() => setTab("disputes")}
           >
             Complaints / Disputes ({disputes.length})
           </button>
           <button
-            className={`pb-1 font-semibold border-b-2 ${
-              tab === "tickets"
+            className={`pb-1 font-semibold border-b-2 ${tab === "tickets"
                 ? "border-blue-700 text-blue-700"
                 : "border-transparent text-gray-500 hover:text-blue-700"
-            }`}
+              }`}
             onClick={() => setTab("tickets")}
           >
             Support Tickets ({tickets.length})
           </button>
           <button
-            className={`pb-1 font-semibold border-b-2 ${
-              tab === "feedback"
+            className={`pb-1 font-semibold border-b-2 ${tab === "feedback"
                 ? "border-blue-700 text-blue-700"
                 : "border-transparent text-gray-500 hover:text-blue-700"
-            }`}
+              }`}
             onClick={() => setTab("feedback")}
           >
             Customer Feedback ({feedback.length})
@@ -918,7 +914,7 @@ const DisputesSupportPage: React.FC = () => {
               <span>Customer Feedback Management</span>
               {loading && <div className="text-sm text-blue-600">Loading...</div>}
             </div>
-            
+
             {feedback.length === 0 ? (
               <div className="text-center py-12">
                 <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -1033,27 +1029,27 @@ const DisputesSupportPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex gap-1">
-                          <button 
+                          <button
                             className="bg-gray-100 hover:bg-blue-100 text-blue-700 p-1 rounded text-xs"
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleSendReminder(f.customer_id)}
                             className="bg-gray-100 hover:bg-green-100 text-green-700 p-1 rounded text-xs"
                             title="Send Reminder"
                           >
                             <Mail className="w-4 h-4" />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleBulkFeedbackAction('approve', [f.id])}
                             className="bg-gray-100 hover:bg-green-100 text-green-700 p-1 rounded text-xs"
                             title="Approve"
                           >
                             <CheckSquare className="w-4 h-4" />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleBulkFeedbackAction('flag', [f.id])}
                             className="bg-gray-100 hover:bg-red-100 text-red-700 p-1 rounded text-xs"
                             title="Flag"
@@ -1108,24 +1104,23 @@ const DisputesSupportPage: React.FC = () => {
               >
                 Previous
               </button>
-              
+
               {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                 const page = i + 1;
                 return (
                   <button
                     key={page}
                     onClick={() => handlePageChange(page)}
-                    className={`px-3 py-1 text-sm border rounded ${
-                      pagination.page === page 
-                        ? 'bg-blue-600 text-white border-blue-600' 
+                    className={`px-3 py-1 text-sm border rounded ${pagination.page === page
+                        ? 'bg-blue-600 text-white border-blue-600'
                         : 'hover:bg-gray-50'
-                    }`}
+                      }`}
                   >
                     {page}
                   </button>
                 );
               })}
-              
+
               <button
                 onClick={() => handlePageChange(pagination.page + 1)}
                 disabled={pagination.page === pagination.totalPages}

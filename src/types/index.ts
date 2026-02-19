@@ -35,6 +35,8 @@ export interface Vehicle {
   status: 'available' | 'rented' | 'maintenance' | 'inactive';
   location_lat?: number;
   location_lng?: number;
+  locationLat?: number;
+  locationLng?: number;
   location_address?: string;
   created_at: string;
   updated_at: string;

@@ -56,7 +56,7 @@ const defaultSettings: Settings = {
   weeklyReports: true,
   darkMode: false,
   language: "en",
-  currency: "USD",
+  currency: "RWF",
   timezone: "UTC",
   units: "metric",
   profileVisibility: "private",
@@ -70,6 +70,7 @@ const defaultSettings: Settings = {
   notificationSound: "default",
   showNavBar: true,
   showChatBot: true,
+  adminUserId: "",
 };
 
 const translations = {
@@ -86,7 +87,7 @@ const translations = {
     analytics: "Analytics",
     support: "Support",
     logout: "Logout",
-    
+
     // Auth
     login: "Login",
     register: "Register",
@@ -98,7 +99,7 @@ const translations = {
     firstName: "First Name",
     lastName: "Last Name",
     phone: "Phone Number",
-    
+
     // Common
     save: "Save",
     cancel: "Cancel",
@@ -111,7 +112,7 @@ const translations = {
     loading: "Loading...",
     success: "Success",
     error: "Error",
-    
+
     // App Specific
     autofleetHub: "AutoFleet Hub",
     customer: "Customer",
@@ -120,7 +121,7 @@ const translations = {
     myBookings: "My Bookings",
     addVehicle: "Add Vehicle",
     rentVehicle: "Rent Vehicle",
-    
+
     // Settings
     notifications: "Notifications",
     appearance: "Appearance",
@@ -129,7 +130,7 @@ const translations = {
     darkMode: "Dark Mode",
     lightMode: "Light Mode",
   },
-  
+
   fr: {
     // Navigation
     profile: "Profil",
@@ -143,7 +144,7 @@ const translations = {
     analytics: "Analyses",
     support: "Support",
     logout: "Déconnexion",
-    
+
     // Auth
     login: "Connexion",
     register: "S'inscrire",
@@ -155,7 +156,7 @@ const translations = {
     firstName: "Prénom",
     lastName: "Nom",
     phone: "Numéro de téléphone",
-    
+
     // Common
     save: "Enregistrer",
     cancel: "Annuler",
@@ -168,7 +169,7 @@ const translations = {
     loading: "Chargement...",
     success: "Succès",
     error: "Erreur",
-    
+
     // App Specific
     autofleetHub: "AutoFleet Hub",
     customer: "Client",
@@ -177,7 +178,7 @@ const translations = {
     myBookings: "Mes réservations",
     addVehicle: "Ajouter un véhicule",
     rentVehicle: "Louer un véhicule",
-    
+
     // Settings
     notifications: "Notifications",
     appearance: "Apparence",
@@ -186,7 +187,7 @@ const translations = {
     darkMode: "Mode sombre",
     lightMode: "Mode clair",
   },
-  
+
   rw: {
     // Navigation
     profile: "Umuntu",
@@ -200,7 +201,7 @@ const translations = {
     analytics: "Isesengura",
     support: "Ubufasha",
     logout: "Gusohoka",
-    
+
     // Auth
     login: "Kwinjira",
     register: "Kwiyandikisha",
@@ -212,7 +213,7 @@ const translations = {
     firstName: "Izina ry'ibanza",
     lastName: "Izina ry'umuryango",
     phone: "Nimero ya telefoni",
-    
+
     // Common
     save: "Kubika",
     cancel: "Kureka",
@@ -225,7 +226,7 @@ const translations = {
     loading: "Birategerwa...",
     success: "Byagenze neza",
     error: "Ikosa",
-    
+
     // App Specific
     autofleetHub: "AutoFleet Hub",
     customer: "Umukiriya",
@@ -234,7 +235,7 @@ const translations = {
     myBookings: "Amatungo yanjye",
     addVehicle: "Kongeramo ikinyabiziga",
     rentVehicle: "Gukodesha ikinyabiziga",
-    
+
     // Settings
     notifications: "Amakuru",
     appearance: "Isura",
@@ -243,7 +244,7 @@ const translations = {
     darkMode: "Ubwiza bw'ijoro",
     lightMode: "Ubwiza bw'umunsi",
   },
-  
+
   sw: {
     // Navigation
     profile: "Wasifu",
@@ -257,7 +258,7 @@ const translations = {
     analytics: "Uchambuzi",
     support: "Msaada",
     logout: "Toka",
-    
+
     // Auth
     login: "Ingia",
     register: "Jisajili",
@@ -269,7 +270,7 @@ const translations = {
     firstName: "Jina la kwanza",
     lastName: "Jina la mwisho",
     phone: "Nambari ya simu",
-    
+
     // Common
     save: "Hifadhi",
     cancel: "Ghairi",
@@ -282,7 +283,7 @@ const translations = {
     loading: "Inapakia...",
     success: "Mafanikio",
     error: "Hitilafu",
-    
+
     // App Specific
     autofleetHub: "AutoFleet Hub",
     customer: "Mteja",
@@ -291,7 +292,7 @@ const translations = {
     myBookings: "Mahifadhi yangu",
     addVehicle: "Ongeza gari",
     rentVehicle: "Kodi gari",
-    
+
     // Settings
     notifications: "Arifa",
     appearance: "Mwonekano",
@@ -332,7 +333,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   // Apply settings to document when they change
   useEffect(() => {
-    applySettings();
+    applySettings(settings);
   }, [settings.darkMode, settings.language]);
 
   const loadSettings = async () => {
@@ -340,38 +341,52 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       // Load from localStorage first for immediate application
       const savedSettings = localStorage.getItem("appSettings");
       if (savedSettings) {
-        const parsedSettings = JSON.parse(savedSettings);
-        setSettings((prevSettings) => ({
-          ...prevSettings,
-          ...parsedSettings,
-        }));
+        let parsed = JSON.parse(savedSettings);
+
+        // MIGRATION: Force RWF if local storage is USD
+        if (parsed.currency === "USD") {
+          parsed.currency = "RWF";
+          localStorage.setItem("appSettings", JSON.stringify(parsed));
+        }
+
+        setSettings(parsed);
+        applySettings(parsed);
       }
 
       // Try to load from API and sync
       const res = await apiClient.get<any>("/users/settings");
       if (res.success && res.data) {
-        const apiSettings = {
+        let updatedSettings = {
           ...defaultSettings,
           ...res.data,
         };
-        setSettings(apiSettings);
-        localStorage.setItem("appSettings", JSON.stringify(apiSettings));
+
+        // MIGRATION: Force RWF if current session/db is USD
+        if (updatedSettings.currency === "USD") {
+          updatedSettings = { ...updatedSettings, currency: "RWF" };
+          // Save back to API if possible, or just local
+          apiClient.put("/users/settings", { preferences: updatedSettings }).catch(e => console.error("Migration save failed", e));
+        }
+
+        setSettings(updatedSettings);
+        localStorage.setItem("appSettings", JSON.stringify(updatedSettings));
+        applySettings(updatedSettings);
       }
     } catch (error) {
       console.error("Error fetching settings:", error);
     }
   };
 
-  const applySettings = () => {
+  const applySettings = (currentSettings: Settings) => {
     // Apply dark mode to entire app
     const root = document.documentElement;
     const body = document.body;
-    
+
     if (settings.darkMode) {
       root.classList.add('dark');
       root.style.colorScheme = 'dark';
       body.classList.add('dark');
-      
+
       // Apply dark mode CSS variables
       root.style.setProperty('--bg-primary', '#0f172a');
       root.style.setProperty('--bg-secondary', '#1e293b');
@@ -380,7 +395,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       root.style.setProperty('--text-secondary', '#cbd5e1');
       root.style.setProperty('--text-muted', '#64748b');
       root.style.setProperty('--border-color', '#475569');
-      
+
       // Set meta theme color for mobile browsers
       let themeColorMeta = document.querySelector('meta[name="theme-color"]');
       if (!themeColorMeta) {
@@ -393,7 +408,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       root.classList.remove('dark');
       root.style.colorScheme = 'light';
       body.classList.remove('dark');
-      
+
       // Apply light mode CSS variables
       root.style.setProperty('--bg-primary', '#ffffff');
       root.style.setProperty('--bg-secondary', '#f8fafc');
@@ -402,7 +417,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
       root.style.setProperty('--text-secondary', '#334155');
       root.style.setProperty('--text-muted', '#64748b');
       root.style.setProperty('--border-color', '#e2e8f0');
-      
+
       // Set meta theme color for mobile browsers
       let themeColorMeta = document.querySelector('meta[name="theme-color"]');
       if (!themeColorMeta) {
@@ -415,7 +430,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     // Apply language
     root.setAttribute('lang', settings.language);
-    
+
     // Set document direction (for RTL languages if needed)
     const rtlLanguages = ['ar', 'he', 'fa'];
     if (rtlLanguages.includes(settings.language)) {
@@ -425,12 +440,12 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
 
     // Dispatch custom events for components to react to changes
-    window.dispatchEvent(new CustomEvent('themeChanged', { 
-      detail: { darkMode: settings.darkMode } 
+    window.dispatchEvent(new CustomEvent('themeChanged', {
+      detail: { darkMode: settings.darkMode }
     }));
-    
-    window.dispatchEvent(new CustomEvent('languageChanged', { 
-      detail: { language: settings.language, translations: t } 
+
+    window.dispatchEvent(new CustomEvent('languageChanged', {
+      detail: { language: settings.language, translations: t }
     }));
   };
 
@@ -445,16 +460,16 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (key === 'currency') {
       window.dispatchEvent(new CustomEvent('currencyChanged', { detail: value }));
     }
-    
+
     if (key === 'darkMode') {
-      window.dispatchEvent(new CustomEvent('themeChanged', { 
-        detail: { darkMode: value } 
+      window.dispatchEvent(new CustomEvent('themeChanged', {
+        detail: { darkMode: value }
       }));
     }
-    
+
     if (key === 'language') {
-      window.dispatchEvent(new CustomEvent('languageChanged', { 
-        detail: { language: value, translations: translations[value as keyof typeof translations] || translations.en } 
+      window.dispatchEvent(new CustomEvent('languageChanged', {
+        detail: { language: value, translations: translations[value as keyof typeof translations] || translations.en }
       }));
     }
 

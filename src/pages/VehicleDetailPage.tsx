@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import VehicleMap from '../components/VehicleMap';
 import { apiClient } from '@/services/apiClient';
+import { useSettings } from '@/contexts/SettingContxt';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 const STATIC_BASE_URL = API_BASE_URL.replace('/api', '');
@@ -113,6 +114,8 @@ const VehicleDetailPage: React.FC = () => {
   const images = parseVehicleImages(vehicle.images);
   const allImages = images && images.length > 0 ? images : [];
 
+  const { formatPrice } = useSettings();
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row gap-8">
@@ -149,7 +152,11 @@ const VehicleDetailPage: React.FC = () => {
         <div className="md:w-1/2">
           <h1 className="text-3xl font-bold mb-4">{vehicle.make} {vehicle.model}</h1>
           <p className="text-gray-600 mb-2">Type: {vehicle.type}</p>
-          <p className="text-gray-600 mb-2">Status: {vehicle.status}</p>
+          <p className={`mb-2 font-bold ${vehicle.status === 'Available' ? 'text-green-600' :
+            (vehicle.status === 'Rented' || vehicle.status === 'Sold') ? 'text-red-600' : 'text-yellow-600'
+            }`}>
+            Status: {vehicle.status}
+          </p>
           <div className="mb-2">
             <span className="font-semibold">Location:</span> {vehicle.location_address || 'N/A'}
           </div>
@@ -164,13 +171,21 @@ const VehicleDetailPage: React.FC = () => {
             <span className="text-sm text-gray-600">{vehicle.rating} ({vehicle.reviews} reviews)</span>
           </div>
           <div className="text-2xl font-bold text-blue-700 mb-4">
-            {vehicle.listing_type === 'sale' ? `$${vehicle.selling_price}` : `$${vehicle.price} per day`}
+            {vehicle.listing_type === 'sale' ? formatPrice(vehicle.selling_price || 0) : `${formatPrice(vehicle.price || 0)} per day`}
           </div>
           <button
-            className="bg-[#2c4a9d] hover:bg-[#1e3a7d] text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition"
-            onClick={() => navigate(`/Booking/${vehicle.id}`, { state: { vehicle } })}
+            className={`font-semibold px-6 py-3 rounded-lg shadow-lg transition ${vehicle.status === 'Rented' || vehicle.status === 'Sold'
+              ? 'bg-gray-400 cursor-not-allowed text-white'
+              : 'bg-[#2c4a9d] hover:bg-[#1e3a7d] text-white'
+              }`}
+            onClick={() => {
+              if (vehicle.status !== 'Rented' && vehicle.status !== 'Sold') {
+                navigate(`/Booking/${vehicle.id}`, { state: { vehicle } });
+              }
+            }}
+            disabled={vehicle.status === 'Rented' || vehicle.status === 'Sold'}
           >
-            {vehicle.listing_type === 'sale' ? 'BUY IT' : 'Book Now'}
+            {vehicle.status === 'Rented' ? 'RENTED' : vehicle.status === 'Sold' ? 'SOLD' : (vehicle.listing_type === 'sale' ? 'BUY IT' : 'Book Now')}
           </button>
           {/* GPS Navigation Button */}
           {Number.isFinite(vehicle.locationLat) && Number.isFinite(vehicle.locationLng) && (

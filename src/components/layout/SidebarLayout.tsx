@@ -49,8 +49,8 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   // Check if token exists and is valid
   const checkAuthentication = () => {
-    const token = localStorage.getItem('token');
-    
+    const token = localStorage.getItem('autofleet_token');
+
     if (!token) {
       console.log('🔄 No token found, redirecting to login...');
       setIsAuthenticated(false);
@@ -61,21 +61,21 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       // Check if token is expired
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Date.now() / 1000;
-      
+
       if (payload.exp && payload.exp < currentTime) {
         console.log('🔄 Token expired, redirecting to login...');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        localStorage.removeItem('autofleet_token');
+        localStorage.removeItem('autofleet_user');
         setIsAuthenticated(false);
         return false;
       }
-      
+
       setIsAuthenticated(true);
       return true;
     } catch (error) {
       console.error('❌ Invalid token format:', error);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem('autofleet_token');
+      localStorage.removeItem('autofleet_user');
       setIsAuthenticated(false);
       return false;
     }
@@ -86,15 +86,15 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     try {
       setLoading(true);
       setError(null);
-      
+
       console.log('🔍 Fetching user profile...');
-      
+
       const response = await apiClient.get('/auth/profile');
-      
+
       if (response.success) {
         setUserProfile(response.data as UserProfile);
         console.log('✅ User profile fetched successfully:', response.data);
-        
+
         // Store user profile in localStorage for quick access
         localStorage.setItem('user', JSON.stringify(response.data));
       } else {
@@ -104,12 +104,12 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     } catch (error: any) {
       console.error('❌ Error fetching user profile:', error);
       setError(error.message || 'Failed to fetch profile');
-      
+
       // If unauthorized, clear auth and redirect
       if (error.status === 401 || error.status === 403) {
         console.log('🔄 Unauthorized access, clearing auth...');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        localStorage.removeItem('autofleet_token');
+        localStorage.removeItem('autofleet_user');
         setIsAuthenticated(false);
         setUserProfile(null);
       }
@@ -122,28 +122,28 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   const handleLogout = async () => {
     try {
       console.log('🔄 Logging out...');
-      
+
       // Optional: Call logout endpoint if you have one
       try {
         await apiClient.post('/auth/logout');
       } catch (logoutError) {
         console.log('⚠️ Logout endpoint not available or failed');
       }
-      
+
       // Clear local storage
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      
+      localStorage.removeItem('autofleet_token');
+      localStorage.removeItem('autofleet_user');
+
       // Reset state
       setUserProfile(null);
       setIsAuthenticated(false);
-      
+
       console.log('✅ Logout successful');
     } catch (error) {
       console.error('❌ Error during logout:', error);
       // Still clear local data even if logout call fails
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem('autofleet_token');
+      localStorage.removeItem('autofleet_user');
       setUserProfile(null);
       setIsAuthenticated(false);
     }
@@ -152,7 +152,7 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   // Initial authentication check
   useEffect(() => {
     const isAuth = checkAuthentication();
-    
+
     if (isAuth) {
       // Try to load user from localStorage first
       const storedUser = localStorage.getItem('user');
@@ -166,7 +166,7 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           localStorage.removeItem('user');
         }
       }
-      
+
       // Always fetch fresh profile data
       fetchUserProfile();
     }
@@ -178,7 +178,7 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       const timer = setTimeout(() => {
         navigate('/login', { replace: true });
       }, 100);
-      
+
       return () => clearTimeout(timer);
     }
   }, [isAuthenticated, navigate]);
@@ -221,7 +221,7 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         <div className="px-4 py-6 border-b border-[#3d4f8f]">
           <h1 className="text-xl font-bold">AutoFleet Hub</h1>
         </div>
-        
+
         {/* User Profile Section */}
         <div className="flex items-center gap-3 px-4 py-5 border-b border-[#3d4f8f]">
           {loading ? (
@@ -241,7 +241,7 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               </div>
               <div className="flex-1">
                 <div className="text-sm font-semibold text-red-300">Profile Error</div>
-                <button 
+                <button
                   onClick={retryFetch}
                   className="text-xs text-blue-300 hover:text-blue-200 underline"
                 >
@@ -284,17 +284,16 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </div>
           )}
         </div>
-        
+
         {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1">
           {navItems.map((item) => (
             <div
               key={item.label}
-              className={`flex items-center px-4 py-2.5 rounded-lg cursor-pointer transition text-sm ${
-                location.pathname.startsWith(item.to)
-                  ? "bg-[#3d4f8f] text-white"
-                  : "text-gray-300 hover:bg-[#3d4f8f]/50 hover:text-white"
-              }`}
+              className={`flex items-center px-4 py-2.5 rounded-lg cursor-pointer transition text-sm ${location.pathname.startsWith(item.to)
+                ? "bg-[#3d4f8f] text-white"
+                : "text-gray-300 hover:bg-[#3d4f8f]/50 hover:text-white"
+                }`}
               onClick={() => navigate(item.to)}
             >
               {item.icon}
@@ -302,19 +301,19 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             </div>
           ))}
         </nav>
-        
+
         {/* User Actions */}
         <div className="px-3 pb-3 space-y-2">
           {/* Profile Settings Button */}
-          <button 
+          <button
             onClick={() => navigate('/profile')}
             className="w-full flex items-center justify-center bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg transition font-medium text-sm"
           >
             <Settings className="mr-2 w-4 h-4" /> Settings
           </button>
-          
+
           {/* Logout Button */}
-          <button 
+          <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center bg-[#f59e0b] hover:bg-[#d97706] text-white py-2.5 rounded-lg transition font-medium text-sm shadow-md"
           >
@@ -322,7 +321,7 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </button>
         </div>
       </aside>
-      
+
       {/* Main Content */}
       <div className="flex-1">{children}</div>
     </div>
