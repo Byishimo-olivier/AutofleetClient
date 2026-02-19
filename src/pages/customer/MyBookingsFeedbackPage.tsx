@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { X, Star, Upload } from "lucide-react";
-import { apiClient } from "@/services/apiClient";
+import { apiClient, API_BASE_URL, STATIC_BASE_URL } from "@/services/apiClient";
 
 
 // Types for backend data structure
@@ -355,8 +355,6 @@ const MyBookingsFeedbackPage: React.FC = () => {
     if (img.startsWith("http://") || img.startsWith("https://")) return img;
     // Always ensure a single leading slash
     const normalizedImg = img.startsWith("/") ? img : `/${img}`;
-    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-    const STATIC_BASE_URL = API_BASE_URL.replace('/api', '');
     return `${STATIC_BASE_URL}${normalizedImg}`;
   };
 

@@ -11,12 +11,8 @@ import {
     ChevronRight,
     Search,
 } from "lucide-react";
-import { apiClient } from "@/services/apiClient";
+import { apiClient, API_BASE_URL, STATIC_BASE_URL } from "@/services/apiClient";
 import { useSettings } from '@/contexts/SettingContxt';
-
-// Get base URL without /api for static files
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const STATIC_BASE_URL = API_BASE_URL.replace('/api', '');
 
 const quickActions = [
     {
@@ -285,8 +281,8 @@ export default function CustomerDashboard() {
                                         />
                                         <span
                                             className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold ${vehicle.status === "Available"
-                                                    ? "bg-green-500 text-white"
-                                                    : "bg-red-500 text-white"
+                                                ? "bg-green-500 text-white"
+                                                : "bg-red-500 text-white"
                                                 }`}
                                         >
                                             {vehicle.status}
@@ -361,8 +357,8 @@ export default function CustomerDashboard() {
                                 key={i + 1}
                                 onClick={() => setCurrentPage(i + 1)}
                                 className={`w-10 h-10 rounded-lg font-semibold transition ${currentPage === i + 1
-                                        ? "bg-[#2c4a9d] text-white"
-                                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                    ? "bg-[#2c4a9d] text-white"
+                                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                                     }`}
                             >
                                 {i + 1}

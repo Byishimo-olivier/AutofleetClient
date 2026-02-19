@@ -1,7 +1,8 @@
 import { ChatBotResponse } from '../types/chatbot';
+import { API_BASE_URL } from './apiClient';
 
 interface ConversationContext {
-  messages: Array<{role: 'user' | 'assistant', content: string, timestamp?: number}>;
+  messages: Array<{ role: 'user' | 'assistant', content: string, timestamp?: number }>;
   lastNavigationUrl: string | null;
   awaitingConfirmation: boolean;
   userPreferences: Map<string, any>;
@@ -45,7 +46,7 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
   `;
 
   constructor() {
-    this.baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+    this.baseUrl = API_BASE_URL;
     this.context = {
       messages: [],
       lastNavigationUrl: null,
@@ -209,7 +210,7 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
    * Call Google Gemini API
    */
   private async callGemini(message: string, signal?: AbortSignal): Promise<any> {
-    const contextMessages = this.context.messages.slice(-6).map(msg => 
+    const contextMessages = this.context.messages.slice(-6).map(msg =>
       `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
     ).join('\n');
 
@@ -279,7 +280,7 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
    */
   private parseAIResponse(apiResponse: any): ChatBotResponse {
     let content = '';
-    
+
     // Extract content based on provider
     if (this.aiProvider!.name === 'openai') {
       content = apiResponse.choices?.[0]?.message?.content || '';
@@ -291,7 +292,7 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
 
     // Check for navigation actions in the response
     const navigationMatch = content.match(/{"action":\s*"navigate",\s*"url":\s*"([^"]+)"}/);
-    
+
     let message = content;
     let navigationUrl: string | undefined = undefined;
     let type: 'navigation' | undefined = undefined;
@@ -337,7 +338,7 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
     if (lowerMessage.includes('price') || lowerMessage.includes('cost')) {
       return ["Browse vehicles", "Compare prices", "Discounts available?", "Book now"];
     }
-    
+
     if (lowerMessage.includes('book') || lowerMessage.includes('rent')) {
       return ["Browse vehicles", "My bookings", "Requirements", "Locations"];
     }
@@ -374,7 +375,7 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
   /**
    * Get conversation history (Enhanced)
    */
-  public getConversationHistory(): Array<{role: string, content: string, timestamp?: number}> {
+  public getConversationHistory(): Array<{ role: string, content: string, timestamp?: number }> {
     return [...this.context.messages];
   }
 

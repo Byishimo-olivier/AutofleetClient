@@ -1,11 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import VehicleMap from '../components/VehicleMap';
-import { apiClient } from '@/services/apiClient';
+import { apiClient, API_BASE_URL, STATIC_BASE_URL } from '@/services/apiClient';
 import { useSettings } from '@/contexts/SettingContxt';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const STATIC_BASE_URL = API_BASE_URL.replace('/api', '');
 
 interface GetImageUrlParam {
   // If your image object has a specific structure, define it here

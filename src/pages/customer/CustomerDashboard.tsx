@@ -11,12 +11,8 @@ import {
     ChevronRight,
     Search,
 } from "lucide-react";
-import { apiClient } from "@/services/apiClient";
+import { apiClient, API_BASE_URL, STATIC_BASE_URL } from "@/services/apiClient";
 import { useSettings } from '@/contexts/SettingContxt';
-
-// Get base URL without /api for static files
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const STATIC_BASE_URL = API_BASE_URL.replace('/api', '');
 
 const quickActions = [
     {

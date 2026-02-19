@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { useSettings } from '@/contexts/SettingContxt';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiClient } from '@/services/apiClient';
+import { apiClient, API_BASE_URL } from '@/services/apiClient';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '@/assets/logo.png'; // Import your logo
@@ -180,8 +180,7 @@ const BookingsManagementPage: React.FC = () => {
       if (format === 'csv') {
         // For CSV, we need to handle the download differently
         // Avoid using `process` in browser code to prevent TS errors; allow runtime override on window
-        const apiBase = (window as any).REACT_APP_API_URL || (window as any).__REACT_APP_API_URL || 'http://localhost:5000';
-        const response = await fetch(`${apiBase}/api/bookings/admin/export?${params}`, {
+        const response = await fetch(`${API_BASE_URL}/bookings/admin/export?${params}`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('autofleet_token')}`
           }
@@ -587,8 +586,8 @@ const BookingsManagementPage: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${settings.darkMode
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                   }`}
               />
             </div>
@@ -597,8 +596,8 @@ const BookingsManagementPage: React.FC = () => {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className={`px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${settings.darkMode
-                  ? 'bg-gray-700 border-gray-600 text-white'
-                  : 'bg-white border-gray-300 text-gray-900'
+                ? 'bg-gray-700 border-gray-600 text-white'
+                : 'bg-white border-gray-300 text-gray-900'
                 }`}
             >
               <option value="">All Status</option>
@@ -614,8 +613,8 @@ const BookingsManagementPage: React.FC = () => {
               value={paymentStatusFilter}
               onChange={(e) => setPaymentStatusFilter(e.target.value)}
               className={`px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${settings.darkMode
-                  ? 'bg-gray-700 border-gray-600 text-white'
-                  : 'bg-white border-gray-300 text-gray-900'
+                ? 'bg-gray-700 border-gray-600 text-white'
+                : 'bg-white border-gray-300 text-gray-900'
                 }`}
             >
               <option value="">All Payments</option>
@@ -629,8 +628,8 @@ const BookingsManagementPage: React.FC = () => {
               value={dateRangeFilter}
               onChange={(e) => setDateRangeFilter(e.target.value)}
               className={`px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${settings.darkMode
-                  ? 'bg-gray-700 border-gray-600 text-white'
-                  : 'bg-white border-gray-300 text-gray-900'
+                ? 'bg-gray-700 border-gray-600 text-white'
+                : 'bg-white border-gray-300 text-gray-900'
                 }`}
             >
               <option value="">All Time</option>
@@ -883,8 +882,8 @@ const BookingsManagementPage: React.FC = () => {
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                   className={`px-3 py-1 rounded border ${settings.darkMode
-                      ? 'bg-gray-700 border-gray-600 text-white disabled:opacity-50'
-                      : 'bg-white border-gray-300 text-gray-700 disabled:opacity-50'
+                    ? 'bg-gray-700 border-gray-600 text-white disabled:opacity-50'
+                    : 'bg-white border-gray-300 text-gray-700 disabled:opacity-50'
                     }`}
                 >
                   Previous
@@ -893,8 +892,8 @@ const BookingsManagementPage: React.FC = () => {
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                   className={`px-3 py-1 rounded border ${settings.darkMode
-                      ? 'bg-gray-700 border-gray-600 text-white disabled:opacity-50'
-                      : 'bg-white border-gray-300 text-gray-700 disabled:opacity-50'
+                    ? 'bg-gray-700 border-gray-600 text-white disabled:opacity-50'
+                    : 'bg-white border-gray-300 text-gray-700 disabled:opacity-50'
                     }`}
                 >
                   Next
@@ -1048,8 +1047,8 @@ const BookingsManagementPage: React.FC = () => {
                 value={bulkStatus}
                 onChange={(e) => setBulkStatus(e.target.value)}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${settings.darkMode
-                    ? 'bg-gray-700 border-gray-600 text-white'
-                    : 'bg-white border-gray-300 text-gray-900'
+                  ? 'bg-gray-700 border-gray-600 text-white'
+                  : 'bg-white border-gray-300 text-gray-900'
                   }`}
               >
                 <option value="">Select Status</option>

@@ -11,14 +11,11 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { apiClient } from "@/services/apiClient";
+import { apiClient, API_BASE_URL, STATIC_BASE_URL } from "@/services/apiClient";
 import { useSettings } from '@/contexts/SettingContxt';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const STATIC_BASE_URL = API_BASE_URL.replace('/api', '');
 
 // Move type/interface definitions outside the component
 interface Vehicle {

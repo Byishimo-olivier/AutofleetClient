@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Car, CheckCircle, XCircle } from 'lucide-react';
-import { apiClient } from "@/services/apiClient";
+import { apiClient, STATIC_BASE_URL } from "@/services/apiClient";
 import { useSettings } from '@/contexts/SettingContxt';
 
 interface Vehicle {
@@ -325,7 +325,7 @@ const VehiclesPage: React.FC = () => {
                           src={
                             vehicle.images[0].startsWith('http://') || vehicle.images[0].startsWith('https://')
                               ? vehicle.images[0]
-                              : `http://localhost:5000/${vehicle.images[0].replace(/^\/+/, '')}`
+                              : `${STATIC_BASE_URL}/${vehicle.images[0].replace(/^\/+/, '')}`
                           }
                           alt={`${vehicle.make} ${vehicle.model}`}
                           className="w-full h-full object-cover"
@@ -349,13 +349,12 @@ const VehiclesPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        vehicle.status === 'available'
-                          ? 'bg-green-100 text-green-700'
-                          : vehicle.status === 'rented'
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${vehicle.status === 'available'
+                        ? 'bg-green-100 text-green-700'
+                        : vehicle.status === 'rented'
                           ? 'bg-blue-100 text-blue-700'
                           : 'bg-yellow-100 text-yellow-700'
-                      }`}
+                        }`}
                     >
                       {vehicle.status ? vehicle.status.charAt(0).toUpperCase() + vehicle.status.slice(1) : ''}
                     </span>
@@ -416,7 +415,7 @@ const VehiclesPage: React.FC = () => {
           </tbody>
         </table>
       </div>
-      
+
       {/* Pagination */}
       <div className="flex justify-end mt-4">
         <nav className="inline-flex rounded-md shadow-sm">
@@ -452,7 +451,7 @@ const VehiclesPage: React.FC = () => {
               &times;
             </button>
             <h2 className="text-lg font-bold mb-4">Add New Vehicle</h2>
-            
+
             {uploadError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                 {uploadError}
@@ -464,62 +463,62 @@ const VehiclesPage: React.FC = () => {
                 {/* Make */}
                 <div>
                   <label className="block text-sm font-medium mb-1">Make *</label>
-                  <input 
-                    name="make" 
-                    value={form.make} 
-                    onChange={handleInputChange} 
-                    className="w-full border px-3 py-2 rounded" 
-                    placeholder="e.g., Toyota" 
-                    required 
+                  <input
+                    name="make"
+                    value={form.make}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
+                    placeholder="e.g., Toyota"
+                    required
                   />
                 </div>
                 {/* Model */}
                 <div>
                   <label className="block text-sm font-medium mb-1">Model *</label>
-                  <input 
-                    name="model" 
-                    value={form.model} 
-                    onChange={handleInputChange} 
-                    className="w-full border px-3 py-2 rounded" 
-                    placeholder="e.g., Corolla" 
-                    required 
+                  <input
+                    name="model"
+                    value={form.model}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
+                    placeholder="e.g., Corolla"
+                    required
                   />
                 </div>
                 {/* Year */}
                 <div>
                   <label className="block text-sm font-medium mb-1">Year *</label>
-                  <input 
-                    name="year" 
+                  <input
+                    name="year"
                     type="number"
                     min="1900"
                     max="2030"
-                    value={form.year} 
-                    onChange={handleInputChange} 
-                    className="w-full border px-3 py-2 rounded" 
-                    placeholder="e.g., 2022" 
-                    required 
+                    value={form.year}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
+                    placeholder="e.g., 2022"
+                    required
                   />
                 </div>
                 {/* Plate Number */}
                 <div>
                   <label className="block text-sm font-medium mb-1">Plate Number *</label>
-                  <input 
-                    name="plateNumber" 
-                    value={form.plateNumber} 
-                    onChange={handleInputChange} 
-                    className="w-full border px-3 py-2 rounded" 
-                    placeholder="e.g., RAC 007D" 
-                    required 
+                  <input
+                    name="plateNumber"
+                    value={form.plateNumber}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
+                    placeholder="e.g., RAC 007D"
+                    required
                   />
                 </div>
                 {/* Category */}
                 <div>
                   <label className="block text-sm font-medium mb-1">Category *</label>
-                  <select 
-                    name="category" 
-                    value={form.category} 
-                    onChange={handleInputChange} 
-                    className="w-full border px-3 py-2 rounded" 
+                  <select
+                    name="category"
+                    value={form.category}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
                     required
                   >
                     <option value="">Select Category</option>
@@ -657,13 +656,13 @@ const VehiclesPage: React.FC = () => {
               {/* Description */}
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-1">Description</label>
-                <textarea 
-                  name="description" 
-                  value={form.description} 
-                  onChange={handleInputChange} 
-                  className="w-full border px-3 py-2 rounded" 
-                  placeholder="Brief description of the vehicle ..." 
-                  rows={2} 
+                <textarea
+                  name="description"
+                  value={form.description}
+                  onChange={handleInputChange}
+                  className="w-full border px-3 py-2 rounded"
+                  placeholder="Brief description of the vehicle ..."
+                  rows={2}
                 />
               </div>
               {/* Images */}
@@ -700,15 +699,15 @@ const VehiclesPage: React.FC = () => {
               {form.listing_type === 'rent' && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium mb-1">Price per Day ($) *</label>
-                  <input 
-                    name="dailyRate" 
+                  <input
+                    name="dailyRate"
                     type="number"
                     min="0"
                     step="0.01"
-                    value={form.dailyRate} 
-                    onChange={handleInputChange} 
-                    className="w-full border px-3 py-2 rounded" 
-                    placeholder="e.g., 45" 
+                    value={form.dailyRate}
+                    onChange={handleInputChange}
+                    className="w-full border px-3 py-2 rounded"
+                    placeholder="e.g., 45"
                     required={form.listing_type === 'rent'}
                   />
                 </div>
@@ -730,9 +729,9 @@ const VehiclesPage: React.FC = () => {
                 </div>
               )}
               <div className="flex justify-end gap-3">
-                <button 
-                  type="button" 
-                  className="px-6 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300" 
+                <button
+                  type="button"
+                  className="px-6 py-2 rounded bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300"
                   onClick={() => {
                     setShowModal(false);
                     setForm(initialForm);
@@ -742,8 +741,8 @@ const VehiclesPage: React.FC = () => {
                 >
                   Cancel
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="px-6 py-2 rounded bg-blue-700 text-white font-semibold hover:bg-blue-800"
                 >
                   Add Vehicle

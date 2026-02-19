@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Search, UploadCloud, ChevronUp, ChevronDown as ArrowDown } from "lucide-react";
-import { apiClient } from "@/services/apiClient";
+import { apiClient, API_BASE_URL } from "@/services/apiClient";
 import { useSettings } from '@/contexts/SettingContxt';
 
 // Declare Intercom on the Window interface for TypeScript
@@ -133,7 +133,7 @@ const SupportPage: React.FC = () => {
         formData.append('attachment', file);
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/support/requests`, {
+      const response = await fetch(`${API_BASE_URL}/support/requests`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('autofleet_token')}`
