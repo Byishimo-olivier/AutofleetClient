@@ -67,199 +67,199 @@ function App() {
           <ConditionalNavBar />
           <Routes>
             {/* Owner/Dashboard Routes */}
-            <Route 
-              path="/dashboard" 
+            <Route
+              path="/dashboard"
               element={
                 <ProtectedRoute allowedRoles={['owner']}>
                   <SidebarLayout>
                     <DashboardPage />
                   </SidebarLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/Management-vehicles" 
+            <Route
+              path="/Management-vehicles"
               element={
-                <ProtectedRoute allowedRoles={[ 'owner', 'admin']}>
+                <ProtectedRoute allowedRoles={['owner', 'admin']}>
                   <SidebarLayout>
                     <VehiclesPage />
                   </SidebarLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/booking" 
+            <Route
+              path="/booking"
               element={
                 <ProtectedRoute allowedRoles={['owner', 'admin', 'customer']}>
                   <SidebarLayout>
                     <Booking />
                   </SidebarLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/feedback" 
+            <Route
+              path="/feedback"
               element={
                 <ProtectedRoute allowedRoles={['owner']}>
                   <SidebarLayout>
                     <FeedbackPage />
                   </SidebarLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/analytics" 
+            <Route
+              path="/analytics"
               element={
                 <ProtectedRoute allowedRoles={['owner']}>
                   <SidebarLayout>
                     <AnalyticsPage />
                   </SidebarLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/profile" 
+            <Route
+              path="/profile"
               element={
                 <ProtectedRoute allowedRoles={['owner', 'customer', 'admin']}>
                   <SidebarLayout>
                     <ProfilePage />
                   </SidebarLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
             {/* Customer Pages */}
-            <Route 
-              path="/MyBookings" 
+            <Route
+              path="/MyBookings"
               element={
                 <ProtectedRoute allowedRoles={['customer']}>
                   <MyBookingsFeedbackPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/Vehicles" 
+            <Route
+              path="/Vehicles"
               element={
                 <ProtectedRoute allowedRoles={['customer']}>
                   <Vehicle />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/Booking/:vehicleId" 
+            <Route
+              path="/Booking/:vehicleId"
               element={
                 <ProtectedRoute allowedRoles={['customer']}>
                   <BOOKINGPAGE />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/Booking" 
+            <Route
+              path="/Booking"
               element={
                 <ProtectedRoute allowedRoles={['customer']}>
                   <BOOKINGPAGE />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/Support" 
+            <Route
+              path="/Support"
               element={
                 <ProtectedRoute allowedRoles={['customer']}>
                   <SupportPage />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/" 
-              element={<HomePage />} 
+            <Route
+              path="/"
+              element={<HomePage />}
             />
-            <Route 
-              path="/login" 
-              element={<LoginPage />} 
+            <Route
+              path="/login"
+              element={<LoginPage />}
             />
-            <Route 
-              path="/register" 
-              element={<RegisterPage />} 
+            <Route
+              path="/register"
+              element={<RegisterPage />}
             />
             {/* Admin Routes */}
-            <Route 
-              path="/admin" 
+            <Route
+              path="/admin"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminLayout>
                     <AdminDashboard />
                   </AdminLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/users" 
+            <Route
+              path="/admin/users"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminLayout>
                     <UserManagementPage />
                   </AdminLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/vehicles" 
+            <Route
+              path="/admin/vehicles"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminLayout>
                     <VehicleManagementPage />
                   </AdminLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/bookings" 
+            <Route
+              path="/admin/bookings"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminLayout>
                     <BookingsManagementPage />
                   </AdminLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/reports" 
+            <Route
+              path="/admin/reports"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminLayout>
                     <ReportsAnalyticsPage />
                   </AdminLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/disputes" 
+            <Route
+              path="/admin/disputes"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminLayout>
                     <DisputesSupportPage />
                   </AdminLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/settings" 
+            <Route
+              path="/admin/settings"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminLayout>
                     <SystemSettingsPage />
                   </AdminLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/admin/notifications" 
+            <Route
+              path="/admin/notifications"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminLayout>
                     <NotificationsCenterPage />
                   </AdminLayout>
                 </ProtectedRoute>
-              } 
+              }
             />
             {/* Catch all route - redirect to home for unauthenticated users */}
             <Route path="*" element={<Navigate to="/" replace />} />
