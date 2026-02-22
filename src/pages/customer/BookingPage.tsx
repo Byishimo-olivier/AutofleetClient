@@ -15,8 +15,14 @@ import { apiClient, API_BASE_URL, STATIC_BASE_URL } from "@/services/apiClient";
 import { useSettings } from '@/contexts/SettingContxt';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
-import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
 import React from "react";
+
+// Load Paystack script
+declare global {
+  interface Window {
+    PaystackPop: any;
+  }
+}
 
 // Move type/interface definitions outside the component
 interface Vehicle {
@@ -50,8 +56,7 @@ interface BookingData {
   return_date: string;
   payment_method: PaymentMethod;
   total_price: number;
-  transaction_id?: string;
-  flw_transaction_id?: number;
+  transaction_ref?: string;
   telephone?: string;
 }
 
@@ -101,44 +106,100 @@ export default function VehicleDetails() {
     return days * (vehicle.price || 0);
   };
 
-  // Flutterwave Config — computed fresh whenever paymentMethod, currency, or txNonce changes
-  const fwConfig = React.useMemo(() => {
-    const isMobile = paymentMethod === 'mobile';
-    let amount = calculateTotalPrice();
-    let currency = settings.currency || 'RWF';
-
-    // Always use RWF for Mobile Money Rwanda
-    if (isMobile) {
-      if (currency === 'USD') {
-        amount = Math.round(amount * 1400); // approx conversion
+  // Paystack Config
+  const paystackConfig = React.useMemo(() => {
+    const amount = calculateTotalPrice() * 100; // Paystack uses kobo (smallest currency unit)
+    
+    return {
+      amount,
+      email: user?.email || 'customer@autofleet.com',
+      publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_1363f2cf5db2f2f6bd8cf64db5294078c4c45e80',
+      reference: `autofleet-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      onSuccess: async (response: any) => {
+        console.log("Paystack payment successful:", response);
+        await handlePaymentSuccess(response.reference);
+      },
+      onClose: () => {
+        console.log("Paystack payment closed");
+        setErrorMessage("Payment was cancelled");
       }
-      currency = 'RWF';
+    };
+  }, [user, calculateTotalPrice()]);
+
+  const handlePaystackPayment = async () => {
+    const amount = calculateTotalPrice();
+    
+    if (amount <= 0) {
+      setErrorMessage("Total price must be greater than 0");
+      return;
     }
 
-    // Enforce minimum amounts to avoid gateway rejection
-    if (currency === 'RWF' && amount < 500) amount = 500;
-    if (currency === 'USD' && amount < 1) amount = 1;
+    if (!user || !user.email) {
+      setErrorMessage("Please ensure you are logged in");
+      return;
+    }
 
-    return {
-      public_key: import.meta.env.VITE_FLW_PUBLIC_KEY || '',
-      tx_ref: `tx-${Date.now()}-${txNonce}-${Math.random().toString(36).substring(2, 9)}`,
-      amount,
-      currency,
-      payment_options: isMobile ? 'mobilemoneyrwanda' : 'card',
-      customer: {
-        email: user?.email || 'customer@autofleet.rw',
-        phone_number: telephone.trim() || '250',
-        name: user ? `${user.first_name} ${user.last_name}` : 'Customer',
-      },
-      customizations: {
-        title: 'AutoFleet Hub',
-        description: `Payment for ${vehicle?.make || ''} ${vehicle?.model || ''}`,
-        logo: 'https://st2.depositphotos.com/4403291/7418/v/450/depositphotos_74189661-stock-illustration-abstract-minimal-car-logo-design.jpg',
-      },
-    };
-  }, [paymentMethod, settings.currency, txNonce, user, telephone, vehicle]); // full deps
+    // Load Paystack script if not already loaded
+    if (!window.PaystackPop) {
+      const script = document.createElement("script");
+      script.src = "https://js.paystack.co/v1/inline.js";
+      document.body.appendChild(script);
+    }
 
-  const handleFlutterPayment = useFlutterwave(fwConfig);
+    const handler = window.PaystackPop.setup({
+      key: paystackConfig.publicKey,
+      email: paystackConfig.email,
+      amount: paystackConfig.amount,
+      ref: paystackConfig.reference,
+      onClose: paystackConfig.onClose,
+      callback: async (response: any) => {
+        if (response.status === 'success') {
+          paystackConfig.onSuccess(response);
+        }
+      }
+    });
+    
+    handler.openIframe();
+  };
+
+  const handlePaymentSuccess = async (reference: string) => {
+    try {
+      setLoading(true);
+      const isForSale = vehicle?.listing_type === "sale";
+      
+      // Create booking first
+      const bookingResponse = await apiClient.post('/bookings', {
+        vehicle_id: vehicleId,
+        pickup_location: pickupLocation,
+        pickup_date: pickupDate,
+        return_date: isForSale ? returnDate : returnDate, // For sale, this is purchase, not dates
+        payment_method: 'paystack',
+        total_amount: calculateTotalPrice(),
+        customer_id: user?.id,
+      });
+
+      const bookingId = bookingResponse.data?.id || bookingResponse.data?.booking?.id;
+      console.log("Booking created:", bookingId);
+
+      // Verify payment
+      const verifyResponse = await apiClient.post('/bookings/verify-payment', {
+        transaction_ref: reference,
+        booking_id: bookingId,
+      });
+
+      if (verifyResponse.data?.success) {
+        setSuccessMessage("Payment successful! Your booking is confirmed.");
+        setTimeout(() => {
+          navigate('/bookings');
+        }, 2000);
+      }
+    } catch (error: any) {
+      console.error("Payment verification error:", error);
+      setErrorMessage(error.response?.data?.message || "Payment verification failed");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (!vehicleFromState && vehicleId) {
@@ -219,94 +280,29 @@ export default function VehicleDetails() {
 
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage("");
+    setSuccessMessage("");
 
     const isForSale = vehicle?.listing_type === "sale";
     if (!pickupLocation || (!isForSale && (!pickupDate || !returnDate))) {
-      alert("Please fill in all required fields");
+      setErrorMessage("Please fill in all required fields");
       return;
     }
 
     if (!user || !user.email) {
-      console.error('CRITICAL: User object or email missing in handleBooking!', {
-        user,
-        hasEmail: !!user?.email,
-        keys: Object.keys(user || {})
-      });
-      alert("Please ensure you are logged in and have an email associated with your account.");
+      setErrorMessage("Please ensure you are logged in");
       return;
     }
 
     const bookingPrice = calculateTotalPrice();
     if (bookingPrice <= 0) {
-      alert("Total price must be greater than 0 to proceed with payment.");
+      setErrorMessage("Total price must be greater than 0");
       return;
     }
 
-    // Increment nonce to ensure a NEW tx_ref, then trigger via useEffect
-    setTxNonce(prev => prev + 1);
-    setIsPendingPayment(true);
+    // Trigger Paystack payment
+    await handlePaystackPayment();
   };
-
-  // Separate effect to trigger payment once config has rotated
-  useEffect(() => {
-    if (isPendingPayment && !loading && vehicle) {
-      setIsPendingPayment(false);
-      console.log("Triggering Flutterwave with fresh nonce:", txNonce);
-      handleFlutterPayment({
-        callback: async (response) => {
-          console.log("Flutterwave payment response:", response);
-          setIsPendingPayment(false);
-
-          if (response.status === "successful") {
-            try {
-              const isForSale = vehicle?.listing_type === "sale";
-              const bookingData: BookingData = {
-                vehicle_id: vehicleId,
-                pickup_location: pickupLocation,
-                pickup_date: pickupDate,
-                return_date: returnDate,
-                payment_method: paymentMethod,
-                total_price: calculateTotalPrice(),
-                flw_transaction_id: response.transaction_id,
-                ...(paymentMethod === "mobile" && {
-                  telephone: telephone,
-                }),
-                customerId: user?.id
-              };
-
-              const createRes = await apiClient.post('/bookings', bookingData);
-
-              if (createRes && createRes.success && createRes.data) {
-                const bookingId = (createRes.data as any)?.booking?.id ?? (createRes.data as any)?.id;
-                const verifyRes = await apiClient.post('/bookings/verify-payment', {
-                  transaction_id: response.transaction_id,
-                  booking_id: bookingId
-                });
-
-                if (verifyRes && verifyRes.success) {
-                  setSuccessMessage(isForSale ? "Payment verified and vehicle purchased!" : "Payment verified and booking confirmed!");
-                  setErrorMessage("");
-                  setTimeout(() => navigate("/MyBookings"), 1500);
-                } else {
-                  setErrorMessage("Payment verification failed. Please contact support.");
-                }
-              }
-            } catch (error: any) {
-              console.error("Booking/Verification error:", error);
-              setErrorMessage(error.message || "Failed to finalize transaction.");
-            }
-          } else {
-            setErrorMessage("Payment was not successful. Please try again.");
-          }
-          closePaymentModal();
-        },
-        onClose: () => {
-          setIsPendingPayment(false);
-          setErrorMessage('Payment was cancelled. Please try again if needed.');
-        },
-      });
-    }
-  }, [txNonce, isPendingPayment, loading, vehicle, handleFlutterPayment]);
 
   if (loading) {
     return (
