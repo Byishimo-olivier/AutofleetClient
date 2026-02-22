@@ -204,7 +204,13 @@ export default function VehicleDetails() {
         customer_id: user?.id,
       });
 
-      const bookingId = bookingResponse.data?.id || bookingResponse.data?.booking?.id;
+      let bookingId;
+      if (bookingResponse.data && typeof bookingResponse.data === 'object') {
+        bookingId = (bookingResponse.data as { id?: string }).id;
+        if (!bookingId && 'booking' in bookingResponse.data && typeof (bookingResponse.data as any).booking === 'object') {
+          bookingId = ((bookingResponse.data as any).booking as { id?: string }).id;
+        }
+      }
       console.log("Booking created:", bookingId);
 
       // Verify payment
@@ -213,7 +219,12 @@ export default function VehicleDetails() {
         booking_id: bookingId,
       });
 
-      if (verifyResponse.data?.success) {
+      if (
+        verifyResponse.data &&
+        typeof verifyResponse.data === 'object' &&
+        'success' in verifyResponse.data &&
+        (verifyResponse.data as { success?: boolean }).success
+      ) {
         setSuccessMessage("Payment successful! Your booking is confirmed.");
         setTimeout(() => {
           navigate('/bookings');
