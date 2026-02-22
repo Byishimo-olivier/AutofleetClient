@@ -33,43 +33,36 @@ import {
 const defaultStats = [
   {
     label: "Total Bookings",
-    value: "1,245",
+    value: "0",
     icon: <ClipboardList className="w-6 h-6 text-blue-600" />,
-    change: "+12% this month",
-    changeColor: "text-green-600",
+    change: "0% this month",
+    changeColor: "text-gray-600",
     badge: (
-      <span className="ml-2 bg-red-100 text-red-600 px-2 py-0.5 rounded text-xs font-bold flex items-center">
-        <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24">
-          <path
-            stroke="currentColor"
-            strokeWidth="2"
-            d="M8 7V3m8 4V3m-9 8h10m-12 8V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"
-          />
-        </svg>
-        17
+      <span className="ml-2 bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold flex items-center">
+        0
       </span>
     ),
   },
   {
     label: "Total Revenue",
-    value: "$54,320",
+    value: "0 RWF",
     icon: <FileText className="w-6 h-6 text-green-600" />,
-    change: "+8% this month",
-    changeColor: "text-green-600",
+    change: "0% this month",
+    changeColor: "text-gray-600",
   },
   {
     label: "Active Vehicles",
-    value: "342",
+    value: "0",
     icon: <Car className="w-6 h-6 text-yellow-500" />,
-    change: "78% utilization",
-    changeColor: "text-blue-600",
+    change: "0% utilization",
+    changeColor: "text-gray-600",
   },
   {
     label: "Active Users",
-    value: "1,830",
+    value: "0",
     icon: <Users className="w-6 h-6 text-blue-500" />,
-    change: "+250 new users",
-    changeColor: "text-green-600",
+    change: "+0 new users",
+    changeColor: "text-gray-600",
   },
 ];
 
@@ -96,24 +89,9 @@ const quickActions = [
   },
 ];
 
-const defaultTrendsData = [
-  { month: "Jan", bookings: 60, revenue: 30 },
-  { month: "Feb", bookings: 70, revenue: 32 },
-  { month: "Mar", bookings: 80, revenue: 35 },
-  { month: "Apr", bookings: 95, revenue: 40 },
-  { month: "May", bookings: 110, revenue: 45 },
-  { month: "Jun", bookings: 125, revenue: 50 },
-  { month: "Jul", bookings: 140, revenue: 55 },
-  { month: "Aug", bookings: 160, revenue: 60 },
-];
+const defaultTrendsData: any[] = [];
 
-const defaultTopRented = [
-  { name: "Toyota RAV4", color: "bg-red-200 text-red-700", bookings: 104 },
-  { name: "Honda Civic", color: "bg-blue-200 text-blue-700", bookings: 78 },
-  { name: "BMW X5", color: "bg-green-200 text-green-700", bookings: 58 },
-  { name: "Tesla Model 3", color: "bg-yellow-200 text-yellow-700", bookings: 26 },
-  { name: "Audi A4", color: "bg-purple-200 text-purple-700", bookings: 20 },
-];
+const defaultTopRented: any[] = [];
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -302,8 +280,8 @@ const AdminDashboard: React.FC = () => {
               type="text"
               placeholder="Search ..."
               className={`px-4 py-2 rounded-lg border focus:outline-none focus:ring w-80 shadow-sm ${settings.darkMode
-                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                 }`}
             />
           </div>
@@ -351,8 +329,8 @@ const AdminDashboard: React.FC = () => {
               <button
                 key={i}
                 className={`flex flex-col items-center justify-center border-2 ${action.border} rounded-lg py-6 shadow transition ${settings.darkMode
-                    ? 'bg-gray-800 hover:bg-gray-700'
-                    : 'bg-white hover:bg-gray-50'
+                  ? 'bg-gray-800 hover:bg-gray-700'
+                  : 'bg-white hover:bg-gray-50'
                   }`}
               >
                 {action.icon}
