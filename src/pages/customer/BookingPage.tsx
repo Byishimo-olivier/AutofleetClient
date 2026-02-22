@@ -106,19 +106,19 @@ export default function VehicleDetails() {
     return days * (vehicle.price || 0);
   };
 
-  // Paystack Config
-  const paystackConfig = React.useMemo(() => {
-    const amount = calculateTotalPrice() * 100; // Paystack uses kobo (smallest currency unit)
+  // Paypack Config
+  const paypackConfig = React.useMemo(() => {
+    const amount = calculateTotalPrice();
     
     return {
       amount,
       email: user?.email || 'customer@autofleet.com',
-      publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_1363f2cf5db2f2f6bd8cf64db5294078c4c45e80',
+      applicationId: import.meta.env.VITE_PAYPACK_APPLICATION_ID || '',
       reference: `autofleet-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
     };
   }, [user, calculateTotalPrice()]);
 
-  const handlePaystackPayment = async () => {
+  const handlePaypackPayment = async () => {
     const amount = calculateTotalPrice();
     
     if (amount <= 0) {
@@ -141,58 +141,51 @@ export default function VehicleDetails() {
     }
 
     setLoading(true);
-
-    // Load Paystack script and wait for it
-    return new Promise((resolve) => {
-      if (window.PaystackPop) {
-        initializePaystackPayment();
-        resolve(null);
-      } else {
-        const script = document.createElement("script");
-        script.src = "https://js.paystack.co/v1/inline.js";
-        script.onload = () => {
-          setTimeout(() => {
-            initializePaystackPayment();
-            resolve(null);
-          }, 500);
-        };
-        document.body.appendChild(script);
-      }
-    });
+    initializePaypackPayment();
   };
 
-  const initializePaystackPayment = () => {
-    if (!window.PaystackPop) {
-      setErrorMessage("Failed to load payment gateway");
-      setLoading(false);
-      return;
-    }
-
+  const initializePaypackPayment = async () => {
     try {
-      window.PaystackPop.setup({
-        key: paystackConfig.publicKey,
-        email: paystackConfig.email,
-        amount: paystackConfig.amount,
-        ref: paystackConfig.reference,
-        currency: 'KES', // Kenyan Shilling - matches your Paystack account
-        channels: ['card', 'mobile_money', 'bank_transfer', 'bank', 'ussd'],
-        onClose: function() {
-          console.log("Paystack payment closed");
-          setErrorMessage("Payment was cancelled");
-          setLoading(false);
+      const amount = calculateTotalPrice();
+      const reference = `autofleet-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      
+      console.log("🔐 Paypack Config being sent:", {
+        amount,
+        email: paypackConfig.email,
+        reference,
+        currency: 'RWF'
+      });
+
+      // Paypack API endpoint to initiate payment
+      const paypackResponse = await fetch('https://payments.paypack.rw/api/transactions/initiate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        callback: function(response: any) {
-          console.log("Paystack payment callback:", response);
-          if (response && response.reference) {
-            handlePaymentSuccess(response.reference);
-          } else {
-            setErrorMessage("Payment verification failed");
-            setLoading(false);
-          }
-        }
-      }).openIframe();
+        body: JSON.stringify({
+          amount: amount,
+          currency: 'RWF',
+          description: 'Autofleet Vehicle Booking',
+          client_name: paypackConfig.email,
+          client_email: paypackConfig.email,
+          callback_url: `${import.meta.env.VITE_API_URL}/bookings/verify-payment`,
+          reference: reference
+        })
+      });
+
+      const paypackData = await paypackResponse.json();
+      
+      console.log("Paypack initiate response:", paypackData);
+
+      if (paypackData.status === 'success' && paypackData.data?.payment_url) {
+        // Redirect to Paypack payment page
+        window.location.href = paypackData.data.payment_url;
+      } else {
+        setErrorMessage("Failed to initiate Paypack payment: " + (paypackData.message || 'Unknown error'));
+        setLoading(false);
+      }
     } catch (error) {
-      console.error("Paystack setup error:", error);
+      console.error("Paypack payment error:", error);
       setErrorMessage("Failed to open payment gateway: " + (error as any).message);
       setLoading(false);
     }
@@ -369,8 +362,8 @@ export default function VehicleDetails() {
       return;
     }
 
-    // Trigger Paystack payment
-    await handlePaystackPayment();
+    // Trigger Paypack payment
+    await handlePaypackPayment();
   };
 
   if (loading) {
