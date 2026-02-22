@@ -79,10 +79,13 @@ export default function CustomerDashboard() {
             if (returnDate) params.append("returnDate", returnDate);
 
             const res = await apiClient.get<any>(`/vehicles?${params.toString()}`);
+            console.log("[HomePage] API Response:", res);
             if (res && res.success && res.data && Array.isArray(res.data.vehicles)) {
+                console.log("[HomePage] Vehicles fetched:", res.data.vehicles);
                 setFeaturedVehicles(res.data.vehicles);
                 setPagination(res.data.pagination);
             } else {
+                console.log("[HomePage] No vehicles in response or incorrect structure");
                 setFeaturedVehicles([]);
                 setPagination({ currentPage: 1, totalPages: 1 });
             }
@@ -110,8 +113,10 @@ export default function CustomerDashboard() {
             } else {
                 parsedImages = [];
             }
+            console.log(`[HomePage] Images for vehicle ${vehicleId}:`, { raw: images, parsed: parsedImages });
             return parsedImages;
         } catch (e) {
+            console.log(`[HomePage] Failed to parse images for vehicle ${vehicleId}:`, e);
             return [];
         }
     };

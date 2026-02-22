@@ -159,31 +159,32 @@ export default function VehicleDetails() {
       return;
     }
 
-    // Use function declarations instead of arrow functions for Paystack compatibility
-    const onCloseHandler = function() {
-      console.log("Paystack payment closed");
-      setErrorMessage("Payment was cancelled");
+    try {
+      window.PaystackPop.setup({
+        key: paystackConfig.publicKey,
+        email: paystackConfig.email,
+        amount: paystackConfig.amount,
+        ref: paystackConfig.reference,
+        onClose: function() {
+          console.log("Paystack payment closed");
+          setErrorMessage("Payment was cancelled");
+          setLoading(false);
+        },
+        callback: function(response: any) {
+          console.log("Paystack payment callback:", response);
+          if (response && response.reference) {
+            handlePaymentSuccess(response.reference);
+          } else {
+            setErrorMessage("Payment verification failed");
+            setLoading(false);
+          }
+        }
+      }).openIframe();
+    } catch (error) {
+      console.error("Paystack setup error:", error);
+      setErrorMessage("Failed to open payment gateway: " + (error as any).message);
       setLoading(false);
-    };
-
-    const callbackHandler = function(response: any) {
-      console.log("Paystack payment callback:", response);
-      if (response && response.reference) {
-        handlePaymentSuccess(response.reference);
-      } else {
-        setErrorMessage("Payment verification failed");
-        setLoading(false);
-      }
-    };
-
-    window.PaystackPop.setup({
-      key: paystackConfig.publicKey,
-      email: paystackConfig.email,
-      amount: paystackConfig.amount,
-      ref: paystackConfig.reference,
-      onClose: onCloseHandler,
-      callback: callbackHandler
-    }).openIframe();
+    }
   };
 
   const handlePaymentSuccess = async (reference: string) => {
