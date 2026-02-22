@@ -91,11 +91,7 @@ const VehiclesPage: React.FC = () => {
       if (status && status !== 'All Status') params.append('status', status.toLowerCase());
       // Add owner filter to only show vehicles owned by current user
       params.append('ownerOnly', 'true');
-      const response = await apiClient.get(`/vehicles?${params.toString()}`, {
-        headers: {
-          'X-User-ID': String(user?.id) // Pass user ID to backend
-        }
-      });
+      const response = await apiClient.get(`/vehicles?${params.toString()}&userId=${encodeURIComponent(String(user?.id))}`);
       const data = response.data as { vehicles: Vehicle[] };
       setVehicles(data.vehicles || []);
     } catch (error) {
