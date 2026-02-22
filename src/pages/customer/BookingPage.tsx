@@ -126,7 +126,16 @@ export default function VehicleDetails() {
       return;
     }
 
-    if (!user || !user.email) {
+    // Check if user is logged in - also check localStorage as fallback
+    let currentUser = user;
+    if (!currentUser) {
+      const storedUser = localStorage.getItem('autofleet_user');
+      if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+      }
+    }
+
+    if (!currentUser || !currentUser.email) {
       setErrorMessage("Please ensure you are logged in");
       return;
     }
@@ -193,6 +202,19 @@ export default function VehicleDetails() {
       setLoading(true);
       const isForSale = vehicle?.listing_type === "sale";
       
+      // Get current user - check both context and localStorage
+      let currentUser = user;
+      if (!currentUser) {
+        const storedUser = localStorage.getItem('autofleet_user');
+        if (storedUser) {
+          currentUser = JSON.parse(storedUser);
+        }
+      }
+
+      if (!currentUser?.id) {
+        throw new Error('User not authenticated');
+      }
+      
       // Create booking first
       const bookingResponse = await apiClient.post('/bookings', {
         vehicle_id: vehicleId,
@@ -201,7 +223,7 @@ export default function VehicleDetails() {
         return_date: isForSale ? returnDate : returnDate, // For sale, this is purchase, not dates
         payment_method: 'paystack',
         total_amount: calculateTotalPrice(),
-        customer_id: user?.id,
+        customer_id: currentUser.id,
       });
 
       let bookingId;
@@ -326,7 +348,16 @@ export default function VehicleDetails() {
       return;
     }
 
-    if (!user || !user.email) {
+    // Check if user is logged in - also check localStorage as fallback
+    let currentUser = user;
+    if (!currentUser) {
+      const storedUser = localStorage.getItem('autofleet_user');
+      if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+      }
+    }
+
+    if (!currentUser || !currentUser.email) {
       setErrorMessage("Please ensure you are logged in");
       return;
     }
