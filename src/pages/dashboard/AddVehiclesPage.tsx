@@ -1,4 +1,4 @@
-import  { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Car, CheckCircle, XCircle } from 'lucide-react';
 import { apiClient, STATIC_BASE_URL } from "@/services/apiClient";
 import { useSettings } from '@/contexts/SettingContxt';
@@ -69,6 +69,7 @@ const VehiclesPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<VehicleForm>(initialForm);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
@@ -176,6 +177,8 @@ const VehiclesPage: React.FC = () => {
       setShowModal(false);
       setForm(initialForm);
       setEditingId(null); // Reset edit mode
+      setSuccessMessage(editingId ? 'Vehicle updated successfully!' : 'Vehicle added successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000);
       fetchVehicles();
     } catch (err: any) {
       const errorMsg =
@@ -228,26 +231,27 @@ const VehiclesPage: React.FC = () => {
   };
 
   const handleEditVehicle = (vehicle: Vehicle) => {
+    const v = vehicle as any; // Cast to access additional DB fields that might not be in the TS interface
     setForm({
       ...initialForm,
-      make: vehicle.make || '',
-      model: vehicle.model || '',
-      year: '', // Set if you have year in Vehicle
-      plateNumber: vehicle.license_plate || '',
-      category: vehicle.type || '',
-      color: '', // Set if you have color in Vehicle
-      seats: '', // Set if you have seats in Vehicle
-      transmission: '', // Set if you have transmission in Vehicle
-      fuelType: '', // Set if you have fuelType in Vehicle
-      dailyRate: vehicle.daily_rate ? String(vehicle.daily_rate) : '',
-      description: '', // Set if you have description in Vehicle
-      features: '', // Set if you have features in Vehicle
-      images: [],
-      locationLat: '', // Set if you have locationLat in Vehicle
-      locationLng: '', // Set if you have locationLng in Vehicle
-      locationAddress: vehicle.locationAddress || '',
-      listing_type: '', // Set if you have listing_type in Vehicle
-      selling_price: '', // Set if you have selling_price in Vehicle
+      make: v.make || '',
+      model: v.model || '',
+      year: v.year ? String(v.year) : '',
+      plateNumber: v.license_plate || '',
+      category: v.type || v.category || '',
+      color: v.color || '',
+      seats: v.seats ? String(v.seats) : '',
+      transmission: v.transmission || 'automatic',
+      fuelType: v.fuel_type || v.fuelType || 'gasoline',
+      dailyRate: v.daily_rate ? String(v.daily_rate) : '',
+      description: v.description || '',
+      features: v.features ? (Array.isArray(v.features) ? v.features.join(', ') : v.features) : '',
+      images: [], // Images are handled separately via upload
+      locationLat: v.location_lat || v.locationLat || '',
+      locationLng: v.location_lng || v.locationLng || '',
+      locationAddress: v.locationAddress || '',
+      listing_type: v.listing_type || 'rent',
+      selling_price: v.selling_price ? String(v.selling_price) : '',
     });
     setEditingId(vehicle.id); // <-- Track which vehicle is being edited
     setShowModal(true);
@@ -275,11 +279,22 @@ const VehiclesPage: React.FC = () => {
         </div>
         <button
           className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded-lg font-semibold flex items-center"
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setForm(initialForm);
+            setEditingId(null);
+            setShowModal(true);
+          }}
         >
           <Car className="w-5 h-5 mr-2" /> Add Vehicle
         </button>
       </div>
+
+      {successMessage && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-lg flex items-center">
+          <CheckCircle className="w-5 h-5 mr-2" />
+          {successMessage}
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex items-center gap-4 mb-6">
