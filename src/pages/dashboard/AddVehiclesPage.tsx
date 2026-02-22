@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Car, CheckCircle, XCircle } from 'lucide-react';
+import { Car, CheckCircle, XCircle, Sparkles, Loader2 } from 'lucide-react';
 import { apiClient, STATIC_BASE_URL } from "@/services/apiClient";
+import { aiService } from '@/services/aiService';
+
 import { useSettings } from '@/contexts/SettingContxt';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -76,6 +78,8 @@ const VehiclesPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('');
+  const [generatingDescription, setGeneratingDescription] = useState(false);
+
 
   useEffect(() => {
     fetchVehicles();
@@ -234,7 +238,37 @@ const VehiclesPage: React.FC = () => {
     }
   };
 
+  const handleAiGenerate = async () => {
+
+    if (!form.make || !form.model || !form.year) {
+      setUploadError('Please enter make, model, and year first to generate a description.');
+      return;
+    }
+
+    setGeneratingDescription(true);
+    try {
+      const description = await aiService.generateDescription({
+        make: form.make,
+        model: form.model,
+        year: form.year,
+        features: form.features
+      });
+
+      if (description) {
+        setForm(prev => ({ ...prev, description }));
+      } else {
+        setUploadError('AI generation failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('AI Generate Error:', err);
+      setUploadError('AI service error.');
+    } finally {
+      setGeneratingDescription(false);
+    }
+  };
+
   const handleEditVehicle = (vehicle: Vehicle) => {
+
     const v = vehicle as any; // Cast to access additional DB fields that might not be in the TS interface
     setForm({
       ...initialForm,
@@ -695,8 +729,24 @@ const VehiclesPage: React.FC = () => {
               </div>
               {/* Description */}
               <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Description</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium">Description</label>
+                  <button
+                    type="button"
+                    onClick={handleAiGenerate}
+                    disabled={generatingDescription}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-colors"
+                  >
+                    {generatingDescription ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3 h-3" />
+                    )}
+                    {generatingDescription ? 'Generating...' : 'AI Generate'}
+                  </button>
+                </div>
                 <textarea
+
                   name="description"
                   value={form.description}
                   onChange={handleInputChange}

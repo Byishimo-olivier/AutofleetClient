@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Car, ClipboardList, DollarSign, Plus, FileText, BarChart2 } from 'lucide-react';
+import { Car, ClipboardList, DollarSign, Plus, FileText, BarChart2, Sparkles, BrainCircuit } from 'lucide-react';
+import { aiService } from '@/services/aiService';
+
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from "recharts";
@@ -22,6 +24,9 @@ const DashboardPage: React.FC = () => {
     recentBookings: [],
   });
   const [loading, setLoading] = useState(true);
+  const [insights, setInsights] = useState<string[]>([]);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+
 
   useEffect(() => {
     setLoading(true);
@@ -48,6 +53,17 @@ const DashboardPage: React.FC = () => {
       })
       .finally(() => setLoading(false));
   }, []);
+
+  // Fetch AI Insights once stats are loaded
+  useEffect(() => {
+    if (!loading && stats.totalVehicles > 0) {
+      setInsightsLoading(true);
+      aiService.getInsights(stats)
+        .then(setInsights)
+        .finally(() => setInsightsLoading(false));
+    }
+  }, [loading, stats.totalVehicles]);
+
 
   const totalFleet =
     (stats.fleetStatus.available ?? 0) +
@@ -108,8 +124,36 @@ const DashboardPage: React.FC = () => {
         />
       </div>
 
+      {/* AI Insights Section */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100 p-4 md:p-6 mb-8 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-5 h-5 text-blue-600" />
+          <h2 className="text-lg font-bold text-gray-800">AI Fleet Insights</h2>
+        </div>
+
+        {insightsLoading ? (
+          <div className="flex items-center gap-3 text-sm text-gray-500 animate-pulse">
+            <BrainCircuit className="w-4 h-4 animate-spin" />
+            Generating smart insights for your fleet...
+          </div>
+        ) : insights.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {insights.map((insight, idx) => (
+              <div key={idx} className="flex items-start gap-3 bg-white/60 p-3 rounded-lg border border-blue-50">
+                <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="text-[10px] font-bold text-blue-600">{idx + 1}</span>
+                </div>
+                <p className="text-sm text-gray-700 leading-relaxed">{insight}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 italic">No insights available at the moment. Keep growing your fleet to see smart analytics!</p>
+        )}
+      </div>
 
       {/* Main Grid */}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Booking Trends */}
         <div className="bg-white rounded shadow p-4 md:p-6 lg:col-span-2">

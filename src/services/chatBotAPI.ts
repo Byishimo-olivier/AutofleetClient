@@ -1,5 +1,6 @@
 import { ChatBotResponse } from '../types/chatbot';
-import { API_BASE_URL } from './apiClient';
+import { API_BASE_URL, apiClient } from './apiClient';
+
 
 interface ConversationContext {
   messages: Array<{ role: 'user' | 'assistant', content: string, timestamp?: number }>;
@@ -53,60 +54,15 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
       awaitingConfirmation: false,
       userPreferences: new Map()
     };
-
-    // Initialize AI provider based on environment variables
-    this.initializeAIProvider();
-  }
-
-  /**
-   * Initialize AI provider based on available API keys
-   */
-  private initializeAIProvider(): void {
-    // Check for OpenAI API key first
-    if (import.meta.env.VITE_OPENAI_API_KEY) {
-      this.aiProvider = {
-        name: 'openai',
-        apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-        endpoint: 'https://api.openai.com/v1/chat/completions',
-        model: 'gpt-3.5-turbo'
-      };
-      console.log('🤖 Using OpenAI GPT');
-    }
-    // Check for Google Gemini API key
-    else if (import.meta.env.VITE_GOOGLE_API_KEY) {
-      this.aiProvider = {
-        name: 'gemini',
-        apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
-        endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
-        model: 'gemini-pro'
-      };
-      console.log('🤖 Using Google Gemini');
-    }
-    // Check for Anthropic Claude API key
-    else if (import.meta.env.VITE_ANTHROPIC_API_KEY) {
-      this.aiProvider = {
-        name: 'claude',
-        apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
-        endpoint: 'https://api.anthropic.com/v1/messages',
-        model: 'claude-3-sonnet-20240229'
-      };
-      console.log('🤖 Using Anthropic Claude');
-    }
-    else {
-      if (import.meta.env.PROD) {
-        console.warn(
-          '⚠️ No AI API keys found in production. The chatbot will use keyword-based fallback responses. ' +
-          'To enable AI, please add VITE_OPENAI_API_KEY, VITE_GOOGLE_API_KEY, or VITE_ANTHROPIC_API_KEY in your deployment platform.'
-        );
-      } else {
-        console.log('⚠️ No AI API key found, using fallback responses');
-      }
-    }
   }
 
   /**
    * Send message to AI API or fallback to keyword-based responses
    * Enhanced: Adds timestamp, sessionId to context, logs interactions
+   */
+  /**
+   * Send message to the backend AI API
+   * Moves AI processing to the server for security and better context management
    */
   async sendMessage(
     message: string,
@@ -118,47 +74,51 @@ Always be helpful, friendly, and concise. If you suggest navigation, include the
         throw new Error('Message cannot be empty');
       }
 
-      // Add user message to context with timestamp
+      // Add user message to local context for display
       this.addMessageToContext('user', message, Date.now());
-      this.context.sessionId = sessionId;
 
-      // Try AI API first, fallback to keyword-based if fails
-      if (this.aiProvider) {
-        try {
-          const aiResponse = await this.sendToAI(message, signal);
-          this.addMessageToContext('assistant', aiResponse.message, Date.now());
-          this.logInteraction(message, aiResponse.message, sessionId);
-          return aiResponse;
-        } catch (aiError) {
-          console.warn('AI API failed, falling back to keyword responses:', aiError);
-        }
+      // Prepare history for backend
+      const history = this.context.messages.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }]
+      }));
+
+      // Call backend AI route using the unified apiClient
+      const response = await apiClient.post<any>('/ai/chat', {
+        message,
+        sessionId,
+        history
+      });
+
+      if (!response.success) {
+        throw new Error(response.error || response.message || 'AI Backend error');
       }
 
-      // Fallback to keyword-based responses
-      const fallback = this.getFallbackResponse(message);
-      this.addMessageToContext('assistant', fallback.message, Date.now());
-      this.logInteraction(message, fallback.message, sessionId, true);
-      return fallback;
+      const aiData = response.data;
 
-    } catch (error) {
+
+      this.addMessageToContext('assistant', aiData.message, Date.now());
+      this.logInteraction(message, aiData.message, sessionId);
+
+      // Generate suggestions based on the response
+      const suggestions = this.generateSuggestions(aiData.message, aiData.navigationUrl);
+
+      return {
+        message: aiData.message,
+        navigationUrl: aiData.navigationUrl,
+        type: aiData.type,
+        suggestions
+      };
+
+    } catch (error: any) {
       console.error('Error in sendMessage:', error);
+
+      if (error.name === 'AbortError') throw error;
+
       const errResp = this.getErrorResponse();
       this.addMessageToContext('assistant', errResp.message, Date.now());
-      this.logInteraction(message, errResp.message, sessionId, true);
       return errResp;
     }
-  }
-
-  /**
-   * Send message to AI provider
-   */
-  private async sendToAI(message: string, signal?: AbortSignal): Promise<ChatBotResponse> {
-    if (!this.aiProvider) {
-      throw new Error('No AI provider configured');
-    }
-
-    const response = await this.callAIAPI(message, signal);
-    return this.parseAIResponse(response);
   }
 
   /**

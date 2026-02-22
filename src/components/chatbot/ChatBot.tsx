@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle, X, Send, Bot, User, Minimize2, Navigation, Globe2, Mic } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '@/contexts/SettingContxt';
+import { useAuth } from '@/contexts/AuthContext';
 import { chatBotAPI } from '@/services/chatBotAPI';
 
 interface Message {
@@ -20,13 +21,13 @@ interface ChatBotProps {
 }
 
 const LANGUAGES = ['English', 'Spanish', 'French', 'German'];
-const ROLES = ['Customer', 'Fleet Owner', 'Admin'];
 
-const ChatBot: React.FC<ChatBotProps> = ({ 
+const ChatBot: React.FC<ChatBotProps> = ({
   position = 'bottom-right',
-  theme = 'blue' 
+  theme = 'blue'
 }) => {
   const { settings } = useSettings();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -41,6 +42,20 @@ const ChatBot: React.FC<ChatBotProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Sync role with authenticated user
+  useEffect(() => {
+    if (user?.role) {
+      // Map backend roles to ChatBot display roles
+      const roleMap: Record<string, string> = {
+        'admin': 'Admin',
+        'owner': 'Fleet Owner',
+        'customer': 'Customer'
+      };
+      setRole(roleMap[user.role] || 'Customer');
+      setPersonalized(true);
+    }
+  }, [user]);
+
   // Get AI provider info on mount
   useEffect(() => {
     setAiProvider(chatBotAPI.getAIProvider());
@@ -49,17 +64,21 @@ const ChatBot: React.FC<ChatBotProps> = ({
   // Initial welcome message
   useEffect(() => {
     if (isOpen && messages.length === 0) {
+      const welcomeText = isAuthenticated && user
+        ? `Hi ${user.first_name || ''}! I'm your AutoFleet AI assistant. I'm ready to help you as a ${role}.`
+        : `Hi! I'm your AutoFleet AI assistant. Please type your message or select a language to get started.`;
+
       const welcomeMessage: Message = {
         id: '1',
-        text: `Hi! I'm your AutoFleet AI assistant${aiProvider !== 'keyword-fallback' ? ` powered by ${aiProvider.toUpperCase()}` : ''}.\n\nSelect your role and language to personalize your experience.`,
+        text: welcomeText,
         sender: 'bot',
         timestamp: new Date(),
         type: 'text',
-        suggestions: ROLES
+        suggestions: isAuthenticated ? getRoleSuggestions(role) : LANGUAGES
       };
       setMessages([welcomeMessage]);
     }
-  }, [isOpen, messages.length, aiProvider]);
+  }, [isOpen, messages.length, aiProvider, isAuthenticated, user, role]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -131,7 +150,7 @@ const ChatBot: React.FC<ChatBotProps> = ({
 
     } catch (error: any) {
       console.error('❌ ChatBot API error:', error);
-      
+
       if (error.name === 'AbortError') {
         console.log('🚫 Request was cancelled');
         return;
@@ -154,23 +173,8 @@ const ChatBot: React.FC<ChatBotProps> = ({
     }
   };
 
-  // Handle suggestion clicks (roles, booking, etc.)
+  // Handle suggestion clicks (languages, booking, etc.)
   const handleSuggestionClick = (suggestion: string) => {
-    if (ROLES.includes(suggestion)) {
-      setRole(suggestion);
-      setMessages(prev => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          text: `Role set to ${suggestion}. Please select your preferred language.`,
-          sender: 'bot',
-          timestamp: new Date(),
-          type: 'confirmation',
-          suggestions: LANGUAGES
-        }
-      ]);
-      return;
-    }
     if (LANGUAGES.includes(suggestion)) {
       setLanguage(suggestion);
       setMessages(prev => [
@@ -190,8 +194,8 @@ const ChatBot: React.FC<ChatBotProps> = ({
   };
 
   // Role-based quick suggestions
-  const getRoleSuggestions = (role: string) => {
-    switch (role) {
+  const getRoleSuggestions = (currentRole: string) => {
+    switch (currentRole) {
       case 'Customer':
         return ['Browse vehicles', 'View my bookings', 'Pricing info', 'Get support', 'Rent an SUV'];
       case 'Fleet Owner':
@@ -221,7 +225,7 @@ const ChatBot: React.FC<ChatBotProps> = ({
   const handleNavigation = (url: string) => {
     console.log('🧭 Navigating to:', url);
     navigate(url);
-    
+
     // Add confirmation message
     const confirmMessage: Message = {
       id: Date.now().toString(),
@@ -231,7 +235,7 @@ const ChatBot: React.FC<ChatBotProps> = ({
       type: 'text',
       suggestions: ['Yes, help me more', 'Browse vehicles', 'My bookings', 'Support']
     };
-    
+
     setMessages(prev => [...prev, confirmMessage]);
   };
 
@@ -288,9 +292,8 @@ const ChatBot: React.FC<ChatBotProps> = ({
 
   return (
     <div className={`fixed ${positionClasses[position]} z-50`}>
-      <div className={`${settings?.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-lg shadow-2xl border transition-all duration-300 ${
-        isMinimized ? 'w-80 h-16' : 'w-96 h-[600px]'
-      }`}>
+      <div className={`${settings?.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-lg shadow-2xl border transition-all duration-300 ${isMinimized ? 'w-80 h-16' : 'w-96 h-[600px]'
+        }`}>
         {/* Header */}
         <div className={`${themeClasses[theme]} text-white p-4 rounded-t-lg flex items-center justify-between`}>
           <div className="flex items-center gap-3">
@@ -348,24 +351,22 @@ const ChatBot: React.FC<ChatBotProps> = ({
               {messages.map((message) => (
                 <div key={message.id} className={`flex items-start gap-2 ${message.sender === 'bot' ? 'justify-start' : 'justify-end'}`}>
                   {message.sender === 'bot' && (
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      message.type === 'error' ? 'bg-red-100' : 'bg-blue-100'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${message.type === 'error' ? 'bg-red-100' : 'bg-blue-100'
+                      }`}>
                       <Bot className={`w-4 h-4 ${message.type === 'error' ? 'text-red-600' : 'text-blue-600'}`} />
                     </div>
                   )}
-                  
-                  <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
-                    message.sender === 'bot' 
-                      ? message.type === 'error'
-                        ? 'bg-red-50 text-red-800 border border-red-200'
-                        : settings?.darkMode 
-                          ? 'bg-gray-700 text-gray-100' 
-                          : 'bg-gray-100 text-gray-800'
-                      : themeClasses[theme].replace('hover:', '') + ' text-white'
-                  }`}>
+
+                  <div className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${message.sender === 'bot'
+                    ? message.type === 'error'
+                      ? 'bg-red-50 text-red-800 border border-red-200'
+                      : settings?.darkMode
+                        ? 'bg-gray-700 text-gray-100'
+                        : 'bg-gray-100 text-gray-800'
+                    : themeClasses[theme].replace('hover:', '') + ' text-white'
+                    }`}>
                     <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                    
+
                     {/* Navigation button */}
                     {message.navigationUrl && (
                       <button
@@ -376,12 +377,12 @@ const ChatBot: React.FC<ChatBotProps> = ({
                         Go there
                       </button>
                     )}
-                    
+
                     <p className="text-xs opacity-70 mt-1">
                       {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
-                  
+
                   {message.sender === 'user' && (
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${themeClasses[theme].replace('hover:', '')}`}>
                       <User className="w-4 h-4 text-white" />
@@ -389,7 +390,7 @@ const ChatBot: React.FC<ChatBotProps> = ({
                   )}
                 </div>
               ))}
-              
+
               {isTyping && (
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -405,7 +406,7 @@ const ChatBot: React.FC<ChatBotProps> = ({
                   </div>
                 </div>
               )}
-              
+
               <div ref={messagesEndRef} />
             </div>
 
@@ -418,11 +419,10 @@ const ChatBot: React.FC<ChatBotProps> = ({
                     <button
                       key={index}
                       onClick={() => handleSuggestionClick(suggestion)}
-                      className={`text-xs px-3 py-1 rounded-full transition-colors ${
-                        settings?.darkMode 
-                          ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' 
-                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                      }`}
+                      className={`text-xs px-3 py-1 rounded-full transition-colors ${settings?.darkMode
+                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        }`}
                     >
                       {suggestion}
                     </button>
@@ -441,11 +441,10 @@ const ChatBot: React.FC<ChatBotProps> = ({
                   onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage(inputValue)}
                   placeholder={`Ask me anything about AutoFleet... (${role}, ${language})`}
                   disabled={isTyping}
-                  className={`flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-50 ${
-                    settings?.darkMode 
-                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
-                  }`}
+                  className={`flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-50 ${settings?.darkMode
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
                 />
                 <button
                   onClick={() => handleSendMessage(inputValue)}
