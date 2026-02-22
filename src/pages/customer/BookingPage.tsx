@@ -165,7 +165,7 @@ export default function VehicleDetails() {
         email: paystackConfig.email,
         amount: paystackConfig.amount,
         ref: paystackConfig.reference,
-        channels: ['card', 'bank', 'ussd', 'mobile_money', 'bank_transfer'],
+        channels: ['card', 'mobile_money', 'bank_transfer', 'bank', 'ussd'],
         onClose: function() {
           console.log("Paystack payment closed");
           setErrorMessage("Payment was cancelled");
