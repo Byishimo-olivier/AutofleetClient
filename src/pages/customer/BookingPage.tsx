@@ -147,41 +147,27 @@ export default function VehicleDetails() {
   const initializePaypackPayment = async () => {
     try {
       const amount = calculateTotalPrice();
-      const reference = `autofleet-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       
-      console.log("🔐 Paypack Config being sent:", {
+      console.log("🔐 Initiating Paypack payment:", {
         amount,
         email: paypackConfig.email,
-        reference,
         currency: 'RWF'
       });
 
-      // Paypack API endpoint to initiate payment
-      const paypackResponse = await fetch('https://payments.paypack.rw/api/transactions/initiate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          amount: amount,
-          currency: 'RWF',
-          description: 'Autofleet Vehicle Booking',
-          client_name: paypackConfig.email,
-          client_email: paypackConfig.email,
-          callback_url: `${import.meta.env.VITE_API_URL}/bookings/verify-payment`,
-          reference: reference
-        })
+      // Call backend endpoint to initiate Paypack payment
+      const response = await apiClient.post('/bookings/initiate-payment', {
+        booking_id: vehicleId, // Use vehicle ID as reference since booking doesn't exist yet
+        amount: amount,
+        email: paypackConfig.email
       });
 
-      const paypackData = await paypackResponse.json();
-      
-      console.log("Paypack initiate response:", paypackData);
+      console.log("Paypack initiate response:", response);
 
-      if (paypackData.status === 'success' && paypackData.data?.payment_url) {
+      if (response.success && response.data?.payment_url) {
         // Redirect to Paypack payment page
-        window.location.href = paypackData.data.payment_url;
+        window.location.href = response.data.payment_url;
       } else {
-        setErrorMessage("Failed to initiate Paypack payment: " + (paypackData.message || 'Unknown error'));
+        setErrorMessage("Failed to initiate Paypack payment: " + (response.message || 'Unknown error'));
         setLoading(false);
       }
     } catch (error) {
