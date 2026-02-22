@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
@@ -16,6 +16,7 @@ import { useSettings } from '@/contexts/SettingContxt';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
+import React from "react";
 
 // Move type/interface definitions outside the component
 interface Vehicle {
@@ -191,7 +192,7 @@ export default function VehicleDetails() {
   };
 
   const getImageUrl = (img: string | undefined): string => {
-    if (!img) return "/placeholder.png";
+    if (!img) return 'https://placehold.co/600x400?text=No+Image';
     if (img.startsWith("http://") || img.startsWith("https://")) return img;
     const normalizedImg = img.startsWith("/") ? img : `/${img}`;
     return `${STATIC_BASE_URL}${normalizedImg}`;
@@ -364,7 +365,7 @@ export default function VehicleDetails() {
                   alt={vehicle.name}
                   className="w-full h-96 object-cover"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/placeholder.png";
+                    (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
                   }}
                 />
 

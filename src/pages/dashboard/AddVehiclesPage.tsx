@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import  { useEffect, useState } from 'react';
 import { Car, CheckCircle, XCircle } from 'lucide-react';
 import { apiClient, STATIC_BASE_URL } from "@/services/apiClient";
 import { useSettings } from '@/contexts/SettingContxt';
@@ -20,7 +20,28 @@ interface Vehicle {
   location_lng?: string;
 }
 
-const initialForm = {
+interface VehicleForm {
+  make: string;
+  model: string;
+  year: string;
+  plateNumber: string;
+  category: string;
+  color: string;
+  seats: string;
+  transmission: string;
+  fuelType: string;
+  dailyRate: string;
+  description: string;
+  features: string;
+  images: File[];
+  locationLat: string;
+  locationLng: string;
+  locationAddress: string;
+  listing_type: string;
+  selling_price: string;
+}
+
+const initialForm: VehicleForm = {
   make: '',
   model: '',
   year: '',
@@ -33,7 +54,7 @@ const initialForm = {
   dailyRate: '',
   description: '',
   features: '',
-  images: [] as File[],
+  images: [],
   locationLat: '',
   locationLng: '',
   locationAddress: '',
@@ -46,7 +67,7 @@ const VehiclesPage: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState<VehicleForm>(initialForm);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
@@ -90,7 +111,7 @@ const VehiclesPage: React.FC = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      setForm(prev => ({ ...prev, images: files }));
+      setForm(prev => ({ ...prev, images: files as File[] }));
       setUploadError(null);
     }
   };
@@ -330,7 +351,7 @@ const VehiclesPage: React.FC = () => {
                           alt={`${vehicle.make} ${vehicle.model}`}
                           className="w-full h-full object-cover"
                           onError={e => {
-                            (e.target as HTMLImageElement).src = '/placeholder.png';
+                            (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
                           }}
                         />
                       ) : (

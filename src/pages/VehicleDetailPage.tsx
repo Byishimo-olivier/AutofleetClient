@@ -10,7 +10,7 @@ interface GetImageUrlParam {
 }
 
 const getImageUrl = (img: string | GetImageUrlParam | null): string => {
-  if (!img || typeof img !== 'string') return '/placeholder.png';
+  if (!img || typeof img !== 'string') return 'https://placehold.co/600x400?text=No+Image';
   if (img.startsWith('http://') || img.startsWith('https://')) return img;
   const normalizedImg = img.startsWith('/') ? img : `/${img}`;
   return `${STATIC_BASE_URL}${normalizedImg}`;
@@ -126,7 +126,7 @@ const VehicleDetailPage: React.FC = () => {
                   src={getImageUrl(img)}
                   alt={`Vehicle image ${idx + 1}`}
                   className="w-full max-w-xs h-64 object-cover rounded-xl shadow-lg border"
-                  onError={e => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
+                  onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image'; }}
                 />
               )) : (
                 <img

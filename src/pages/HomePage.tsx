@@ -93,7 +93,7 @@ export default function CustomerDashboard() {
 
     // Updated helper function to construct image URLs correctly
     const getImageUrl = (img: string | null | undefined) => {
-        if (!img) return "/placeholder.png";
+        if (!img) return 'https://placehold.co/600x400?text=No+Image';
         if (img.startsWith("http://") || img.startsWith("https://")) return img;
         // Always ensure a single leading slash
         const normalizedImg = img.startsWith("/") ? img : `/${img}`;
@@ -277,7 +277,7 @@ export default function CustomerDashboard() {
                                             src={imageUrl}
                                             alt={vehicle.name}
                                             className="w-full h-56 object-cover"
-                                            onError={e => { (e.target as HTMLImageElement).src = "/placeholder.png"; }}
+                                            onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image'; }}
                                         />
                                         <span
                                             className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold ${vehicle.status === "Available"

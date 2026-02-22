@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { X, Star, Upload } from "lucide-react";
 import { apiClient, API_BASE_URL, STATIC_BASE_URL } from "@/services/apiClient";
 
@@ -351,7 +351,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
   };
 
   const getImageUrl = (img: string | null | undefined) => {
-    if (!img) return "/placeholder.png";
+    if (!img) return 'https://placehold.co/600x400?text=No+Image';
     if (img.startsWith("http://") || img.startsWith("https://")) return img;
     // Always ensure a single leading slash
     const normalizedImg = img.startsWith("/") ? img : `/${img}`;
@@ -363,7 +363,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
     if (images.length > 0) {
       return getImageUrl(images[0]);
     }
-    return "/placeholder.png";
+    return 'https://placehold.co/600x400?text=No+Image';
   };
 
   const parseVehicleImages = (images: any) => {
@@ -567,7 +567,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
                         alt={getVehicleName(booking)}
                         className="w-full h-full object-cover"
                         onError={e => {
-                          (e.target as HTMLImageElement).src = '/placeholder.png';
+                          (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
                         }}
                       />
                     );
@@ -662,7 +662,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
                         alt={getVehicleName(feedback)}
                         className="w-full h-full object-cover"
                         onError={e => {
-                          (e.target as HTMLImageElement).src = '/placeholder.png';
+                          (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
                         }}
                       />
                     );
@@ -839,7 +839,7 @@ const MyBookingsFeedbackPage: React.FC = () => {
                     alt={getVehicleName(selectedBooking)}
                     className="w-16 h-12 object-cover rounded-lg border border-gray-300"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/placeholder.png";
+                      (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
                     }}
                   />
                   <div>

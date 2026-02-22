@@ -466,7 +466,7 @@ const VehicleManagementPage: React.FC = () => {
   };
 
   const getImageUrl = (img: string | null | undefined) => {
-    if (!img) return "/placeholder.png";
+    if (!img) return 'https://placehold.co/600x400?text=No+Image';
     if (img.startsWith("http://") || img.startsWith("https://")) return img;
     // Always ensure a single leading slash
     const normalizedImg = img.startsWith("/") ? img : `/${img}`;
@@ -752,7 +752,7 @@ const VehicleManagementPage: React.FC = () => {
                                   alt={`${vehicle.make} ${vehicle.model}`}
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
-                                    (e.target as HTMLImageElement).src = '/placeholder.png';
+                                    (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
                                   }}
                                 />
                               );
