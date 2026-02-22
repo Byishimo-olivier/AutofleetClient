@@ -27,7 +27,11 @@ interface UserProfile {
   is_active?: boolean;
 }
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  onNavClick?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ onNavClick }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -198,7 +202,7 @@ const Sidebar: React.FC = () => {
   // Show loading screen during initial auth check
   if (isAuthenticated === null) {
     return (
-      <aside className="w-64 bg-[#2c3e7d] text-white flex flex-col shadow-lg">
+      <aside className="w-64 h-full bg-[#2c3e7d] text-white flex flex-col shadow-lg">
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
@@ -212,7 +216,7 @@ const Sidebar: React.FC = () => {
   // Don't render if not authenticated (will redirect)
   if (!isAuthenticated) {
     return (
-      <aside className="w-64 bg-[#2c3e7d] text-white flex flex-col shadow-lg">
+      <aside className="w-64 h-full bg-[#2c3e7d] text-white flex flex-col shadow-lg">
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <p className="text-gray-300 text-sm">Redirecting to login...</p>
@@ -223,7 +227,7 @@ const Sidebar: React.FC = () => {
   }
 
   return (
-    <aside className="w-64 bg-[#2c3e7d] text-white flex flex-col shadow-lg">
+    <aside className="w-64 h-full bg-[#2c3e7d] text-white flex flex-col shadow-lg">
       {/* Header */}
       <div className="px-4 py-6 border-b border-[#3d4f8f]">
         <h1 className="text-xl font-bold">AutoFleet Hub</h1>
@@ -334,7 +338,10 @@ const Sidebar: React.FC = () => {
                 ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg transform scale-105"
                 : "text-gray-300 hover:bg-[#3d4f8f] hover:text-white hover:transform hover:scale-105"
               }`}
-            onClick={() => navigate(item.to)}
+            onClick={() => {
+              navigate(item.to);
+              if (onNavClick) onNavClick();
+            }}
           >
             <div className={`p-1 rounded ${location.pathname === item.to ? 'bg-white/20' : ''}`}>
               {item.icon}

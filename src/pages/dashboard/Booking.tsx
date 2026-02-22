@@ -313,18 +313,18 @@ const BookingPage: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen ${settings?.darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen p-4 md:p-8 ${settings?.darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex-1 flex items-center">
-          <form onSubmit={handleSearch} className="relative">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center w-full lg:w-auto">
+          <form onSubmit={handleSearch} className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search bookings by ID, customer, or vehicle..."
-              className={`pl-10 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 w-96 shadow-sm transition-colors ${settings?.darkMode
-                  ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+              placeholder="Search bookings..."
+              className={`pl-10 pr-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500 w-full lg:w-96 shadow-sm transition-colors ${settings?.darkMode
+                ? 'bg-gray-800 border-gray-700 text-white placeholder-gray-400'
+                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                 }`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -333,23 +333,19 @@ const BookingPage: React.FC = () => {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className={`ml-4 p-3 rounded-lg transition-colors ${settings?.darkMode
-                ? 'bg-gray-800 hover:bg-gray-700 text-white'
-                : 'bg-white hover:bg-gray-50 text-gray-700'
+            className={`ml-3 p-3 rounded-lg transition-colors ${settings?.darkMode
+              ? 'bg-gray-800 hover:bg-gray-700 text-white'
+              : 'bg-white hover:bg-gray-50 text-gray-700'
               } border shadow-sm disabled:opacity-50`}
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 lg:gap-4 ml-auto lg:ml-0">
           <button className={`p-3 rounded-lg shadow-sm transition-colors ${settings?.darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'
             }`}>
             <Bell className="w-4 h-4" />
-          </button>
-          <button className={`p-3 rounded-lg shadow-sm transition-colors ${settings?.darkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-50'
-            }`}>
-            <Globe className="w-4 h-4" />
           </button>
           <div className={`rounded-lg px-4 py-2 flex items-center gap-2 shadow-sm ${settings?.darkMode ? 'bg-gray-800' : 'bg-white'
             }`}>
@@ -360,16 +356,16 @@ const BookingPage: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-8">
         <div className={`rounded-xl shadow-sm p-6 transition-colors ${settings?.darkMode ? 'bg-gray-800' : 'bg-white'
           }`}>
           <div className="flex items-center gap-4">
             <div className="bg-blue-100 rounded-full p-3">
               <ClipboardList className="w-6 h-6 text-blue-600" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Total Bookings</p>
-              <p className="text-2xl font-bold">{stats.totalBookings.toLocaleString()}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-500 font-medium truncate">Total Bookings</p>
+              <p className="text-xl md:text-2xl font-bold">{stats.totalBookings.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -380,9 +376,9 @@ const BookingPage: React.FC = () => {
             <div className="bg-green-100 rounded-full p-3">
               <Car className="w-6 h-6 text-green-600" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Active Bookings</p>
-              <p className="text-2xl font-bold">{stats.activeBookings.toLocaleString()}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-500 font-medium truncate">Active Bookings</p>
+              <p className="text-xl md:text-2xl font-bold">{stats.activeBookings.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -393,9 +389,9 @@ const BookingPage: React.FC = () => {
             <div className="bg-yellow-100 rounded-full p-3">
               <Clock className="w-6 h-6 text-yellow-600" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Pending Approval</p>
-              <p className="text-2xl font-bold">{stats.pendingBookings.toLocaleString()}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-500 font-medium truncate">Pending Approval</p>
+              <p className="text-xl md:text-2xl font-bold">{stats.pendingBookings.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -406,9 +402,9 @@ const BookingPage: React.FC = () => {
             <div className="bg-purple-100 rounded-full p-3">
               <DollarSign className="w-6 h-6 text-purple-600" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Total Revenue</p>
-              <p className="text-2xl font-bold">{formatPrice ? formatPrice(stats.totalRevenue) : `₣${stats.totalRevenue.toLocaleString()}`}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-500 font-medium truncate">Total Revenue</p>
+              <p className="text-xl md:text-2xl font-bold truncate">{formatPrice ? formatPrice(stats.totalRevenue) : `₣${stats.totalRevenue.toLocaleString()}`}</p>
             </div>
           </div>
         </div>
@@ -419,9 +415,9 @@ const BookingPage: React.FC = () => {
             <div className="bg-indigo-100 rounded-full p-3">
               <BarChart2 className="w-6 h-6 text-indigo-600" />
             </div>
-            <div>
-              <p className="text-sm text-gray-500 font-medium">Ongoing Bookings</p>
-              <p className="text-2xl font-bold">{stats.ongoingBookings.toLocaleString()}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-gray-500 font-medium truncate">Ongoing Bookings</p>
+              <p className="text-xl md:text-2xl font-bold">{stats.ongoingBookings.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -441,8 +437,8 @@ const BookingPage: React.FC = () => {
             <input
               type="date"
               className={`border rounded-lg px-3 py-2 text-sm outline-none transition-colors ${settings?.darkMode
-                  ? 'bg-gray-700 border-gray-600 text-white'
-                  : 'bg-gray-50 border-gray-300 text-gray-900'
+                ? 'bg-gray-700 border-gray-600 text-white'
+                : 'bg-gray-50 border-gray-300 text-gray-900'
                 }`}
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
@@ -451,8 +447,8 @@ const BookingPage: React.FC = () => {
             <input
               type="date"
               className={`border rounded-lg px-3 py-2 text-sm outline-none transition-colors ${settings?.darkMode
-                  ? 'bg-gray-700 border-gray-600 text-white'
-                  : 'bg-gray-50 border-gray-300 text-gray-900'
+                ? 'bg-gray-700 border-gray-600 text-white'
+                : 'bg-gray-50 border-gray-300 text-gray-900'
                 }`}
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
@@ -465,10 +461,10 @@ const BookingPage: React.FC = () => {
                 key={filter}
                 type="button"
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${status === filter
-                    ? "bg-blue-600 text-white shadow-md"
-                    : settings?.darkMode
-                      ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? "bg-blue-600 text-white shadow-md"
+                  : settings?.darkMode
+                    ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 onClick={() => handleStatusChange(filter)}
               >
@@ -613,8 +609,8 @@ const BookingPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <button
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${settings?.darkMode
-                      ? 'bg-gray-700 hover:bg-gray-600 text-white'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                     }`}
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
@@ -627,10 +623,10 @@ const BookingPage: React.FC = () => {
                     <button
                       key={page}
                       className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${currentPage === page
-                          ? "bg-blue-600 text-white"
-                          : settings?.darkMode
-                            ? "bg-gray-700 hover:bg-gray-600 text-white"
-                            : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                        ? "bg-blue-600 text-white"
+                        : settings?.darkMode
+                          ? "bg-gray-700 hover:bg-gray-600 text-white"
+                          : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                         }`}
                       onClick={() => setCurrentPage(page)}
                     >
@@ -640,8 +636,8 @@ const BookingPage: React.FC = () => {
                 })}
                 <button
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${settings?.darkMode
-                      ? 'bg-gray-700 hover:bg-gray-600 text-white'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                    ? 'bg-gray-700 hover:bg-gray-600 text-white'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                     }`}
                   disabled={currentPage === totalPages}
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}

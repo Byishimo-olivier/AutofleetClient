@@ -11,9 +11,8 @@ function SidebarNavItem({ icon, label, to, active = false }: { icon: React.React
   const navigate = useNavigate();
   return (
     <div
-      className={`flex items-center px-4 py-2.5 rounded-lg cursor-pointer transition text-sm ${
-        active ? "bg-[#3d4f8f]" : "hover:bg-[#3d4f8f]/50"
-      }`}
+      className={`flex items-center px-4 py-2.5 rounded-lg cursor-pointer transition text-sm ${active ? "bg-[#3d4f8f]" : "hover:bg-[#3d4f8f]/50"
+        }`}
       onClick={() => navigate(to)}
     >
       {icon}
@@ -52,17 +51,17 @@ const AnalyticsPage: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Main Content */}
-      <div className="flex-1 p-8">
+      <div className="flex-1 p-4 md:p-8">
         {loading ? (
-          <div className="text-center text-gray-500">Loading analytics...</div>
+          <div className="text-center text-gray-500 py-12">Loading analytics...</div>
         ) : error ? (
-          <div className="text-center text-red-500">{error}</div>
+          <div className="text-center text-red-500 py-12">{error}</div>
         ) : (
           <>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
               {stats.map((stat, i) => (
-                <div key={i} className="bg-white rounded-lg shadow flex items-center px-6 py-4 gap-4">
+                <div key={i} className="bg-white rounded-lg shadow flex items-center px-4 md:px-6 py-4 gap-4">
                   <div className="bg-gray-100 rounded-full p-3">
                     {stat.label === "Total Revenue" && <FileText className="w-5 h-5 text-blue-500" />}
                     {stat.label === "Total Bookings" && <ClipboardList className="w-5 h-5 text-green-500" />}
@@ -78,9 +77,9 @@ const AnalyticsPage: React.FC = () => {
             </div>
 
             {/* Charts */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
               {/* Revenue by Vehicle */}
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white rounded-lg shadow p-4 md:p-6">
                 <div className="flex items-center justify-between mb-2">
                   <div className="font-semibold text-sm">Revenue by Vehicle</div>
                   <select className="border rounded px-2 py-1 text-xs bg-gray-50">
@@ -101,7 +100,7 @@ const AnalyticsPage: React.FC = () => {
                 </div>
               </div>
               {/* Bookings per Vehicle */}
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white rounded-lg shadow p-4 md:p-6">
                 <div className="flex items-center justify-between mb-2">
                   <div className="font-semibold text-sm">Bookings per Vehicle</div>
                   <select className="border rounded px-2 py-1 text-xs bg-gray-50">
@@ -128,61 +127,63 @@ const AnalyticsPage: React.FC = () => {
             </div>
 
             {/* Detailed Vehicle Performance Table */}
-            <div className="bg-white rounded-xl shadow-lg p-0 overflow-x-auto">
-              <div className="font-semibold text-sm px-6 pt-6 pb-2">Detailed Vehicle Performance</div>
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Vehicle</th>
-                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Revenue</th>
-                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Bookings</th>
-                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Utilization</th>
-                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Avg Rating</th>
-                    <th className="px-6 py-3 text-left font-semibold text-gray-700">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {vehicles.map((v: any, i: number) => (
-                    <tr key={i} className="border-b last:border-b-0">
-                      <td className="px-6 py-4 flex items-center gap-2">
-                        <span className={`inline-block w-3 h-3 rounded-full bg-blue-500`}></span>
-                        <div>
-                          <div className="font-medium">{v.name}</div>
-                          <div className="text-xs text-gray-500">{v.type}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">{v.revenue}</td>
-                      <td className="px-6 py-4">{v.bookings}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-24 h-2 bg-gray-200 rounded">
-                            <div
-                              className="h-2 rounded bg-blue-500"
-                              style={{ width: `${v.utilization}%` }}
-                            />
-                          </div>
-                          <span className="text-xs">{v.utilization}%</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 flex items-center gap-1">
-                        <span className="font-semibold">{v.rating}</span>
-                        <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-700">
-                          {v.status}
-                        </span>
-                      </td>
+            <div className="bg-white rounded-xl shadow-lg p-0 overflow-hidden">
+              <div className="font-semibold text-sm px-4 md:px-6 pt-6 pb-2">Detailed Vehicle Performance</div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="px-6 py-3 text-left font-semibold text-gray-700">Vehicle</th>
+                      <th className="px-6 py-3 text-left font-semibold text-gray-700">Revenue</th>
+                      <th className="px-6 py-3 text-left font-semibold text-gray-700">Bookings</th>
+                      <th className="px-6 py-3 text-left font-semibold text-gray-700">Utilization</th>
+                      <th className="px-6 py-3 text-left font-semibold text-gray-700">Avg Rating</th>
+                      <th className="px-6 py-3 text-left font-semibold text-gray-700">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {vehicles.map((v: any, i: number) => (
+                      <tr key={i} className="border-b last:border-b-0">
+                        <td className="px-6 py-4 flex items-center gap-2">
+                          <span className={`inline-block w-3 h-3 rounded-full bg-blue-500`}></span>
+                          <div>
+                            <div className="font-medium">{v.name}</div>
+                            <div className="text-xs text-gray-500">{v.type}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">{v.revenue}</td>
+                        <td className="px-6 py-4">{v.bookings}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-24 h-2 bg-gray-200 rounded">
+                              <div
+                                className="h-2 rounded bg-blue-500"
+                                style={{ width: `${v.utilization}%` }}
+                              />
+                            </div>
+                            <span className="text-xs">{v.utilization}%</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 flex items-center gap-1">
+                          <span className="font-semibold">{v.rating}</span>
+                          <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="px-3 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-700">
+                            {v.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               {/* Export Buttons */}
-              <div className="flex justify-end gap-4 px-6 py-4">
-                <button className="px-6 py-2 rounded bg-blue-900 text-white font-semibold shadow hover:bg-blue-800">
+              <div className="flex flex-col sm:flex-row justify-end gap-3 md:gap-4 px-4 md:px-6 py-4">
+                <button className="px-6 py-2 rounded bg-blue-900 text-white font-semibold shadow hover:bg-blue-800 text-sm">
                   Export PDF
                 </button>
-                <button className="px-6 py-2 rounded bg-blue-100 text-blue-900 font-semibold shadow hover:bg-blue-200">
+                <button className="px-6 py-2 rounded bg-blue-100 text-blue-900 font-semibold shadow hover:bg-blue-200 text-sm">
                   Export CSV
                 </button>
               </div>

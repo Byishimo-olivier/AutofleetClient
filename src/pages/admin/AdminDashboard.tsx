@@ -273,13 +273,13 @@ const AdminDashboard: React.FC = () => {
   return (
     <div className={`flex-1 ${settings.darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
       {/* Top search bar */}
-      <div className="p-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="p-4 md:p-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div className="flex-1 flex items-center">
             <input
               type="text"
               placeholder="Search ..."
-              className={`px-4 py-2 rounded-lg border focus:outline-none focus:ring w-80 shadow-sm ${settings.darkMode
+              className={`px-4 py-2 rounded-lg border focus:outline-none focus:ring w-full md:w-80 shadow-sm ${settings.darkMode
                 ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                 : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
                 }`}
@@ -305,17 +305,17 @@ const AdminDashboard: React.FC = () => {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
           {stats.map((stat, i) => (
-            <div key={i} className={`rounded-lg shadow flex items-center px-6 py-4 gap-4 ${settings.darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-              <div className={`rounded-full p-3 ${settings.darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>{stat.icon}</div>
-              <div>
-                <div className={`text-xs ${settings.darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{stat.label}</div>
-                <div className={`text-2xl font-bold flex items-center ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
+            <div key={i} className={`rounded-lg shadow flex items-center px-4 md:px-6 py-4 gap-4 ${settings.darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+              <div className={`rounded-full p-2 md:p-3 ${settings.darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>{stat.icon}</div>
+              <div className="min-w-0 flex-1">
+                <div className={`text-xs truncate ${settings.darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{stat.label}</div>
+                <div className={`text-xl md:text-2xl font-bold flex items-center flex-wrap gap-1 ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
                   {stat.value}
                   {stat.badge}
                 </div>
-                <div className={`text-xs ${stat.changeColor}`}>{stat.change}</div>
+                <div className={`text-[10px] md:text-xs ${stat.changeColor} truncate`}>{stat.change}</div>
               </div>
             </div>
           ))}
@@ -324,7 +324,7 @@ const AdminDashboard: React.FC = () => {
         {/* Quick Actions */}
         <div className="mb-6">
           <div className={`font-semibold mb-2 ${settings.darkMode ? 'text-gray-200' : 'text-gray-700'}`}>Quick Actions</div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {quickActions.map((action, i) => (
               <button
                 key={i}
@@ -343,14 +343,14 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Trends & Top Rented */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Bookings & Revenue Trends */}
-          <div className={`col-span-2 rounded-xl shadow-lg p-6 ${settings.darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <div className={`lg:col-span-2 rounded-xl shadow-lg p-4 md:p-6 ${settings.darkMode ? 'bg-gray-800' : 'bg-white'}`}>
             <div className={`font-semibold mb-3 flex items-center ${settings.darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
               <BarChart2 className="w-5 h-5 mr-2 text-blue-600" />
               Bookings & Revenue Trends
             </div>
-            <div className="h-72">
+            <div className="h-48 md:h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={trendsData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={settings.darkMode ? '#374151' : '#e5e7eb'} />

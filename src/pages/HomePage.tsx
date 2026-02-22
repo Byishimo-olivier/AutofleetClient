@@ -146,24 +146,24 @@ export default function HomePage() {
             <main className="max-w-7xl mx-auto px-6 space-y-20">
 
                 {/* Header Area */}
-                <div className="flex flex-col gap-6 pt-4">
-                    <div className={`inline-flex items-center px-5 py-2.5 rounded-full w-fit ${neuCardInset}`}>
-                        <span className={`text-sm font-bold tracking-widest uppercase ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                <div className="flex flex-col gap-4 md:gap-6 pt-0 md:pt-4">
+                    <div className={`inline-flex items-center px-4 md:px-5 py-2 rounded-full w-fit ${neuCardInset}`}>
+                        <span className={`text-xs md:text-sm font-bold tracking-widest uppercase ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                             Customer Portal
                         </span>
                     </div>
-                    <h1 className={`text-5xl lg:text-6xl font-black tracking-tight leading-tight ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                    <h1 className={`text-4xl md:text-6xl font-black tracking-tight leading-tight ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
                         Dashboard
                     </h1>
-                    <p className="text-xl font-medium max-w-2xl">
+                    <p className="text-lg md:text-xl font-medium max-w-2xl">
                         Find and reserve your premium vehicle effortlessly with our soft tactile interface.
                     </p>
                 </div>
 
                 {/* Neumorphic Filter Panel */}
-                <div className={`p-8 md:p-10 rounded-[2.5rem] ${neuCardFlat}`}>
+                <div className={`p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] ${neuCardFlat}`}>
                     <form
-                        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-6"
+                        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 md:gap-6"
                         onSubmit={e => { e.preventDefault(); setCurrentPage(1); }}
                     >
                         {/* Search Field */}
@@ -191,25 +191,26 @@ export default function HomePage() {
                         </div>
 
                         {/* Date Fields Container */}
-                        <div className={`flex items-center xl:col-span-2 rounded-2xl px-4 h-14 ${neuCardInset}`}>
-                            <Calendar className={`w-5 h-5 ${isDark ? 'text-gray-500' : 'text-gray-400'} mr-3 shrink-0`} />
-                            <div className="flex-1 flex items-center justify-between min-w-0 h-full">
+                        <div className={`flex flex-col sm:flex-row items-center xl:col-span-2 rounded-2xl p-2 sm:px-4 sm:h-14 gap-2 sm:gap-0 ${neuCardInset}`}>
+                            <div className="flex items-center w-full min-w-0">
+                                <Calendar className={`w-5 h-5 ${isDark ? 'text-gray-500' : 'text-gray-400'} mr-3 shrink-0`} />
                                 <input
                                     type="date"
-                                    className={`w-full h-full bg-transparent text-sm font-bold focus:outline-none ${isDark ? 'text-white' : 'text-gray-900'} [color-scheme:dark] dark:[color-scheme:dark]`}
+                                    className={`w-full h-10 sm:h-full bg-transparent text-sm font-bold focus:outline-none ${isDark ? 'text-white' : 'text-gray-900'} [color-scheme:dark] dark:[color-scheme:dark]`}
                                     value={pickupDate}
                                     onChange={e => setPickupDate(e.target.value)}
                                     style={{ colorScheme: isDark ? 'dark' : 'light' }}
                                 />
-                                <div className={`w-[2px] h-6 mx-3 shrink-0 rounded-full ${isDark ? 'bg-[#14151a]' : 'bg-[#a3b1c6]'}`} />
-                                <input
-                                    type="date"
-                                    className={`w-full h-full bg-transparent text-sm font-bold focus:outline-none ${isDark ? 'text-white' : 'text-gray-900'} [color-scheme:dark] dark:[color-scheme:dark]`}
-                                    value={returnDate}
-                                    onChange={e => setReturnDate(e.target.value)}
-                                    style={{ colorScheme: isDark ? 'dark' : 'light' }}
-                                />
                             </div>
+                            <div className={`hidden sm:block w-[2px] h-6 mx-3 shrink-0 rounded-full ${isDark ? 'bg-[#14151a]' : 'bg-[#a3b1c6]'}`} />
+                            <div className="sm:hidden w-full h-[1px] bg-gray-600/20" />
+                            <input
+                                type="date"
+                                className={`w-full h-10 sm:h-full bg-transparent text-sm font-bold focus:outline-none sm:pl-0 pl-8 ${isDark ? 'text-white' : 'text-gray-900'} [color-scheme:dark] dark:[color-scheme:dark]`}
+                                value={returnDate}
+                                onChange={e => setReturnDate(e.target.value)}
+                                style={{ colorScheme: isDark ? 'dark' : 'light' }}
+                            />
                         </div>
 
                         {/* Submit Button */}
@@ -245,8 +246,8 @@ export default function HomePage() {
                 </div>
 
                 {/* Vehicle Grid Header */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-10">
-                    <h2 className={`text-4xl font-black ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pt-10">
+                    <h2 className={`text-3xl md:text-4xl font-black ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
                         Available Fleet
                     </h2>
                     <div>
@@ -310,8 +311,8 @@ export default function HomePage() {
 
                                         <div className="absolute top-6 left-6 right-6 flex justify-between items-start pointer-events-none z-10">
                                             <span className={`px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest ${neuCardFlat} ${vehicle.status === "Available"
-                                                    ? "text-emerald-500"
-                                                    : "text-rose-500"
+                                                ? "text-emerald-500"
+                                                : "text-rose-500"
                                                 }`}>
                                                 {vehicle.status}
                                             </span>
@@ -376,25 +377,25 @@ export default function HomePage() {
 
                 {/* Pagination */}
                 {!loading && pagination.totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-6 mt-20">
+                    <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mt-12 md:mt-20">
                         <button
-                            className={`p-4 rounded-xl disabled:opacity-50 disabled:shadow-none ${neuCardFlat} ${neuButtonHoverShadow} ${neuButtonActiveShadow}`}
+                            className={`p-3 md:p-4 rounded-xl disabled:opacity-50 disabled:shadow-none ${neuCardFlat} ${neuButtonHoverShadow} ${neuButtonActiveShadow}`}
                             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                             disabled={pagination.currentPage === 1}
                         >
-                            <ChevronLeft className="w-6 h-6" />
+                            <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
                         </button>
 
-                        <div className={`flex gap-3 p-3 rounded-2xl ${neuCardInset}`}>
+                        <div className={`flex flex-wrap gap-2 md:gap-3 p-2 md:p-3 rounded-2xl ${neuCardInset}`}>
                             {Array.from({ length: pagination.totalPages }, (_, i) => {
                                 const isCurrent = currentPage === i + 1;
                                 return (
                                     <button
                                         key={i + 1}
                                         onClick={() => setCurrentPage(i + 1)}
-                                        className={`w-12 h-12 rounded-xl font-black text-lg transition-all ${isCurrent
-                                                ? `${neuCardInset} ${isDark ? 'text-blue-400' : 'text-blue-600'}`
-                                                : `${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'}`
+                                        className={`w-10 h-10 md:w-12 md:h-12 rounded-xl font-black text-base md:text-lg transition-all ${isCurrent
+                                            ? `${neuCardInset} ${isDark ? 'text-blue-400' : 'text-blue-600'}`
+                                            : `${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'}`
                                             }`}
                                     >
                                         {i + 1}
@@ -404,11 +405,11 @@ export default function HomePage() {
                         </div>
 
                         <button
-                            className={`p-4 rounded-xl disabled:opacity-50 disabled:shadow-none ${neuCardFlat} ${neuButtonHoverShadow} ${neuButtonActiveShadow}`}
+                            className={`p-3 md:p-4 rounded-xl disabled:opacity-50 disabled:shadow-none ${neuCardFlat} ${neuButtonHoverShadow} ${neuButtonActiveShadow}`}
                             onClick={() => setCurrentPage((p) => Math.min(p + 1, pagination.totalPages))}
                             disabled={pagination.currentPage === pagination.totalPages}
                         >
-                            <ChevronRight className="w-6 h-6" />
+                            <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
                         </button>
                     </div>
                 )}

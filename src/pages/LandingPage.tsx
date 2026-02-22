@@ -34,15 +34,15 @@ export default function LandingPage() {
         <div className={`min-h-screen font-sans ${bgClass}`}>
 
             {/* Neumorphic Header */}
-            <header className={`fixed top-0 inset-x-0 z-50 h-24 flex items-center ${bgClass}`}>
-                <div className="max-w-7xl mx-auto px-6 w-full flex items-center justify-between">
+            <header className={`fixed top-0 inset-x-0 z-50 h-20 md:h-24 flex items-center ${bgClass}`}>
+                <div className="max-w-7xl mx-auto px-4 md:px-6 w-full flex items-center justify-between">
 
                     {/* Brand */}
-                    <div className={`flex items-center gap-4 px-6 py-3 rounded-full ${neuCardFlat}`}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${neuCardInset}`}>
+                    <div className={`flex items-center gap-2 md:gap-4 px-4 md:px-6 py-2 md:py-3 rounded-full ${neuCardFlat}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${neuCardInset}`}>
                             <Car className={`w-4 h-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
                         </div>
-                        <span className={`text-xl font-extrabold tracking-tight ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                        <span className={`text-lg md:text-xl font-extrabold tracking-tight ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
                             AutoFleet
                         </span>
                     </div>
@@ -55,19 +55,19 @@ export default function LandingPage() {
                     </nav>
 
                     {/* Auth & CTA */}
-                    <div className="flex items-center gap-6">
-                        <Link to="/login" className="font-semibold px-4">
+                    <div className="flex items-center gap-3 md:gap-6">
+                        <Link to="/login" className="font-semibold px-2 md:px-4 text-sm md:text-base">
                             Sign In
                         </Link>
-                        <Link to="/home" className={`px-8 py-3 rounded-full font-bold flex items-center gap-2 ${neuCardFlat} active:${neuCardInset} ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
-                            Explore Fleet
+                        <Link to="/home" className={`px-4 md:px-8 py-2 md:py-3 rounded-full font-bold flex items-center gap-2 text-sm md:text-base ${neuCardFlat} active:${neuCardInset} ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                            Explore <span className="hidden sm:inline">Fleet</span>
                         </Link>
                     </div>
                 </div>
             </header>
 
             {/* Metamorphism Hero Section */}
-            <main className="pt-40 lg:pt-48 pb-20 px-6 overflow-hidden">
+            <main className="pt-32 lg:pt-48 pb-12 md:pb-20 px-4 md:px-6 overflow-hidden">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid lg:grid-cols-2 gap-16 items-center">
 
@@ -79,7 +79,7 @@ export default function LandingPage() {
                                 </span>
                             </div>
 
-                            <h1 className={`text-5xl lg:text-7xl font-black tracking-tighter leading-[1.1] ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                            <h1 className={`text-4xl md:text-5xl lg:text-7xl font-black tracking-tighter leading-[1.1] ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
                                 Rent Your <br />
                                 Next Vehicle <br />
                                 <span className={isDark ? 'text-blue-400' : 'text-blue-600'}>With Ease.</span>
@@ -90,9 +90,9 @@ export default function LandingPage() {
                             </p>
 
                             <div className="flex items-center gap-6 pt-4">
-                                <Link to="/home" className={`flex items-center gap-3 px-10 py-5 rounded-2xl font-black text-lg ${neuCardFlat} active:${neuCardInset} transition-all`}>
+                                <Link to="/home" className={`flex items-center gap-3 px-6 md:px-10 py-4 md:py-5 rounded-2xl font-black text-base md:text-lg ${neuCardFlat} active:${neuCardInset} transition-all`}>
                                     <span className={isDark ? 'text-blue-400' : 'text-blue-600'}>Browse Fleet</span>
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${neuCardInset}`}>
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${neuCardInset}`}>
                                         <ArrowRight className={`w-4 h-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
                                     </div>
                                 </Link>
@@ -115,10 +115,10 @@ export default function LandingPage() {
             </main>
 
             {/* How It Works Section */}
-            <section id="how-it-works" className="py-24">
-                <div className="max-w-7xl mx-auto px-6">
-                    <div className="text-center mb-16">
-                        <h2 className={`text-4xl font-extrabold mb-6 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Simple, Soft Process</h2>
+            <section id="how-it-works" className="py-12 md:py-24">
+                <div className="max-w-7xl mx-auto px-4 md:px-6">
+                    <div className="text-center mb-12 md:mb-16">
+                        <h2 className={`text-3xl md:text-4xl font-extrabold mb-4 md:mb-6 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Simple, Soft Process</h2>
                         <p className="max-w-2xl mx-auto text-lg font-medium">
                             We have optimized the booking flow so you can secure your vehicle in just a few smooth tactile clicks.
                         </p>
@@ -155,10 +155,10 @@ export default function LandingPage() {
             </section>
 
             {/* App-like CTA Section */}
-            <section className="py-32 px-6">
+            <section className="py-20 md:py-32 px-4 md:px-6">
                 <div className="max-w-4xl mx-auto">
-                    <div className={`p-16 rounded-[3rem] ${neuCardInset} text-center flex flex-col items-center gap-8`}>
-                        <h2 className={`text-4xl md:text-5xl font-black ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Ready to drive?</h2>
+                    <div className={`p-8 md:p-16 rounded-[2rem] md:rounded-[3rem] ${neuCardInset} text-center flex flex-col items-center gap-6 md:gap-8`}>
+                        <h2 className={`text-3xl md:text-5xl font-black ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>Ready to drive?</h2>
                         <p className="text-xl font-medium max-w-2xl">
                             Join thousands of satisfied customers and experience the most reliable soft-UI vehicle rental platform today.
                         </p>

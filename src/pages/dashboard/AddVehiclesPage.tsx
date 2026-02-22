@@ -274,15 +274,15 @@ const VehiclesPage: React.FC = () => {
   }
 
   return (
-    <div className="p-8 bg-gray-50 min-h-screen">
+    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Vehicle Management</h1>
-          <p className="text-gray-600 mt-1">Manage your fleet of vehicles</p>
+          <h1 className="text-xl md:text-2xl font-bold text-gray-800">Vehicle Management</h1>
+          <p className="text-gray-600 text-sm mt-1">Manage your fleet of vehicles</p>
         </div>
         <button
-          className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded-lg font-semibold flex items-center"
+          className="w-full sm:w-auto bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded-lg font-semibold flex items-center justify-center"
           onClick={() => {
             setForm(initialForm);
             setEditingId(null);
@@ -301,16 +301,16 @@ const VehiclesPage: React.FC = () => {
       )}
 
       {/* Filters */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex flex-wrap items-center gap-3 md:gap-4 mb-6">
         <input
           type="text"
           placeholder="Search vehicles..."
-          className="px-4 py-2 border border-gray-300 rounded-lg w-64"
+          className="px-4 py-2 border border-gray-300 rounded-lg flex-1 min-w-[200px]"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
         <select
-          className="px-4 py-2 border border-gray-300 rounded-lg"
+          className="px-4 py-2 border border-gray-300 rounded-lg flex-1 sm:flex-none"
           value={category}
           onChange={e => setCategory(e.target.value)}
         >
@@ -321,7 +321,7 @@ const VehiclesPage: React.FC = () => {
           <option>Truck</option>
         </select>
         <select
-          className="px-4 py-2 border border-gray-300 rounded-lg"
+          className="px-4 py-2 border border-gray-300 rounded-lg flex-1 sm:flex-none"
           value={status}
           onChange={e => setStatus(e.target.value)}
         >
@@ -475,7 +475,7 @@ const VehiclesPage: React.FC = () => {
           }}
         >
           <div
-            className="bg-white rounded-xl shadow-lg w-full max-w-xl max-h-[90vh] overflow-y-auto p-8 relative"
+            className="bg-white rounded-xl shadow-lg w-full max-w-xl max-h-[90vh] overflow-y-auto p-4 md:p-8 relative m-4"
             style={{ boxSizing: 'border-box' }}
           >
             <button
@@ -499,7 +499,7 @@ const VehiclesPage: React.FC = () => {
             )}
 
             <form onSubmit={handleAddVehicle}>
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 {/* Make */}
                 <div>
                   <label className="block text-sm font-medium mb-1">Make *</label>
@@ -636,7 +636,7 @@ const VehiclesPage: React.FC = () => {
                   </select>
                 </div>
                 {/* Features */}
-                <div className="col-span-2">
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium mb-1">Features (comma separated)</label>
                   <input
                     name="features"
@@ -647,8 +647,8 @@ const VehiclesPage: React.FC = () => {
                   />
                 </div>
                 {/* Location Latitude and Longitude */}
-                <div className="col-span-2 flex gap-2 items-end">
-                  <div className="flex-1">
+                <div className="md:col-span-2 flex flex-col sm:flex-row gap-2 items-end">
+                  <div className="w-full sm:flex-1">
                     <label className="block text-sm font-medium mb-1">Location Latitude</label>
                     <input
                       name="locationLat"
@@ -660,7 +660,7 @@ const VehiclesPage: React.FC = () => {
                       placeholder="e.g., -1.9441"
                     />
                   </div>
-                  <div className="flex-1">
+                  <div className="w-full sm:flex-1">
                     <label className="block text-sm font-medium mb-1">Location Longitude</label>
                     <input
                       name="locationLng"
@@ -675,14 +675,14 @@ const VehiclesPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleDetectLocation}
-                    className="h-10 px-4 mb-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="w-full sm:w-auto h-10 px-4 mb-0 sm:mb-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                     style={{ whiteSpace: 'nowrap' }}
                   >
-                    Show Me Location
+                    Detect Location
                   </button>
                 </div>
                 {/* Location Address */}
-                <div className="col-span-2">
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium mb-1">Location Address</label>
                   <input
                     name="locationAddress"

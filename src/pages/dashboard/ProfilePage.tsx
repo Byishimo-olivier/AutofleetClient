@@ -235,26 +235,24 @@ const ProfilePage: React.FC = () => {
       <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{label}</span>
       <button
         type="button"
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-          checked ? "bg-blue-600" : settings.darkMode ? "bg-gray-600" : "bg-gray-200"
-        }`}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${checked ? "bg-blue-600" : settings.darkMode ? "bg-gray-600" : "bg-gray-200"
+          }`}
         onClick={() => onChange(!checked)}
       >
         <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-            checked ? "translate-x-6" : "translate-x-1"
-          }`}
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${checked ? "translate-x-6" : "translate-x-1"
+            }`}
         />
       </button>
     </div>
   );
 
   return (
-      <div className="p-12">
-        <div className={`max-w-4xl mx-auto ${settings.darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow`}>
-          {/* Tabs */}
-          <div className={`border-b ${settings.darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-            <nav className="flex space-x-8 px-6">
+    <div className="p-4 md:p-12">
+      <div className={`max-w-4xl mx-auto ${settings.darkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow`}>
+        {/* Tabs */}
+        <div className={`border-b ${settings.darkMode ? 'border-gray-700' : 'border-gray-200'} overflow-x-auto scrollbar-hide`}>
+          <nav className="flex space-x-6 md:space-x-8 px-6 min-w-max">
             {[
               {
                 id: "profile",
@@ -280,531 +278,515 @@ const ProfilePage: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
+                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm ${activeTab === tab.id
                     ? "border-blue-500 text-blue-600"
                     : `border-transparent ${settings.darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'}`
-                }`}
+                  }`}
               >
                 {tab.icon}
                 {tab.label}
               </button>
             ))}
-            </nav>
-          </div>
+          </nav>
+        </div>
 
-          <div className="p-6">
-            {loading ? (
-              <div className={`text-center ${settings.darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Loading...</div>
-            ) : (
-              <>
-                {/* Profile Tab */}
-                {activeTab === "profile" && (
-                  <div className="space-y-6">
-                    <h2 className={`text-xl font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>{t.profileInfo}</h2>
+        <div className="p-6">
+          {loading ? (
+            <div className={`text-center ${settings.darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Loading...</div>
+          ) : (
+            <>
+              {/* Profile Tab */}
+              {activeTab === "profile" && (
+                <div className="space-y-6">
+                  <h2 className={`text-xl font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>{t.profileInfo}</h2>
 
-                    <div className="flex flex-col items-center mb-6">
-                      <div className={`w-20 h-20 rounded-full ${settings.darkMode ? 'bg-gray-600' : 'bg-gray-200'} flex items-center justify-center mb-2`}>
-                        <User className={`w-12 h-12 ${settings.darkMode ? 'text-gray-300' : 'text-gray-400'}`} />
-                      </div>
-                      <button className="text-blue-700 text-sm font-medium underline mb-2">
-                        Update Profile Picture
-                      </button>
+                  <div className="flex flex-col items-center mb-6">
+                    <div className={`w-20 h-20 rounded-full ${settings.darkMode ? 'bg-gray-600' : 'bg-gray-200'} flex items-center justify-center mb-2`}>
+                      <User className={`w-12 h-12 ${settings.darkMode ? 'text-gray-300' : 'text-gray-400'}`} />
                     </div>
+                    <button className="text-blue-700 text-sm font-medium underline mb-2">
+                      Update Profile Picture
+                    </button>
+                  </div>
 
-                    <form className="space-y-4" onSubmit={handleProfileUpdate}>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className={`block font-semibold mb-1 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t.firstName}:</label>
-                          <input
-                            type="text"
-                            className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              settings.darkMode 
-                                ? 'bg-gray-700 border-gray-600 text-white' 
-                                : 'bg-white border-gray-300 text-gray-900'
-                            }`}
-                            value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <label className={`block font-semibold mb-1 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t.lastName}:</label>
-                          <input
-                            type="text"
-                            className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              settings.darkMode 
-                                ? 'bg-gray-700 border-gray-600 text-white' 
-                                : 'bg-white border-gray-300 text-gray-900'
-                            }`}
-                            value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
-                          />
-                        </div>
-                      </div>
-
+                  <form className="space-y-4" onSubmit={handleProfileUpdate}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className={`block font-semibold mb-1 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t.email}:</label>
-                        <input
-                          type="email"
-                          className={`w-full border rounded-lg px-3 py-2 text-sm ${
-                            settings.darkMode 
-                              ? 'bg-gray-600 border-gray-600 text-gray-300' 
-                              : 'bg-gray-50 border-gray-300 text-gray-600'
-                          }`}
-                          value={email}
-                          disabled
-                        />
-                      </div>
-
-                      <div>
-                        <label className={`block font-semibold mb-1 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t.phone}:</label>
+                        <label className={`block font-semibold mb-1 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t.firstName}:</label>
                         <input
                           type="text"
-                          className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            settings.darkMode 
-                              ? 'bg-gray-700 border-gray-600 text-white' 
+                          className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${settings.darkMode
+                              ? 'bg-gray-700 border-gray-600 text-white'
                               : 'bg-white border-gray-300 text-gray-900'
-                          }`}
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
+                            }`}
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
                         />
                       </div>
+                      <div>
+                        <label className={`block font-semibold mb-1 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t.lastName}:</label>
+                        <input
+                          type="text"
+                          className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${settings.darkMode
+                              ? 'bg-gray-700 border-gray-600 text-white'
+                              : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                        />
+                      </div>
+                    </div>
 
-                      {profileMsg && (
+                    <div>
+                      <label className={`block font-semibold mb-1 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t.email}:</label>
+                      <input
+                        type="email"
+                        className={`w-full border rounded-lg px-3 py-2 text-sm ${settings.darkMode
+                            ? 'bg-gray-600 border-gray-600 text-gray-300'
+                            : 'bg-gray-50 border-gray-300 text-gray-600'
+                          }`}
+                        value={email}
+                        disabled
+                      />
+                    </div>
+
+                    <div>
+                      <label className={`block font-semibold mb-1 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t.phone}:</label>
+                      <input
+                        type="text"
+                        className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${settings.darkMode
+                            ? 'bg-gray-700 border-gray-600 text-white'
+                            : 'bg-white border-gray-300 text-gray-900'
+                          }`}
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                      />
+                    </div>
+
+                    {profileMsg && (
+                      <div className="text-center text-sm text-green-600">
+                        {profileMsg}
+                      </div>
+                    )}
+
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        className="px-6 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-700"
+                      >
+                        {t.saveChanges}
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* Change Password Section */}
+                  <div className={`border-t pt-6 ${settings.darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                    <h3 className={`text-lg font-semibold mb-4 ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>{t.changePassword}</h3>
+                    <form className="space-y-4" onSubmit={handlePasswordChange}>
+                      <div>
+                        <label className={`block font-semibold mb-1 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {t.currentPassword}:
+                        </label>
+                        <input
+                          type="password"
+                          className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${settings.darkMode
+                              ? 'bg-gray-700 border-gray-600 text-white'
+                              : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className={`block font-semibold mb-1 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t.newPassword}:</label>
+                        <input
+                          type="password"
+                          className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${settings.darkMode
+                              ? 'bg-gray-700 border-gray-600 text-white'
+                              : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                        />
+                      </div>
+                      {passwordMsg && (
                         <div className="text-center text-sm text-green-600">
-                          {profileMsg}
+                          {passwordMsg}
                         </div>
                       )}
-
                       <div className="flex justify-end">
                         <button
                           type="submit"
                           className="px-6 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-700"
                         >
-                          {t.saveChanges}
+                          {t.changePassword}
                         </button>
                       </div>
                     </form>
+                  </div>
+                </div>
+              )}
 
-                    {/* Change Password Section */}
-                    <div className={`border-t pt-6 ${settings.darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                      <h3 className={`text-lg font-semibold mb-4 ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>{t.changePassword}</h3>
-                      <form className="space-y-4" onSubmit={handlePasswordChange}>
-                        <div>
-                          <label className={`block font-semibold mb-1 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            {t.currentPassword}:
-                          </label>
-                          <input
-                            type="password"
-                            className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              settings.darkMode 
-                                ? 'bg-gray-700 border-gray-600 text-white' 
-                                : 'bg-white border-gray-300 text-gray-900'
-                            }`}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <label className={`block font-semibold mb-1 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t.newPassword}:</label>
-                          <input
-                            type="password"
-                            className={`w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                              settings.darkMode 
-                                ? 'bg-gray-700 border-gray-600 text-white' 
-                                : 'bg-white border-gray-300 text-gray-900'
-                            }`}
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                          />
-                        </div>
-                        {passwordMsg && (
-                          <div className="text-center text-sm text-green-600">
-                            {passwordMsg}
-                          </div>
-                        )}
-                        <div className="flex justify-end">
-                          <button
-                            type="submit"
-                            className="px-6 py-2 rounded-lg bg-blue-600 text-white font-semibold shadow hover:bg-blue-700"
-                          >
-                            {t.changePassword}
-                          </button>
-                        </div>
-                      </form>
+              {/* App Settings Tab */}
+              {activeTab === "settings" && (
+                <div className="space-y-6">
+                  <h2 className={`text-xl font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>{t.settings}</h2>
+
+                  {/* Notification Settings */}
+                  <div className={`${settings.darkMode ? 'bg-gray-700' : 'bg-gray-50'} p-4 rounded-lg`}>
+                    <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <Bell className="w-5 h-5" />
+                      {t.notifications}
+                    </h3>
+                    <div className="space-y-3">
+                      <ToggleSwitch
+                        checked={settings.emailNotifications}
+                        onChange={(value) =>
+                          updateSetting("emailNotifications", value)
+                        }
+                        label="Email Notifications"
+                      />
+                      <ToggleSwitch
+                        checked={settings.pushNotifications}
+                        onChange={(value) =>
+                          updateSetting("pushNotifications", value)
+                        }
+                        label="Push Notifications"
+                      />
+                      <ToggleSwitch
+                        checked={settings.smsNotifications}
+                        onChange={(value) =>
+                          updateSetting("smsNotifications", value)
+                        }
+                        label="SMS Notifications"
+                      />
+                      <ToggleSwitch
+                        checked={settings.bookingReminders}
+                        onChange={(value) =>
+                          updateSetting("bookingReminders", value)
+                        }
+                        label="Booking Reminders"
+                      />
+                      <ToggleSwitch
+                        checked={settings.paymentAlerts}
+                        onChange={(value) =>
+                          updateSetting("paymentAlerts", value)
+                        }
+                        label="Payment Alerts"
+                      />
+                      <ToggleSwitch
+                        checked={settings.promotionalEmails}
+                        onChange={(value) =>
+                          updateSetting("promotionalEmails", value)
+                        }
+                        label="Promotional Emails"
+                      />
+                      <ToggleSwitch
+                        checked={settings.weeklyReports}
+                        onChange={(value) =>
+                          updateSetting("weeklyReports", value)
+                        }
+                        label="Weekly Reports"
+                      />
                     </div>
                   </div>
-                )}
 
-                {/* App Settings Tab */}
-                {activeTab === "settings" && (
-                  <div className="space-y-6">
-                    <h2 className={`text-xl font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>{t.settings}</h2>
-
-                    {/* Notification Settings */}
-                    <div className={`${settings.darkMode ? 'bg-gray-700' : 'bg-gray-50'} p-4 rounded-lg`}>
-                      <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        <Bell className="w-5 h-5" />
-                        {t.notifications}
-                      </h3>
-                      <div className="space-y-3">
-                        <ToggleSwitch
-                          checked={settings.emailNotifications}
-                          onChange={(value) =>
-                            updateSetting("emailNotifications", value)
-                          }
-                          label="Email Notifications"
-                        />
-                        <ToggleSwitch
-                          checked={settings.pushNotifications}
-                          onChange={(value) =>
-                            updateSetting("pushNotifications", value)
-                          }
-                          label="Push Notifications"
-                        />
-                        <ToggleSwitch
-                          checked={settings.smsNotifications}
-                          onChange={(value) =>
-                            updateSetting("smsNotifications", value)
-                          }
-                          label="SMS Notifications"
-                        />
-                        <ToggleSwitch
-                          checked={settings.bookingReminders}
-                          onChange={(value) =>
-                            updateSetting("bookingReminders", value)
-                          }
-                          label="Booking Reminders"
-                        />
-                        <ToggleSwitch
-                          checked={settings.paymentAlerts}
-                          onChange={(value) =>
-                            updateSetting("paymentAlerts", value)
-                          }
-                          label="Payment Alerts"
-                        />
-                        <ToggleSwitch
-                          checked={settings.promotionalEmails}
-                          onChange={(value) =>
-                            updateSetting("promotionalEmails", value)
-                          }
-                          label="Promotional Emails"
-                        />
-                        <ToggleSwitch
-                          checked={settings.weeklyReports}
-                          onChange={(value) =>
-                            updateSetting("weeklyReports", value)
-                          }
-                          label="Weekly Reports"
-                        />
-                      </div>
-                    </div>
-
-                    {/* App Preferences */}
-                    <div className={`${settings.darkMode ? 'bg-gray-700' : 'bg-gray-50'} p-4 rounded-lg`}>
-                      <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        <Smartphone className="w-5 h-5" />
-                        {t.appPreferences}
-                      </h3>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between py-2">
-                          <span className={`text-sm font-medium flex items-center gap-2 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            {settings.darkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
-                            {t.darkMode}
-                          </span>
-                          <button
-                            type="button"
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                              settings.darkMode ? "bg-blue-600" : "bg-gray-200"
-                            }`}
-                            onClick={() => updateSetting('darkMode', !settings.darkMode)}
-                          >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                settings.darkMode ? "translate-x-6" : "translate-x-1"
-                              }`}
-                            />
-                          </button>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            {t.language}
-                          </span>
-                          <select
-                            value={settings.language}
-                            onChange={(e) => updateSetting("language", e.target.value)}
-                            className={`border rounded px-3 py-1 text-sm ${
-                              settings.darkMode 
-                                ? 'bg-gray-600 border-gray-500 text-white' 
-                                : 'bg-white border-gray-300 text-gray-900'
-                            }`}
-                          >
-                            <option value="en">English</option>
-                            <option value="fr">Français</option>
-                            <option value="rw">Kinyarwanda</option>
-                            <option value="sw">Kiswahili</option>
-                          </select>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            {t.currency}
-                          </span>
-                          <select
-                            value={settings.currency}
-                            onChange={(e) => updateSetting("currency", e.target.value)}
-                            className={`border rounded px-3 py-1 text-sm ${
-                              settings.darkMode 
-                                ? 'bg-gray-600 border-gray-500 text-white' 
-                                : 'bg-white border-gray-300 text-gray-900'
-                            }`}
-                          >
-                            <option value="USD">USD ($) - US Dollar</option>
-                            <option value="RWF">RWF (₣) - Rwandan Franc</option>
-                            <option value="EUR">EUR (€) - Euro</option>
-                          </select>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            {t.timezone}
-                          </span>
-                          <select
-                            value={settings.timezone}
-                            onChange={(e) => updateSetting("timezone", e.target.value)}
-                            className={`border rounded px-3 py-1 text-sm ${
-                              settings.darkMode 
-                                ? 'bg-gray-600 border-gray-500 text-white' 
-                                : 'bg-white border-gray-300 text-gray-900'
-                            }`}
-                          >
-                            <option value="UTC">UTC</option>
-                            <option value="Africa/Kigali">Kigali Time</option>
-                            <option value="America/New_York">Eastern Time</option>
-                            <option value="Europe/London">London Time</option>
-                          </select>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t.units}</span>
-                          <select
-                            value={settings.units}
-                            onChange={(e) => updateSetting("units", e.target.value)}
-                            className={`border rounded px-3 py-1 text-sm ${
-                              settings.darkMode 
-                                ? 'bg-gray-600 border-gray-500 text-white' 
-                                : 'bg-white border-gray-300 text-gray-900'
-                            }`}
-                          >
-                            <option value="metric">Metric (km, L)</option>
-                            <option value="imperial">Imperial (miles, gal)</option>
-                          </select>
-                        </div>
-
-                        {/* Currency Preview */}
-                        <div className={`mt-4 p-3 rounded-lg ${settings.darkMode ? 'bg-gray-600' : 'bg-blue-50'} border ${settings.darkMode ? 'border-gray-500' : 'border-blue-200'}`}>
-                          <div className={`text-sm ${settings.darkMode ? 'text-gray-300' : 'text-blue-800'}`}>
-                            Preview: Sample price {formatPrice(150)} per day
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Sound Settings */}
-                    <div className={`${settings.darkMode ? 'bg-gray-700' : 'bg-gray-50'} p-4 rounded-lg`}>
-                      <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        {settings.soundEnabled ? (
-                          <Volume2 className="w-5 h-5" />
-                        ) : (
-                          <VolumeX className="w-5 h-5" />
-                        )}
-                        {t.soundSettings}
-                      </h3>
-                      <div className="space-y-3">
-                        <ToggleSwitch
-                          checked={settings.soundEnabled}
-                          onChange={(value) => updateSetting("soundEnabled", value)}
-                          label={t.enableSounds}
-                        />
-                        {settings.soundEnabled && (
-                          <div className="flex items-center justify-between">
-                            <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                              {t.notificationSound}
-                            </span>
-                            <select
-                              value={settings.notificationSound}
-                              onChange={(e) =>
-                                updateSetting("notificationSound", e.target.value)
-                              }
-                              className={`border rounded px-3 py-1 text-sm ${
-                                settings.darkMode 
-                                  ? 'bg-gray-600 border-gray-500 text-white' 
-                                  : 'bg-white border-gray-300 text-gray-900'
-                              }`}
-                            >
-                              <option value="default">Default</option>
-                              <option value="chime">Chime</option>
-                              <option value="bell">Bell</option>
-                              <option value="buzz">Buzz</option>
-                            </select>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Security Tab */}
-                {activeTab === "security" && (
-                  <div className="space-y-6">
-                    <h2 className={`text-xl font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>{t.security}</h2>
-
-                    <div className={`${settings.darkMode ? 'bg-gray-700' : 'bg-gray-50'} p-4 rounded-lg`}>
-                      <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        <Shield className="w-5 h-5" />
-                        {t.accountSecurity}
-                      </h3>
-                      <div className="space-y-4">
-                        <ToggleSwitch
-                          checked={settings.twoFactorAuth}
-                          onChange={(value) => updateSetting("twoFactorAuth", value)}
-                          label={t.twoFactorAuth}
-                        />
-                        <ToggleSwitch
-                          checked={settings.loginAlerts}
-                          onChange={(value) => updateSetting("loginAlerts", value)}
-                          label={t.loginAlerts}
-                        />
-
-                        <div className="flex items-center justify-between">
-                          <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            {t.sessionTimeout}
-                          </span>
-                          <select
-                            value={settings.sessionTimeout}
-                            onChange={(e) =>
-                              updateSetting("sessionTimeout", parseInt(e.target.value))
-                            }
-                            className={`border rounded px-3 py-1 text-sm ${
-                              settings.darkMode 
-                                ? 'bg-gray-600 border-gray-500 text-white' 
-                                : 'bg-white border-gray-300 text-gray-900'
-                            }`}
-                          >
-                            <option value={15}>15 minutes</option>
-                            <option value={30}>30 minutes</option>
-                            <option value={60}>1 hour</option>
-                            <option value={240}>4 hours</option>
-                            <option value={480}>8 hours</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className={`${settings.darkMode ? 'bg-red-900 border-red-700' : 'bg-red-50 border-red-200'} p-4 rounded-lg border`}>
-                      <h3 className={`text-lg font-semibold mb-4 ${settings.darkMode ? 'text-red-300' : 'text-red-800'}`}>
-                        {t.dangerZone}
-                      </h3>
-                      <div className="space-y-3">
+                  {/* App Preferences */}
+                  <div className={`${settings.darkMode ? 'bg-gray-700' : 'bg-gray-50'} p-4 rounded-lg`}>
+                    <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <Smartphone className="w-5 h-5" />
+                      {t.appPreferences}
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between py-2">
+                        <span className={`text-sm font-medium flex items-center gap-2 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {settings.darkMode ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                          {t.darkMode}
+                        </span>
                         <button
-                          onClick={exportData}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                          type="button"
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${settings.darkMode ? "bg-blue-600" : "bg-gray-200"
+                            }`}
+                          onClick={() => updateSetting('darkMode', !settings.darkMode)}
                         >
-                          <Download className="w-4 h-4" />
-                          {t.exportData}
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.darkMode ? "translate-x-6" : "translate-x-1"
+                              }`}
+                          />
                         </button>
-                        <button
-                          onClick={handleDeleteAccount}
-                          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {t.language}
+                        </span>
+                        <select
+                          value={settings.language}
+                          onChange={(e) => updateSetting("language", e.target.value)}
+                          className={`border rounded px-3 py-1 text-sm ${settings.darkMode
+                              ? 'bg-gray-600 border-gray-500 text-white'
+                              : 'bg-white border-gray-300 text-gray-900'
+                            }`}
                         >
-                          <Trash2 className="w-4 h-4" />
-                          {t.deleteAccount}
-                        </button>
+                          <option value="en">English</option>
+                          <option value="fr">Français</option>
+                          <option value="rw">Kinyarwanda</option>
+                          <option value="sw">Kiswahili</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {t.currency}
+                        </span>
+                        <select
+                          value={settings.currency}
+                          onChange={(e) => updateSetting("currency", e.target.value)}
+                          className={`border rounded px-3 py-1 text-sm ${settings.darkMode
+                              ? 'bg-gray-600 border-gray-500 text-white'
+                              : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                        >
+                          <option value="USD">USD ($) - US Dollar</option>
+                          <option value="RWF">RWF (₣) - Rwandan Franc</option>
+                          <option value="EUR">EUR (€) - Euro</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {t.timezone}
+                        </span>
+                        <select
+                          value={settings.timezone}
+                          onChange={(e) => updateSetting("timezone", e.target.value)}
+                          className={`border rounded px-3 py-1 text-sm ${settings.darkMode
+                              ? 'bg-gray-600 border-gray-500 text-white'
+                              : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                        >
+                          <option value="UTC">UTC</option>
+                          <option value="Africa/Kigali">Kigali Time</option>
+                          <option value="America/New_York">Eastern Time</option>
+                          <option value="Europe/London">London Time</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{t.units}</span>
+                        <select
+                          value={settings.units}
+                          onChange={(e) => updateSetting("units", e.target.value)}
+                          className={`border rounded px-3 py-1 text-sm ${settings.darkMode
+                              ? 'bg-gray-600 border-gray-500 text-white'
+                              : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                        >
+                          <option value="metric">Metric (km, L)</option>
+                          <option value="imperial">Imperial (miles, gal)</option>
+                        </select>
+                      </div>
+
+                      {/* Currency Preview */}
+                      <div className={`mt-4 p-3 rounded-lg ${settings.darkMode ? 'bg-gray-600' : 'bg-blue-50'} border ${settings.darkMode ? 'border-gray-500' : 'border-blue-200'}`}>
+                        <div className={`text-sm ${settings.darkMode ? 'text-gray-300' : 'text-blue-800'}`}>
+                          Preview: Sample price {formatPrice(150)} per day
+                        </div>
                       </div>
                     </div>
                   </div>
-                )}
 
-                {/* Privacy Tab */}
-                {activeTab === "privacy" && (
-                  <div className="space-y-6">
-                    <h2 className={`text-xl font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>{t.privacy}</h2>
-
-                    <div className={`${settings.darkMode ? 'bg-gray-700' : 'bg-gray-50'} p-4 rounded-lg`}>
-                      <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
-                        <Globe className="w-5 h-5" />
-                        {t.dataPrivacy}
-                      </h3>
-                      <div className="space-y-4">
+                  {/* Sound Settings */}
+                  <div className={`${settings.darkMode ? 'bg-gray-700' : 'bg-gray-50'} p-4 rounded-lg`}>
+                    <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {settings.soundEnabled ? (
+                        <Volume2 className="w-5 h-5" />
+                      ) : (
+                        <VolumeX className="w-5 h-5" />
+                      )}
+                      {t.soundSettings}
+                    </h3>
+                    <div className="space-y-3">
+                      <ToggleSwitch
+                        checked={settings.soundEnabled}
+                        onChange={(value) => updateSetting("soundEnabled", value)}
+                        label={t.enableSounds}
+                      />
+                      {settings.soundEnabled && (
                         <div className="flex items-center justify-between">
                           <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            {t.profileVisibility}
+                            {t.notificationSound}
                           </span>
                           <select
-                            value={settings.profileVisibility}
+                            value={settings.notificationSound}
                             onChange={(e) =>
-                              updateSetting("profileVisibility", e.target.value)
+                              updateSetting("notificationSound", e.target.value)
                             }
-                            className={`border rounded px-3 py-1 text-sm ${
-                              settings.darkMode 
-                                ? 'bg-gray-600 border-gray-500 text-white' 
+                            className={`border rounded px-3 py-1 text-sm ${settings.darkMode
+                                ? 'bg-gray-600 border-gray-500 text-white'
                                 : 'bg-white border-gray-300 text-gray-900'
-                            }`}
+                              }`}
                           >
-                            <option value="private">Private</option>
-                            <option value="public">Public</option>
+                            <option value="default">Default</option>
+                            <option value="chime">Chime</option>
+                            <option value="bell">Bell</option>
+                            <option value="buzz">Buzz</option>
                           </select>
                         </div>
-
-                        <ToggleSwitch
-                          checked={settings.dataSharing}
-                          onChange={(value) => updateSetting("dataSharing", value)}
-                          label={t.dataSharing}
-                        />
-
-                        <ToggleSwitch
-                          checked={settings.locationTracking}
-                          onChange={(value) => updateSetting("locationTracking", value)}
-                          label={t.locationTracking}
-                        />
-
-                        <ToggleSwitch
-                          checked={settings.analyticsOptOut}
-                          onChange={(value) => updateSetting("analyticsOptOut", value)}
-                          label={t.analyticsOptOut}
-                        />
-                      </div>
+                      )}
                     </div>
+                  </div>
+                </div>
+              )}
 
-                    <div className={`${settings.darkMode ? 'bg-blue-900 border-blue-700' : 'bg-blue-50 border-blue-200'} p-4 rounded-lg border`}>
-                      <h3 className={`text-lg font-semibold mb-2 ${settings.darkMode ? 'text-blue-300' : 'text-blue-800'}`}>
-                        {t.privacyInfo}
-                      </h3>
-                      <p className={`text-sm mb-3 ${settings.darkMode ? 'text-blue-200' : 'text-blue-700'}`}>
-                        {t.privacyText}
-                      </p>
-                      <div className={`space-y-2 text-sm ${settings.darkMode ? 'text-blue-300' : 'text-blue-600'}`}>
-                        <button className="underline hover:no-underline">
-                          View Privacy Policy
-                        </button>
-                        <br />
-                        <button className="underline hover:no-underline">
-                          View Terms of Service
-                        </button>
-                        <br />
-                        <button className="underline hover:no-underline">
-                          Cookie Policy
-                        </button>
+              {/* Security Tab */}
+              {activeTab === "security" && (
+                <div className="space-y-6">
+                  <h2 className={`text-xl font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>{t.security}</h2>
+
+                  <div className={`${settings.darkMode ? 'bg-gray-700' : 'bg-gray-50'} p-4 rounded-lg`}>
+                    <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <Shield className="w-5 h-5" />
+                      {t.accountSecurity}
+                    </h3>
+                    <div className="space-y-4">
+                      <ToggleSwitch
+                        checked={settings.twoFactorAuth}
+                        onChange={(value) => updateSetting("twoFactorAuth", value)}
+                        label={t.twoFactorAuth}
+                      />
+                      <ToggleSwitch
+                        checked={settings.loginAlerts}
+                        onChange={(value) => updateSetting("loginAlerts", value)}
+                        label={t.loginAlerts}
+                      />
+
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {t.sessionTimeout}
+                        </span>
+                        <select
+                          value={settings.sessionTimeout}
+                          onChange={(e) =>
+                            updateSetting("sessionTimeout", parseInt(e.target.value))
+                          }
+                          className={`border rounded px-3 py-1 text-sm ${settings.darkMode
+                              ? 'bg-gray-600 border-gray-500 text-white'
+                              : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                        >
+                          <option value={15}>15 minutes</option>
+                          <option value={30}>30 minutes</option>
+                          <option value={60}>1 hour</option>
+                          <option value={240}>4 hours</option>
+                          <option value={480}>8 hours</option>
+                        </select>
                       </div>
                     </div>
                   </div>
-                )}
-              </>
-            )}
-          </div>
+
+                  <div className={`${settings.darkMode ? 'bg-red-900 border-red-700' : 'bg-red-50 border-red-200'} p-4 rounded-lg border`}>
+                    <h3 className={`text-lg font-semibold mb-4 ${settings.darkMode ? 'text-red-300' : 'text-red-800'}`}>
+                      {t.dangerZone}
+                    </h3>
+                    <div className="space-y-3">
+                      <button
+                        onClick={exportData}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      >
+                        <Download className="w-4 h-4" />
+                        {t.exportData}
+                      </button>
+                      <button
+                        onClick={handleDeleteAccount}
+                        className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        {t.deleteAccount}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Privacy Tab */}
+              {activeTab === "privacy" && (
+                <div className="space-y-6">
+                  <h2 className={`text-xl font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>{t.privacy}</h2>
+
+                  <div className={`${settings.darkMode ? 'bg-gray-700' : 'bg-gray-50'} p-4 rounded-lg`}>
+                    <h3 className={`text-lg font-semibold mb-4 flex items-center gap-2 ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>
+                      <Globe className="w-5 h-5" />
+                      {t.dataPrivacy}
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {t.profileVisibility}
+                        </span>
+                        <select
+                          value={settings.profileVisibility}
+                          onChange={(e) =>
+                            updateSetting("profileVisibility", e.target.value)
+                          }
+                          className={`border rounded px-3 py-1 text-sm ${settings.darkMode
+                              ? 'bg-gray-600 border-gray-500 text-white'
+                              : 'bg-white border-gray-300 text-gray-900'
+                            }`}
+                        >
+                          <option value="private">Private</option>
+                          <option value="public">Public</option>
+                        </select>
+                      </div>
+
+                      <ToggleSwitch
+                        checked={settings.dataSharing}
+                        onChange={(value) => updateSetting("dataSharing", value)}
+                        label={t.dataSharing}
+                      />
+
+                      <ToggleSwitch
+                        checked={settings.locationTracking}
+                        onChange={(value) => updateSetting("locationTracking", value)}
+                        label={t.locationTracking}
+                      />
+
+                      <ToggleSwitch
+                        checked={settings.analyticsOptOut}
+                        onChange={(value) => updateSetting("analyticsOptOut", value)}
+                        label={t.analyticsOptOut}
+                      />
+                    </div>
+                  </div>
+
+                  <div className={`${settings.darkMode ? 'bg-blue-900 border-blue-700' : 'bg-blue-50 border-blue-200'} p-4 rounded-lg border`}>
+                    <h3 className={`text-lg font-semibold mb-2 ${settings.darkMode ? 'text-blue-300' : 'text-blue-800'}`}>
+                      {t.privacyInfo}
+                    </h3>
+                    <p className={`text-sm mb-3 ${settings.darkMode ? 'text-blue-200' : 'text-blue-700'}`}>
+                      {t.privacyText}
+                    </p>
+                    <div className={`space-y-2 text-sm ${settings.darkMode ? 'text-blue-300' : 'text-blue-600'}`}>
+                      <button className="underline hover:no-underline">
+                        View Privacy Policy
+                      </button>
+                      <br />
+                      <button className="underline hover:no-underline">
+                        View Terms of Service
+                      </button>
+                      <br />
+                      <button className="underline hover:no-underline">
+                        Cookie Policy
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
+    </div>
   );
 };
 

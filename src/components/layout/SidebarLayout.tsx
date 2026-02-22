@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  BarChart2, Car, ClipboardList, MessageCircle, Users, User, LogOut, Settings, AlertCircle
+  BarChart2, Car, ClipboardList, MessageCircle, Users, User, LogOut, Settings, AlertCircle, Menu, X
 } from "lucide-react";
 import { apiClient } from "@/services/apiClient";
+import { useTheme } from "@/contexts/SettingContxt";
+
 
 const navItems = [
   { icon: <BarChart2 className="w-5 h-5" />, label: "Dashboard", to: "/dashboard" },
@@ -25,12 +27,15 @@ interface UserProfile {
 }
 
 const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isDark } = useTheme();
   const location = useLocation();
+
   const navigate = useNavigate();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Generate user initials
   const generateInitials = (firstName: string, lastName: string) => {
@@ -214,9 +219,32 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className={`flex min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      {/* Mobile Header */}
+      <div className={`lg:hidden fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-4 z-40 border-b ${isDark ? 'bg-[#2c3e7d] border-[#3d4f8f]' : 'bg-[#2c3e7d] border-[#3d4f8f] text-white shadow-md'}`}>
+        <h1 className="text-lg font-bold">AutoFleet Hub</h1>
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-2 rounded-lg hover:bg-[#3d4f8f] transition-colors text-white"
+        >
+          {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* Mobile Overlay */}
+      {isSidebarOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40 transition-opacity"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-[#2c3e7d] text-white flex flex-col shadow-lg">
+      <aside className={`
+        fixed lg:static inset-y-0 left-0 w-64 bg-[#2c3e7d] text-white flex flex-col shadow-lg z-50
+        transition-transform duration-300 transform
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
         {/* Logo */}
         <div className="px-4 py-6 border-b border-[#3d4f8f]">
           <h1 className="text-xl font-bold">AutoFleet Hub</h1>
@@ -294,7 +322,10 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                 ? "bg-[#3d4f8f] text-white"
                 : "text-gray-300 hover:bg-[#3d4f8f]/50 hover:text-white"
                 }`}
-              onClick={() => navigate(item.to)}
+              onClick={() => {
+                navigate(item.to);
+                setIsSidebarOpen(false);
+              }}
             >
               {item.icon}
               <span className="ml-3">{item.label}</span>
@@ -323,7 +354,7 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1">{children}</div>
+      <div className={`flex-1 pt-16 lg:pt-0 ${isDark ? 'bg-gray-900' : ''}`}>{children}</div>
     </div>
   );
 };

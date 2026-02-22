@@ -63,30 +63,27 @@ const DashboardPage: React.FC = () => {
   const isOwner = user?.role === 'owner';
 
   return (
-    <div className="flex-1 p-8">
+    <div className="flex-1 p-4 md:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold">Welcome back!</h1>
-          <p className="text-gray-500 text-sm">Here's what's happening with your fleet today.</p>
+          <h1 className="text-xl md:text-2xl font-bold">Welcome back!</h1>
+          <p className="text-gray-500 text-xs md:text-sm">Here's what's happening with your fleet today.</p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3 md:space-x-4 w-full sm:w-auto">
           <input
             type="text"
             placeholder="Search..."
-            className="px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring w-64"
+            className="px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring flex-1 sm:w-64"
           />
-          <button className="bg-white p-2 rounded-full shadow">
+          <button className="bg-white p-2 rounded-full shadow shrink-0">
             <span role="img" aria-label="bell">🔔</span>
-          </button>
-          <button className="bg-white p-2 rounded-full shadow">
-            <span role="img" aria-label="language">🌐</span>
           </button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
         <StatCard
           icon={<Car className="w-6 h-6 text-blue-600" />}
           label="Total Vehicles"
@@ -115,9 +112,9 @@ const DashboardPage: React.FC = () => {
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Booking Trends */}
-        <div className="bg-white rounded shadow p-6 col-span-2">
-          <div className="font-semibold mb-4">Booking Trends (Last 30 Days)</div>
-          <div className="h-48">
+        <div className="bg-white rounded shadow p-4 md:p-6 lg:col-span-2">
+          <div className="font-semibold mb-4 text-sm md:text-base">Booking Trends (Last 30 Days)</div>
+          <div className="h-48 md:h-64">
             <ResponsiveContainer width="100%" height="100%">
               {stats.bookingTrends && stats.bookingTrends.length > 0 ? (
                 <LineChart data={stats.bookingTrends}>
@@ -144,8 +141,8 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* Fleet Status */}
-        <div className="bg-white rounded shadow p-6">
-          <div className="font-semibold mb-4">Fleet Status</div>
+        <div className="bg-white rounded shadow p-4 md:p-6">
+          <div className="font-semibold mb-4 text-sm md:text-base">Fleet Status</div>
           {loading ? (
             <div className="text-gray-400 text-sm">Loading...</div>
           ) : (
@@ -179,8 +176,8 @@ const DashboardPage: React.FC = () => {
       {/* Bottom Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
         {/* Recent Bookings */}
-        <div className="bg-white rounded shadow p-6 col-span-2">
-          <div className="font-semibold mb-4">Recent Bookings</div>
+        <div className="bg-white rounded shadow p-4 md:p-6 lg:col-span-2">
+          <div className="font-semibold mb-4 text-sm md:text-base">Recent Bookings</div>
           <div className="space-y-2">
             {loading ? (
               <div className="text-gray-400 text-sm">Loading...</div>
@@ -200,8 +197,8 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded shadow p-6">
-          <div className="font-semibold mb-4">Quick Actions</div>
+        <div className="bg-white rounded shadow p-4 md:p-6">
+          <div className="font-semibold mb-4 text-sm md:text-base">Quick Actions</div>
           <div className="space-y-3">
             <button className="w-full flex items-center justify-center bg-blue-100 text-blue-700 py-2 rounded font-semibold hover:bg-blue-200 transition">
               <Plus className="w-4 h-4 mr-2" /> Add New Vehicle
