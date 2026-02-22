@@ -139,27 +139,56 @@ export default function VehicleDetails() {
       return;
     }
 
-    // Load Paystack script if not already loaded
+    setLoading(true);
+
+    // Load Paystack script and wait for it
+    return new Promise((resolve) => {
+      if (window.PaystackPop) {
+        initializePaystackPayment();
+        resolve(null);
+      } else {
+        const script = document.createElement("script");
+        script.src = "https://js.paystack.co/v1/inline.js";
+        script.onload = () => {
+          setTimeout(() => {
+            initializePaystackPayment();
+            resolve(null);
+          }, 500);
+        };
+        document.body.appendChild(script);
+      }
+    });
+  };
+
+  const initializePaystackPayment = () => {
+    const amount = calculateTotalPrice();
+    
     if (!window.PaystackPop) {
-      const script = document.createElement("script");
-      script.src = "https://js.paystack.co/v1/inline.js";
-      document.body.appendChild(script);
+      setErrorMessage("Failed to load payment gateway");
+      setLoading(false);
+      return;
     }
 
-    const handler = window.PaystackPop.setup({
+    window.PaystackPop.setup({
       key: paystackConfig.publicKey,
       email: paystackConfig.email,
       amount: paystackConfig.amount,
       ref: paystackConfig.reference,
-      onClose: paystackConfig.onClose,
+      onClose: () => {
+        console.log("Paystack payment closed");
+        setErrorMessage("Payment was cancelled");
+        setLoading(false);
+      },
       callback: async (response: any) => {
-        if (response.status === 'success') {
-          paystackConfig.onSuccess(response);
+        console.log("Paystack payment callback:", response);
+        if (response && response.reference) {
+          await handlePaymentSuccess(response.reference);
+        } else {
+          setErrorMessage("Payment verification failed");
+          setLoading(false);
         }
       }
-    });
-    
-    handler.openIframe();
+    }).openIframe();
   };
 
   const handlePaymentSuccess = async (reference: string) => {

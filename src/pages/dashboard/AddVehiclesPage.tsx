@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Car, CheckCircle, XCircle } from 'lucide-react';
 import { apiClient, STATIC_BASE_URL } from "@/services/apiClient";
 import { useSettings } from '@/contexts/SettingContxt';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Vehicle {
   id: number;
@@ -64,6 +65,7 @@ const initialForm: VehicleForm = {
 
 const VehiclesPage: React.FC = () => {
   const { settings, formatPrice, t } = useSettings();
+  const { user } = useAuth();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -87,7 +89,13 @@ const VehiclesPage: React.FC = () => {
       if (search) params.append('search', search);
       if (category && category !== 'All Categories') params.append('category', category.toLowerCase());
       if (status && status !== 'All Status') params.append('status', status.toLowerCase());
-      const response = await apiClient.get(`/vehicles?${params.toString()}`);
+      // Add owner filter to only show vehicles owned by current user
+      params.append('ownerOnly', 'true');
+      const response = await apiClient.get(`/vehicles?${params.toString()}`, {
+        headers: {
+          'X-User-ID': String(user?.id) // Pass user ID to backend
+        }
+      });
       const data = response.data as { vehicles: Vehicle[] };
       setVehicles(data.vehicles || []);
     } catch (error) {
