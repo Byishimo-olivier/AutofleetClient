@@ -18,6 +18,7 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminLayout from "@/components/layout/AdminLayout";
 import SidebarLayout from "@/components/layout/SidebarLayout";
 import HomePage from "@/pages/HomePage";
+import LandingPage from "@/pages/LandingPage";
 import "./App.css";
 import NavBar from "@/components/layout/Navbar";
 import ChatBot from "@/components/chatbot/ChatBot";
@@ -169,8 +170,12 @@ function App() {
               }
             />
             <Route
-              path="/"
+              path="/home"
               element={<HomePage />}
+            />
+            <Route
+              path="/"
+              element={<LandingPage />}
             />
             <Route
               path="/login"

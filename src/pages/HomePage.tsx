@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
     Car,
     CreditCard,
@@ -10,49 +10,13 @@ import {
     ChevronLeft,
     ChevronRight,
     Search,
+    Filter,
+    ArrowRight
 } from "lucide-react";
-import { apiClient, API_BASE_URL, STATIC_BASE_URL } from "@/services/apiClient";
+import { apiClient, STATIC_BASE_URL } from "@/services/apiClient";
 import { useSettings } from '@/contexts/SettingContxt';
 
-const quickActions = [
-    {
-        label: "My Bookings",
-        desc: "View active rentals",
-        color: "bg-green-600",
-        icon: <Car className="w-6 h-6" />,
-        onClick: (navigate: (path: string) => void) => navigate("/customer/my-bookings"),
-    },
-    {
-        label: "Payment Methods",
-        desc: "Manage payments",
-        color: "bg-purple-600",
-        icon: <CreditCard className="w-6 h-6" />,
-        onClick: undefined,
-    },
-    {
-        label: "Feedback & Ratings",
-        desc: "Rate your experience",
-        color: "bg-orange-500",
-        icon: <MessageCircle className="w-6 h-6" />,
-        onClick: undefined,
-    },
-    {
-        label: "Support",
-        desc: "Get help 24/7",
-        color: "bg-red-600",
-        icon: <LifeBuoy className="w-6 h-6" />,
-        onClick: (navigate: (path: string) => void) => navigate("/customer/support"),
-    },
-];
-
-const whyChoose = [
-    { value: "500+", label: "Vehicles Available", color: "text-blue-600" },
-    { value: "10K+", label: "Happy Customers", color: "text-green-600" },
-    { value: "4.8", label: "Average Rating", color: "text-orange-500" },
-    { value: "24/7", label: "Customer Support", color: "text-purple-600" },
-];
-
-export default function CustomerDashboard() {
+export default function HomePage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [featuredVehicles, setFeaturedVehicles] = useState<any[]>([]);
     const [pagination, setPagination] = useState({ currentPage: 1, totalPages: 1 });
@@ -63,346 +27,392 @@ export default function CustomerDashboard() {
     const [pickupDate, setPickupDate] = useState("");
     const [returnDate, setReturnDate] = useState("");
     const navigate = useNavigate();
-    const { settings, formatPrice, t } = useSettings();
+    const { settings, formatPrice } = useSettings();
+
+    const isDark = settings?.darkMode;
+
+    // Neumorphic Core Variables
+    const bgClass = isDark ? "bg-[#21232c] text-gray-200" : "bg-[#e0e5ec] text-gray-700";
+
+    const neuCardFlat = isDark
+        ? "bg-[#21232c] shadow-[8px_8px_16px_#14151a,-8px_-8px_16px_#2e313e]"
+        : "bg-[#e0e5ec] shadow-[9px_9px_16px_rgb(163,177,198,0.6),-9px_-9px_16px_rgba(255,255,255,0.5)]";
+
+    const neuCardInset = isDark
+        ? "bg-[#21232c] shadow-[inset_8px_8px_16px_#14151a,inset_-8px_-8px_16px_#2e313e]"
+        : "bg-[#e0e5ec] shadow-[inset_6px_6px_10px_0_rgba(163,177,198,0.7),inset_-6px_-6px_10px_0_rgba(255,255,255,0.8)]";
+
+    const neuButtonHoverShadow = isDark
+        ? "hover:shadow-[inset_4px_4px_8px_#14151a,inset_-4px_-4px_8px_#2e313e]"
+        : "hover:shadow-[inset_4px_4px_8px_0_rgba(163,177,198,0.7),inset_-4px_-4px_8px_0_rgba(255,255,255,0.8)]";
+
+    const neuButtonActiveShadow = isDark
+        ? "active:shadow-[inset_6px_6px_10px_#14151a,inset_-6px_-6px_10px_#2e313e]"
+        : "active:shadow-[inset_6px_6px_10px_0_rgba(163,177,198,0.7),inset_-6px_-6px_10px_0_rgba(255,255,255,0.8)]";
+
+    const neuButton = `
+        px-6 py-3 rounded-2xl font-bold transition-all duration-200 ease-in-out flex items-center justify-center gap-2
+        ${neuCardFlat}
+        ${neuButtonHoverShadow}
+        ${neuButtonActiveShadow}
+        ${isDark ? 'hover:text-blue-400' : 'hover:text-blue-600'}
+        ${isDark ? 'text-gray-300' : 'text-gray-700'}
+    `.trim();
+
+    const inputNeuStyle = `w-full h-14 pl-12 pr-4 rounded-2xl font-medium outline-none transition-all ${neuCardInset} ${isDark ? 'text-white placeholder:text-gray-500' : 'text-gray-900 placeholder:text-gray-500'
+        }`;
+
+    const quickActions = [
+        {
+            label: "My Bookings",
+            desc: "View active rentals",
+            icon: <Car className={`w-6 h-6 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />,
+            onClick: (nav: (path: string) => void) => nav("/customer/my-bookings"),
+        },
+        {
+            label: "Payment Methods",
+            desc: "Manage payments",
+            icon: <CreditCard className={`w-6 h-6 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} />,
+            onClick: undefined,
+        },
+        {
+            label: "Feedback",
+            desc: "Rate your experience",
+            icon: <MessageCircle className={`w-6 h-6 ${isDark ? 'text-teal-400' : 'text-teal-600'}`} />,
+            onClick: undefined,
+        },
+        {
+            label: "Support",
+            desc: "Get help 24/7",
+            icon: <LifeBuoy className={`w-6 h-6 ${isDark ? 'text-rose-400' : 'text-rose-600'}`} />,
+            onClick: (nav: (path: string) => void) => nav("/customer/support"),
+        },
+    ];
 
     useEffect(() => {
         const fetchVehicles = async () => {
             setLoading(true);
-            // Build query string
             const params = new URLSearchParams();
             params.append("page", String(currentPage));
-            params.append("limit", "6");
+            params.append("limit", "9");
             if (search) params.append("search", search);
             if (location) params.append("location", location);
             if (vehicleType) params.append("type", vehicleType);
             if (pickupDate) params.append("pickupDate", pickupDate);
             if (returnDate) params.append("returnDate", returnDate);
 
-            const res = await apiClient.get<any>(`/vehicles?${params.toString()}`);
-            console.log("[HomePage] API Response:", res);
-            if (res && res.success && res.data && Array.isArray(res.data.vehicles)) {
-                console.log("[HomePage] Vehicles fetched:", res.data.vehicles);
-                setFeaturedVehicles(res.data.vehicles);
-                setPagination(res.data.pagination);
-            } else {
-                console.log("[HomePage] No vehicles in response or incorrect structure");
+            try {
+                const res = await apiClient.get<any>(`/vehicles?${params.toString()}`);
+                if (res && res.success && res.data && Array.isArray(res.data.vehicles)) {
+                    setFeaturedVehicles(res.data.vehicles);
+                    setPagination(res.data.pagination);
+                } else {
+                    setFeaturedVehicles([]);
+                    setPagination({ currentPage: 1, totalPages: 1 });
+                }
+            } catch (error) {
+                console.error("Error fetching vehicles:", error);
                 setFeaturedVehicles([]);
-                setPagination({ currentPage: 1, totalPages: 1 });
             }
             setLoading(false);
         };
         fetchVehicles();
     }, [currentPage, search, location, vehicleType, pickupDate, returnDate]);
 
-    // Updated helper function to construct image URLs correctly
     const getImageUrl = (img: string | null | undefined) => {
         if (!img) return 'https://placehold.co/600x400?text=No+Image';
         if (img.startsWith("http://") || img.startsWith("https://")) return img;
-        // Always ensure a single leading slash
         const normalizedImg = img.startsWith("/") ? img : `/${img}`;
         return `${STATIC_BASE_URL}${normalizedImg}`;
     };
 
-    const parseVehicleImages = (images: any, vehicleId: string) => {
-        let parsedImages = [];
+    const parseVehicleImages = (images: any) => {
+        let parsedImages: any[] = [];
         try {
             if (Array.isArray(images)) {
-                parsedImages = images;
+                parsedImages = parsedImages.concat(images);
             } else if (images && typeof images === 'string' && images.trim() !== '') {
                 parsedImages = JSON.parse(images);
-            } else {
-                parsedImages = [];
             }
-            console.log(`[HomePage] Images for vehicle ${vehicleId}:`, { raw: images, parsed: parsedImages });
-            return parsedImages;
         } catch (e) {
-            console.log(`[HomePage] Failed to parse images for vehicle ${vehicleId}:`, e);
-            return [];
+            console.error("Failed to parse images:", e);
         }
+        return parsedImages;
     };
 
     return (
-        <div className={settings.darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>
-            {/* Navigation Bar */}
+        <div className={`min-h-screen pb-24 pt-28 font-sans ${bgClass}`}>
 
-            {/* Hero Section with Search */}
-            <section className="bg-gradient-to-br from-[#2c4a9d] to-[#1e3a7d] text-white py-16 px-4">
-                <div className="max-w-6xl mx-auto">
-                    <div className="text-center mb-8">
-                        <h1 className="text-4xl font-bold mb-3">Find Your Perfect Ride</h1>
-                        <p className="text-blue-100 text-lg">
-                            Choose from thousands of vehicles, book instantly, and drive away with confidence
-                        </p>
-                    </div>
+            <main className="max-w-7xl mx-auto px-6 space-y-20">
 
-                    {/* Search Card */}
-                    <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-5xl mx-auto">
-                        <form
-                            className="grid grid-cols-1 md:grid-cols-6 gap-4"
-                            onSubmit={e => {
-                                e.preventDefault();
-                                setCurrentPage(1);
-                            }}
-                        >
-                            {/* Search input */}
-                            <div className="relative md:col-span-2">
-                                <div className="relative w-full">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 pointer-events-none" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search (make, model, etc)"
-                                        className="w-full pl-12 pr-4 h-14 border border-gray-300 rounded-xl text-gray-700 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        value={search}
-                                        onChange={e => setSearch(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            {/* Pickup Location */}
-                            <div className="relative">
-                                <div className="relative w-full">
-                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 pointer-events-none" />
-                                    <input
-                                        type="text"
-                                        placeholder="Pickup Location"
-                                        className="w-full pl-12 pr-4 h-14 border border-gray-300 rounded-xl text-gray-700 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        value={location}
-                                        onChange={e => setLocation(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            {/* Pickup Date */}
-                            <div className="relative">
-                                <div className="relative w-full">
-                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 pointer-events-none" />
-                                    <input
-                                        type="date"
-                                        placeholder="mm/dd/yyyy"
-                                        className="w-full pl-12 pr-4 h-14 border border-gray-300 rounded-xl text-gray-700 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        value={pickupDate}
-                                        onChange={e => setPickupDate(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            {/* Return Date */}
-                            <div className="relative">
-                                <div className="relative w-full">
-                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-400 pointer-events-none" />
-                                    <input
-                                        type="date"
-                                        placeholder="mm/dd/yyyy"
-                                        className="w-full pl-12 pr-4 h-14 border border-gray-300 rounded-xl text-gray-700 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        value={returnDate}
-                                        onChange={e => setReturnDate(e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            {/* Vehicle Type and Button stacked vertically in the same column */}
-                            <div className="flex flex-col md:col-span-1 lg:col-span-1">
-                                <select
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={vehicleType}
-                                    onChange={e => setVehicleType(e.target.value)}
-                                >
-                                    <option value="">Vehicle Type</option>
-                                    <option value="suv">SUV</option>
-                                    <option value="sedan">Sedan</option>
-                                    <option value="van">Van</option>
-                                    <option value="truck">Truck</option>
-                                </select>
-                                <button
-                                    type="submit"
-                                    className="bg-[#2c4a9d] hover:bg-[#1e3a7d] text-white font-semibold px-6 py-3 rounded-lg shadow-lg transition flex items-center justify-center gap-2 mt-3"
-                                >
-                                    <Search className="w-5 h-5" />
-                                    Find Vehicle
-                                </button>
-                            </div>
-                        </form>
+                {/* Header Area */}
+                <div className="flex flex-col gap-6 pt-4">
+                    <div className={`inline-flex items-center px-5 py-2.5 rounded-full w-fit ${neuCardInset}`}>
+                        <span className={`text-sm font-bold tracking-widest uppercase ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                            Customer Portal
+                        </span>
                     </div>
+                    <h1 className={`text-5xl lg:text-6xl font-black tracking-tight leading-tight ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                        Dashboard
+                    </h1>
+                    <p className="text-xl font-medium max-w-2xl">
+                        Find and reserve your premium vehicle effortlessly with our soft tactile interface.
+                    </p>
                 </div>
-            </section>
 
-            {/* Quick Actions */}
-            <section className="max-w-6xl mx-auto px-4 -mt-8 relative z-10">
+                {/* Neumorphic Filter Panel */}
+                <div className={`p-8 md:p-10 rounded-[2.5rem] ${neuCardFlat}`}>
+                    <form
+                        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-6"
+                        onSubmit={e => { e.preventDefault(); setCurrentPage(1); }}
+                    >
+                        {/* Search Field */}
+                        <div className="relative xl:col-span-2">
+                            <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${isDark ? 'text-gray-500' : 'text-gray-400'} z-10`} />
+                            <input
+                                type="text"
+                                placeholder="Search make, model..."
+                                className={inputNeuStyle}
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Location Field */}
+                        <div className="relative xl:col-span-1">
+                            <MapPin className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${isDark ? 'text-gray-500' : 'text-gray-400'} z-10`} />
+                            <input
+                                type="text"
+                                placeholder="Location"
+                                className={inputNeuStyle}
+                                value={location}
+                                onChange={e => setLocation(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Date Fields Container */}
+                        <div className={`flex items-center xl:col-span-2 rounded-2xl px-4 h-14 ${neuCardInset}`}>
+                            <Calendar className={`w-5 h-5 ${isDark ? 'text-gray-500' : 'text-gray-400'} mr-3 shrink-0`} />
+                            <div className="flex-1 flex items-center justify-between min-w-0 h-full">
+                                <input
+                                    type="date"
+                                    className={`w-full h-full bg-transparent text-sm font-bold focus:outline-none ${isDark ? 'text-white' : 'text-gray-900'} [color-scheme:dark] dark:[color-scheme:dark]`}
+                                    value={pickupDate}
+                                    onChange={e => setPickupDate(e.target.value)}
+                                    style={{ colorScheme: isDark ? 'dark' : 'light' }}
+                                />
+                                <div className={`w-[2px] h-6 mx-3 shrink-0 rounded-full ${isDark ? 'bg-[#14151a]' : 'bg-[#a3b1c6]'}`} />
+                                <input
+                                    type="date"
+                                    className={`w-full h-full bg-transparent text-sm font-bold focus:outline-none ${isDark ? 'text-white' : 'text-gray-900'} [color-scheme:dark] dark:[color-scheme:dark]`}
+                                    value={returnDate}
+                                    onChange={e => setReturnDate(e.target.value)}
+                                    style={{ colorScheme: isDark ? 'dark' : 'light' }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Submit Button */}
+                        <button
+                            type="submit"
+                            className={`h-14 xl:col-span-1 ${neuButton} ${isDark ? 'text-blue-400' : 'text-blue-600'}`}
+                        >
+                            <Filter className="w-5 h-5" />
+                            Filter
+                        </button>
+                    </form>
+                </div>
+
+                {/* Quick Actions Board */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                     {quickActions.map((action, i) => (
                         <button
                             key={i}
-                            className={`${action.color} text-white rounded-xl shadow-lg hover:shadow-xl transition p-8 flex flex-col items-center gap-4 mt-13`}
                             onClick={action.onClick ? () => action.onClick(navigate) : undefined}
+                            className={`group p-8 rounded-[2.5rem] flex flex-col items-center justify-center gap-6 text-center transition-all ${neuCardFlat} ${neuButtonHoverShadow} ${neuButtonActiveShadow}`}
                         >
-                            <div className="bg-white/20 rounded-lg p-4 mb-2">
+                            <div className={`w-20 h-20 rounded-full flex items-center justify-center ${neuCardInset}`}>
                                 {action.icon}
                             </div>
-                            <div className="text-center">
-                                <div className="font-bold text-lg mb-2">{action.label}</div>
-                                <div className="text-sm opacity-90">{action.desc}</div>
+                            <div>
+                                <h3 className={`font-bold text-xl mb-2 ${isDark ? 'group-hover:text-blue-400' : 'group-hover:text-blue-600'} transition-colors ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                                    {action.label}
+                                </h3>
+                                <p className="text-sm font-medium">{action.desc}</p>
                             </div>
                         </button>
                     ))}
                 </div>
-            </section>
 
-            {/* Featured Vehicles */}
-            <section className="max-w-6xl mx-auto px-4 mt-16">
-                <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-gray-800 mb-2">Featured Vehicles</h2>
-                    <p className="text-gray-600">
-                        Choose from our premium fleet of well-maintained vehicles
-                    </p>
-
+                {/* Vehicle Grid Header */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-10">
+                    <h2 className={`text-4xl font-black ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                        Available Fleet
+                    </h2>
+                    <div>
+                        <div className={`relative rounded-2xl overflow-hidden ${neuCardInset}`}>
+                            <select
+                                className={`h-14 w-56 pl-6 pr-12 appearance-none bg-transparent text-sm font-bold focus:outline-none cursor-pointer ${isDark ? 'text-white' : 'text-gray-900'
+                                    }`}
+                                value={vehicleType}
+                                onChange={(e) => {
+                                    setVehicleType(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                            >
+                                <option value="" className={isDark ? "bg-[#21232c]" : "bg-[#e0e5ec]"}>All Categories</option>
+                                <option value="suv" className={isDark ? "bg-[#21232c]" : "bg-[#e0e5ec]"}>SUV</option>
+                                <option value="sedan" className={isDark ? "bg-[#21232c]" : "bg-[#e0e5ec]"}>Sedan</option>
+                                <option value="van" className={isDark ? "bg-[#21232c]" : "bg-[#e0e5ec]"}>Van</option>
+                                <option value="truck" className={isDark ? "bg-[#21232c]" : "bg-[#e0e5ec]"}>Truck</option>
+                            </select>
+                            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
+                                <ChevronRight className={`w-5 h-5 rotate-90 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-
-                <div className="flex justify-end mt-8">
-                    <Link
-                        to="/vehicles"
-                        className="text-blue font-semibold px-8 py-3 rounded-lg shadow-lg transition inline-block"
-                    >
-                        View All Vehicles
-                    </Link>
-                </div>
-
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {loading ? (
-                        <div className="col-span-3 text-center text-gray-500 py-12">Loading vehicles...</div>
-                    ) : featuredVehicles.length === 0 ? (
-                        <div className="col-span-3 text-center text-gray-500 py-12">No vehicles found.</div>
-                    ) : (
-                        featuredVehicles.map((vehicle, i) => {
-                            const images = parseVehicleImages(vehicle.images, vehicle.id);
-                            const firstImage = images && images.length > 0 ? images[0] : null;
-                            const imageUrl = getImageUrl(firstImage);
+                {/* Vehicle Grid */}
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-24 gap-6">
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center ${neuCardInset}`}>
+                            <div className={`w-8 h-8 border-4 border-t-transparent rounded-full animate-spin ${isDark ? 'border-blue-400' : 'border-blue-600'}`} />
+                        </div>
+                        <p className="font-bold text-lg animate-pulse">Loading premium fleet...</p>
+                    </div>
+                ) : featuredVehicles.length === 0 ? (
+                    <div className={`py-32 text-center rounded-[3rem] ${neuCardInset}`}>
+                        <div className={`w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-8 ${neuCardFlat}`}>
+                            <Car className={`w-12 h-12 ${isDark ? 'text-gray-500' : 'text-gray-400'}`} />
+                        </div>
+                        <h3 className={`text-3xl font-black mb-4 ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>No vehicles found</h3>
+                        <p className="text-xl font-medium">Try adjusting your filters to see more luxury options.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
+                        {featuredVehicles.map((vehicle, i) => {
+                            const images = parseVehicleImages(vehicle.images);
+                            const imageUrl = getImageUrl(images[0]);
                             const isForSale = vehicle.listing_type === "sale";
+
                             return (
-                                <div key={i} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition">
-                                    <div className="relative">
+                                <div key={i} className={`flex flex-col rounded-[2.5rem] p-6 gap-6 transition-all duration-300 ${neuCardFlat} hover:-translate-y-2`}>
+
+                                    {/* Image Container */}
+                                    <div className={`relative aspect-[4/3] w-full rounded-[2rem] overflow-hidden p-3 ${neuCardInset}`}>
                                         <img
                                             src={imageUrl}
                                             alt={vehicle.name}
-                                            className="w-full h-56 object-cover"
-                                            onError={e => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image'; }}
+                                            className="w-full h-full object-cover rounded-xl"
+                                            onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image'; }}
                                         />
-                                        <span
-                                            className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-bold ${vehicle.status === "Available"
-                                                ? "bg-green-500 text-white"
-                                                : "bg-red-500 text-white"
-                                                }`}
-                                        >
-                                            {vehicle.status}
-                                        </span>
-                                    </div>
 
-                                    {/* Vehicle Info */}
-                                    <div className="p-6">
-                                        <h3 className="text-xl font-bold text-gray-800 mb-1">{vehicle.make} {vehicle.model}</h3>
-                                        <p className="text-gray-500 text-sm mb-3">{vehicle.type}</p>
-                                        <div className="text-sm text-gray-500">
-                                            <span className="font-semibold">Location:</span> {vehicle.location_address || 'N/A'}
-                                        </div>
-
-                                        {/* Rating */}
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <div className="flex text-yellow-400">
-                                                {Array(5)
-                                                    .fill(0)
-                                                    .map((_, idx) => (
-                                                        <span key={idx} className={idx < Math.round(vehicle.rating) ? "" : "text-gray-300"}>
-                                                            ★
-                                                        </span>
-                                                    ))}
-                                            </div>
-                                            <span className="text-sm text-gray-600">
-                                                {vehicle.rating} ({vehicle.reviews} reviews)
+                                        <div className="absolute top-6 left-6 right-6 flex justify-between items-start pointer-events-none z-10">
+                                            <span className={`px-5 py-2 rounded-full text-xs font-black uppercase tracking-widest ${neuCardFlat} ${vehicle.status === "Available"
+                                                    ? "text-emerald-500"
+                                                    : "text-rose-500"
+                                                }`}>
+                                                {vehicle.status}
                                             </span>
                                         </div>
+                                    </div>
 
-                                        {/* Price */}
-                                        <div className="flex items-end justify-between mb-4">
-                                            <div>
-                                                <span className="text-3xl font-bold text-gray-800">
-                                                    {isForSale ? formatPrice(vehicle.selling_price) : formatPrice(vehicle.price)}
+                                    {/* Card Content */}
+                                    <div className="flex-1 flex flex-col px-2">
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-center mb-3">
+                                                <span className={`text-sm font-black uppercase tracking-widest ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                                                    {vehicle.make}
                                                 </span>
-                                                <span className="text-gray-500 text-sm ml-1">
-                                                    {isForSale ? "" : "per day"}
+                                                <span className={`px-4 py-1.5 rounded-full text-sm font-bold ${neuCardInset}`}>
+                                                    ⭐ {Number(vehicle.rating).toFixed(1)}
+                                                </span>
+                                            </div>
+
+                                            <h3 className={`text-2xl font-black mb-6 leading-tight ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>
+                                                {vehicle.model}
+                                                <span className="ml-3 text-lg font-bold text-gray-500">
+                                                    {vehicle.year}
+                                                </span>
+                                            </h3>
+
+                                            <div className="flex flex-wrap items-center gap-4 text-sm font-bold mb-8">
+                                                <span className={`flex items-center gap-2 px-4 py-2 rounded-xl ${neuCardInset}`}>
+                                                    <Car className={`w-4 h-4 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                                                    {vehicle.type}
+                                                </span>
+                                                <span className={`flex items-center gap-2 px-4 py-2 rounded-xl flex-1 min-w-[120px] ${neuCardInset}`}>
+                                                    <MapPin className={`w-4 h-4 shrink-0 ${isDark ? 'text-blue-400' : 'text-blue-600'}`} />
+                                                    <span className="truncate">{vehicle.location_address || 'Unspecified'}</span>
                                                 </span>
                                             </div>
                                         </div>
 
-                                        {/* Action Button */}
-                                        <button
-                                            className="w-full bg-[#2c4a9d] hover:bg-[#1e3a7d] text-white font-semibold py-3 rounded-lg transition shadow-md"
-                                            onClick={() => navigate(`/Booking/${vehicle.id}`, {
-                                                state: { vehicle }
-                                            })}
-                                        >
-                                            {isForSale ? "BUY IT" : "Book Now"}
-                                        </button>
+                                        {/* Footer / CTA */}
+                                        <div className="flex items-center justify-between pt-4">
+                                            <div>
+                                                <p className="text-xs font-extrabold uppercase tracking-widest mb-1 text-gray-400">
+                                                    {isForSale ? "Price" : "Per Day"}
+                                                </p>
+                                                <p className={`text-2xl font-black ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                                                    {isForSale ? formatPrice(vehicle.selling_price) : formatPrice(vehicle.price)}
+                                                </p>
+                                            </div>
+
+                                            <button
+                                                className={`px-8 py-4 ${neuButton} text-lg ${isDark ? 'text-gray-200' : 'text-gray-800'}`}
+                                                onClick={() => navigate(`/Booking/${vehicle.id}`, { state: { vehicle } })}
+                                            >
+                                                {isForSale ? "Buy" : "Book"} <ArrowRight className="w-5 h-5 ml-1" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             );
-                        })
-                    )}
-                </div>
+                        })}
+                    </div>
+                )}
 
                 {/* Pagination */}
-                <div className="flex items-center justify-center gap-4 mt-10">
-                    <button
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        disabled={pagination.currentPage === 1}
-                    >
-                        <ChevronLeft className="w-4 h-4" />
-                        Prev
-                    </button>
-                    <div className="flex gap-2">
-                        {Array.from({ length: pagination.totalPages }, (_, i) => (
-                            <button
-                                key={i + 1}
-                                onClick={() => setCurrentPage(i + 1)}
-                                className={`w-10 h-10 rounded-lg font-semibold transition ${currentPage === i + 1
-                                    ? "bg-[#2c4a9d] text-white"
-                                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                                    }`}
-                            >
-                                {i + 1}
-                            </button>
-                        ))}
-                    </div>
-                    <button
-                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                        onClick={() => setCurrentPage((p) => Math.min(p + 1, pagination.totalPages))}
-                        disabled={pagination.currentPage === pagination.totalPages}
-                    >
-                        Next
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                </div>
-            </section>
+                {!loading && pagination.totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-6 mt-20">
+                        <button
+                            className={`p-4 rounded-xl disabled:opacity-50 disabled:shadow-none ${neuCardFlat} ${neuButtonHoverShadow} ${neuButtonActiveShadow}`}
+                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                            disabled={pagination.currentPage === 1}
+                        >
+                            <ChevronLeft className="w-6 h-6" />
+                        </button>
 
-            {/* Why Choose Section */}
-            <section className="max-w-6xl mx-auto px-4 py-16">
-                <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold text-gray-800 mb-2">Why Choose AutoFleet Hub?</h2>
-                    <p className="text-gray-600">
-                        Trusted by thousands of customers worldwide
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-                    {whyChoose.map((item, i) => (
-                        <div key={i} className="text-center">
-                            <div className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition">
-                                <div className={`text-5xl font-bold mb-2 ${item.color}`}>
-                                    {item.value}
-                                </div>
-                                <div className="text-gray-600 font-medium">{item.label}</div>
-                            </div>
+                        <div className={`flex gap-3 p-3 rounded-2xl ${neuCardInset}`}>
+                            {Array.from({ length: pagination.totalPages }, (_, i) => {
+                                const isCurrent = currentPage === i + 1;
+                                return (
+                                    <button
+                                        key={i + 1}
+                                        onClick={() => setCurrentPage(i + 1)}
+                                        className={`w-12 h-12 rounded-xl font-black text-lg transition-all ${isCurrent
+                                                ? `${neuCardInset} ${isDark ? 'text-blue-400' : 'text-blue-600'}`
+                                                : `${isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'}`
+                                            }`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                );
+                            })}
                         </div>
-                    ))}
-                </div>
-            </section>
+
+                        <button
+                            className={`p-4 rounded-xl disabled:opacity-50 disabled:shadow-none ${neuCardFlat} ${neuButtonHoverShadow} ${neuButtonActiveShadow}`}
+                            onClick={() => setCurrentPage((p) => Math.min(p + 1, pagination.totalPages))}
+                            disabled={pagination.currentPage === pagination.totalPages}
+                        >
+                            <ChevronRight className="w-6 h-6" />
+                        </button>
+                    </div>
+                )}
+            </main>
         </div>
     );
 }

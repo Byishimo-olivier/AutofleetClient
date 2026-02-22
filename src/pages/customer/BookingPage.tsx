@@ -109,7 +109,7 @@ export default function VehicleDetails() {
   // Paypack Config
   const paypackConfig = React.useMemo(() => {
     const amount = calculateTotalPrice();
-    
+
     return {
       amount,
       email: user?.email || 'customer@autofleet.com',
@@ -120,7 +120,7 @@ export default function VehicleDetails() {
 
   const handlePaypackPayment = async () => {
     const amount = calculateTotalPrice();
-    
+
     if (amount <= 0) {
       setErrorMessage("Total price must be greater than 0");
       return;
@@ -140,6 +140,12 @@ export default function VehicleDetails() {
       return;
     }
 
+    // Validate phone number for mobile money
+    if (!telephone || telephone.trim().length < 10) {
+      setErrorMessage("Please enter a valid phone number (e.g., 0788123456)");
+      return;
+    }
+
     setLoading(true);
     initializePaypackPayment();
   };
@@ -147,25 +153,37 @@ export default function VehicleDetails() {
   const initializePaypackPayment = async () => {
     try {
       const amount = calculateTotalPrice();
-      
+
+      // Format phone number: ensure it starts with 250 for Rwanda
+      let phoneNumber = telephone.trim().replace(/\s+/g, '');
+      if (phoneNumber.startsWith('0')) {
+        phoneNumber = '250' + phoneNumber.substring(1);
+      } else if (!phoneNumber.startsWith('250')) {
+        phoneNumber = '250' + phoneNumber;
+      }
+
       console.log("🔐 Initiating Paypack payment:", {
         amount,
+        phone: phoneNumber,
         email: paypackConfig.email,
         currency: 'RWF'
       });
 
       // Call backend endpoint to initiate Paypack payment
       const response = await apiClient.post('/bookings/initiate-payment', {
-        booking_id: vehicleId, // Use vehicle ID as reference since booking doesn't exist yet
+        booking_id: vehicleId,
         amount: amount,
-        email: paypackConfig.email
+        email: paypackConfig.email,
+        number: phoneNumber
       });
 
       console.log("Paypack initiate response:", response);
 
-      if (response.success && response.data?.payment_url) {
-        // Redirect to Paypack payment page
-        window.location.href = response.data.payment_url;
+      if (response.success && response.data) {
+        // Paypack cashin sends a USSD push to the phone - no redirect needed
+        setSuccessMessage("A payment prompt has been sent to your phone. Please confirm the payment on your device.");
+        setIsPendingPayment(true);
+        setLoading(false);
       } else {
         setErrorMessage("Failed to initiate Paypack payment: " + (response.message || 'Unknown error'));
         setLoading(false);
@@ -181,7 +199,7 @@ export default function VehicleDetails() {
     try {
       setLoading(true);
       const isForSale = vehicle?.listing_type === "sale";
-      
+
       // Get current user - check both context and localStorage
       let currentUser = user;
       if (!currentUser) {
@@ -194,7 +212,7 @@ export default function VehicleDetails() {
       if (!currentUser?.id) {
         throw new Error('User not authenticated');
       }
-      
+
       // Create booking first
       const bookingResponse = await apiClient.post('/bookings', {
         vehicle_id: vehicleId,
