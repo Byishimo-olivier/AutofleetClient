@@ -134,10 +134,10 @@ const VehicleManagementPage: React.FC = () => {
         const vehiclesData = vehiclesList;
         const newStats = {
           total: vehiclesData.length,
-          available: vehiclesData.filter((v: Vehicle) => v.status === 'available').length,
-          rented: vehiclesData.filter((v: Vehicle) => v.status === 'rented').length,
-          maintenance: vehiclesData.filter((v: Vehicle) => v.status === 'maintenance').length,
-          inactive: vehiclesData.filter((v: Vehicle) => v.status === 'inactive').length,
+          available: vehiclesData.filter((v: Vehicle) => v.status?.toLowerCase() === 'available').length,
+          rented: vehiclesData.filter((v: Vehicle) => v.status?.toLowerCase() === 'rented').length,
+          maintenance: vehiclesData.filter((v: Vehicle) => v.status?.toLowerCase() === 'maintenance').length,
+          inactive: vehiclesData.filter((v: Vehicle) => v.status?.toLowerCase() === 'inactive').length,
         };
         setStats(newStats);
       }
