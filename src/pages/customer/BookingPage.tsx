@@ -114,15 +114,7 @@ export default function VehicleDetails() {
       amount,
       email: user?.email || 'customer@autofleet.com',
       publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_1363f2cf5db2f2f6bd8cf64db5294078c4c45e80',
-      reference: `autofleet-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      onSuccess: async (response: any) => {
-        console.log("Paystack payment successful:", response);
-        await handlePaymentSuccess(response.reference);
-      },
-      onClose: () => {
-        console.log("Paystack payment closed");
-        setErrorMessage("Payment was cancelled");
-      }
+      reference: `autofleet-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
     };
   }, [user, calculateTotalPrice()]);
 
@@ -161,33 +153,36 @@ export default function VehicleDetails() {
   };
 
   const initializePaystackPayment = () => {
-    const amount = calculateTotalPrice();
-    
     if (!window.PaystackPop) {
       setErrorMessage("Failed to load payment gateway");
       setLoading(false);
       return;
     }
 
+    // Use function declarations instead of arrow functions for Paystack compatibility
+    const onCloseHandler = function() {
+      console.log("Paystack payment closed");
+      setErrorMessage("Payment was cancelled");
+      setLoading(false);
+    };
+
+    const callbackHandler = function(response: any) {
+      console.log("Paystack payment callback:", response);
+      if (response && response.reference) {
+        handlePaymentSuccess(response.reference);
+      } else {
+        setErrorMessage("Payment verification failed");
+        setLoading(false);
+      }
+    };
+
     window.PaystackPop.setup({
       key: paystackConfig.publicKey,
       email: paystackConfig.email,
       amount: paystackConfig.amount,
       ref: paystackConfig.reference,
-      onClose: () => {
-        console.log("Paystack payment closed");
-        setErrorMessage("Payment was cancelled");
-        setLoading(false);
-      },
-      callback: async (response: any) => {
-        console.log("Paystack payment callback:", response);
-        if (response && response.reference) {
-          await handlePaymentSuccess(response.reference);
-        } else {
-          setErrorMessage("Payment verification failed");
-          setLoading(false);
-        }
-      }
+      onClose: onCloseHandler,
+      callback: callbackHandler
     }).openIframe();
   };
 
