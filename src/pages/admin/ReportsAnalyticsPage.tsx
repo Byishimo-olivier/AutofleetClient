@@ -26,6 +26,7 @@ import {
 import { useSettings } from '@/contexts/SettingContxt';
 import { apiClient } from '@/services/apiClient';
 import AdminLayout from "@/components/layout/AdminLayout";
+import ReportHeader from "@/components/ReportHeader";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logo from '@/assets/logo.png';
