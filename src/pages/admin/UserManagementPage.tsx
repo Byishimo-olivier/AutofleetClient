@@ -761,20 +761,19 @@ const UserManagementPage: React.FC = () => {
                   <th className="px-6 py-4 text-left font-bold text-gray-800 text-sm uppercase tracking-wider">Email</th>
                   <th className="px-6 py-4 text-left font-bold text-gray-800 text-sm uppercase tracking-wider">Phone</th>
                   <th className="px-6 py-4 text-left font-bold text-gray-800 text-sm uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-4 text-left font-bold text-gray-800 text-sm uppercase tracking-wider">Status</th>
                   <th className="px-6 py-4 text-left font-bold text-gray-800 text-sm uppercase tracking-wider">Action</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-12">
+                    <td colSpan={6} className="text-center py-12">
                       <div className="text-gray-500 text-lg font-medium">Loading users...</div>
                     </td>
                   </tr>
                 ) : users.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-12">
+                    <td colSpan={6} className="text-center py-12">
                       <div className="text-gray-500 text-lg font-medium">No users found</div>
                     </td>
                   </tr>
