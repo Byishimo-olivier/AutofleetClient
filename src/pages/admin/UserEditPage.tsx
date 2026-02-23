@@ -40,8 +40,8 @@ export default function UserEditPage() {
       const response = await apiClient.get(`/users/${userId}`);
 
       if (response.success && response.data) {
-        setUser(response.data);
-        setFormData(response.data);
+        setUser(response.data as User);
+        setFormData(response.data as User);
         setError('');
       } else {
         setError('Failed to load user');

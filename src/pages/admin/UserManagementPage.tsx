@@ -32,7 +32,6 @@ interface User {
   last_name: string;
   phone: string;
   role: string;
-  is_active: boolean;
   created_at: string;
   last_login?: string;
 }
@@ -42,8 +41,6 @@ interface UserStats {
   admin: number;
   owner: number;
   customer: number;
-  active: number;
-  inactive: number;
 }
 
 interface NewUser {
@@ -71,9 +68,7 @@ const UserManagementPage: React.FC = () => {
     total: 0,
     admin: 0,
     owner: 0,
-    customer: 0,
-    active: 0,
-    inactive: 0
+    customer: 0
   });
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -189,7 +184,7 @@ const UserManagementPage: React.FC = () => {
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
 
-      const statsText = `Total: ${userStats.total} | Active: ${userStats.active} | Inactive: ${userStats.inactive} | Customers: ${userStats.customer} | Owners: ${userStats.owner} | Admins: ${userStats.admin}`;
+      const statsText = `Total: ${userStats.total} | Customers: ${userStats.customer} | Owners: ${userStats.owner} | Admins: ${userStats.admin}`;
       doc.text(statsText, 20, yPos);
 
       // Table section
@@ -199,14 +194,13 @@ const UserManagementPage: React.FC = () => {
       doc.text('User Details', 20, yPos);
 
       // Table data
-      const tableColumns = ['#', 'Name', 'Email', 'Phone', 'Role', 'Status', 'Created'];
+      const tableColumns = ['#', 'Name', 'Email', 'Phone', 'Role', 'Created'];
       const tableRows = users.map((user, index) => [
         (index + 1).toString(),
         `${user.first_name} ${user.last_name}`,
         user.email,
         user.phone || 'N/A',
         user.role.charAt(0).toUpperCase() + user.role.slice(1),
-        user.is_active ? 'Active' : 'Inactive',
         new Date(user.created_at).toLocaleDateString()
       ]);
 
@@ -368,17 +362,12 @@ const UserManagementPage: React.FC = () => {
               else if (user.role === 'owner') acc.owner++;
               else if (user.role === 'customer') acc.customer++;
 
-              if (user.is_active) acc.active++;
-              else acc.inactive++;
-
               return acc;
             }, {
               total: 0,
               admin: 0,
               owner: 0,
-              customer: 0,
-              active: 0,
-              inactive: 0
+              customer: 0
             });
 
             console.log('Calculated stats from users data:', stats);
@@ -826,12 +815,6 @@ const UserManagementPage: React.FC = () => {
                               'bg-green-100 text-green-700'
                           }`}>
                           {user.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`px-4 py-2 rounded-full text-sm font-bold ${user.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                          }`}>
-                          {user.is_active ? "Active" : "Inactive"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
