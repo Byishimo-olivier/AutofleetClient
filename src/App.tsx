@@ -26,6 +26,7 @@ import ChatBot from "@/components/chatbot/ChatBot";
 // Admin Pages
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import UserManagementPage from "@/pages/admin/UserManagementPage";
+import UserEditPage from "@/pages/admin/UserEditPage";
 import VehicleManagementPage from "@/pages/admin/VehicleManagementPage";
 import BookingsManagementPage from "@/pages/admin/BookingsManagementPage";
 import ReportsAnalyticsPage from "@/pages/admin/ReportsAnalyticsPage";
@@ -202,6 +203,16 @@ function App() {
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminLayout>
                     <UserManagementPage />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/users/:userId"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <UserEditPage />
                   </AdminLayout>
                 </ProtectedRoute>
               }
