@@ -199,9 +199,9 @@ const ReportsAnalyticsPage: React.FC = () => {
       return sum + amount;
     }, 0);
 
-    // Calculate fleet utilization (approved vehicles / total vehicles)
-    const approvedVehicles = vehiclesList.filter(v => v.status === 'approved').length;
-    const fleetUtilization = vehiclesList.length > 0 ? (approvedVehicles / vehiclesList.length) * 100 : 0;
+    // Calculate fleet utilization (available/active vehicles / total vehicles)
+    const availableVehicles = vehiclesList.filter(v => v.status === 'available' || v.status === 'rented').length;
+    const fleetUtilization = vehiclesList.length > 0 ? (availableVehicles / vehiclesList.length) * 100 : 0;
 
     // Calculate average rating from bookings or vehicles
     const ratingsFromBookings = bookingsList
@@ -972,7 +972,7 @@ const ReportsAnalyticsPage: React.FC = () => {
                 <p className="text-gray-600 text-sm font-medium">Fleet Utilization</p>
                 <p className="text-2xl font-bold text-gray-900">{safeFormatPercentage(dashboardStats.fleetUtilization)}</p>
                 <p className="text-sm text-red-600 font-medium">{dashboardStats.utilizationChange}</p>
-                <p className="text-xs text-gray-500">({vehicles.filter(v => v.status === 'approved').length}/{vehicles.length} vehicles)</p>
+                <p className="text-xs text-gray-500">({vehicles.filter(v => v.status === 'available' || v.status === 'rented').length}/{vehicles.length} vehicles)</p>
               </div>
               <BarChart2 className="w-10 h-10 text-red-500" />
             </div>
@@ -1185,8 +1185,8 @@ function generateFallbackFleetUtilization(vehicles: any[]): FleetUtilization[] {
     }
     categoryMap[category].total += 1;
     if (
-      String(vehicle.status).toLowerCase() === "approved" ||
-      String(vehicle.status).toLowerCase() === "active"
+      String(vehicle.status).toLowerCase() === "available" ||
+      String(vehicle.status).toLowerCase() === "rented"
     ) {
       categoryMap[category].active += 1;
     }
