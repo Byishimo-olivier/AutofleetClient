@@ -84,6 +84,8 @@ export default function VehicleDetails() {
   const [successMessage, setSuccessMessage] = useState("");
   const [txNonce, setTxNonce] = useState(0);
   const [isPendingPayment, setIsPendingPayment] = useState(false);
+  const [showUSSDModal, setShowUSSDModal] = useState(false);
+  const [ussdPhone, setUSSDPhone] = useState("");
 
   const { settings, formatPrice, t } = useSettings();
   const { user } = useAuth();
@@ -147,15 +149,57 @@ export default function VehicleDetails() {
     }
 
     setLoading(true);
-    initializePaypackPayment();
+    
+    try {
+      // Step 1: Create the booking first
+      const bookingResponse = await apiClient.post('/bookings', {
+        vehicle_id: vehicleId,
+        pickup_location: pickupLocation,
+        pickup_date: pickupDate,
+        return_date: returnDate,
+        payment_method: paymentMethod, // Use the selected payment method (mobile or card)
+        total_price: amount,
+        telephone: telephone
+      });
+
+      let bookingId;
+      type BookingResponseData = {
+        id?: string;
+        data?: { id?: string };
+        booking?: { id?: string };
+        [key: string]: any;
+      };
+      const bookingData = bookingResponse.data as BookingResponseData;
+      if (bookingData) {
+        // Extract booking ID from response
+        if (bookingData.id) {
+          bookingId = bookingData.id;
+        } else if (bookingData.data && bookingData.data.id) {
+          bookingId = bookingData.data.id;
+        } else if (bookingData.booking && bookingData.booking.id) {
+          bookingId = bookingData.booking.id;
+        }
+      }
+
+      if (!bookingId) {
+        throw new Error('Failed to create booking - no booking ID returned');
+      }
+
+      console.log("✅ Booking created with ID:", bookingId);
+
+      // Step 2: Now initiate payment with the booking ID
+      await initializePaypackPayment(bookingId, amount, telephone);
+    } catch (error) {
+      console.error("Booking creation error:", error);
+      setErrorMessage("Failed to create booking: " + (error as any).message);
+      setLoading(false);
+    }
   };
 
-  const initializePaypackPayment = async () => {
+  const initializePaypackPayment = async (bookingId: string, amount: number, phone: string) => {
     try {
-      const amount = calculateTotalPrice();
-
       // Format phone number: ensure it starts with 250 for Rwanda
-      let phoneNumber = telephone.trim().replace(/\s+/g, '');
+      let phoneNumber = phone.trim().replace(/\s+/g, '');
       if (phoneNumber.startsWith('0')) {
         phoneNumber = '250' + phoneNumber.substring(1);
       } else if (!phoneNumber.startsWith('250')) {
@@ -163,26 +207,32 @@ export default function VehicleDetails() {
       }
 
       console.log("🔐 Initiating Paypack payment:", {
+        booking_id: bookingId,
         amount,
         phone: phoneNumber,
-        email: paypackConfig.email,
         currency: 'RWF'
       });
 
       // Call backend endpoint to initiate Paypack payment
       const response = await apiClient.post('/bookings/initiate-payment', {
-        booking_id: vehicleId,
+        booking_id: bookingId,
         amount: amount,
-        email: paypackConfig.email,
         number: phoneNumber
       });
 
       console.log("Paypack initiate response:", response);
 
       if (response.success && response.data) {
-        // Paypack cashin sends a USSD push to the phone - no redirect needed
-        setSuccessMessage("A payment prompt has been sent to your phone. Please confirm the payment on your device.");
+        // Paypack cashin sends a USSD push to the phone - show modal to user
+        setUSSDPhone(phoneNumber);
+        setShowUSSDModal(true);
         setIsPendingPayment(true);
+        
+        // Store booking ID and transaction reference for verification
+        localStorage.setItem('pending_booking_id', bookingId);
+        const ref = (response.data as { reference?: string; transaction_id?: string })?.reference || (response.data as { transaction_id?: string })?.transaction_id || '';
+        localStorage.setItem('pending_transaction_ref', ref);
+        
         setLoading(false);
       } else {
         setErrorMessage("Failed to initiate Paypack payment: " + (response.message || 'Unknown error'));
@@ -191,6 +241,59 @@ export default function VehicleDetails() {
     } catch (error) {
       console.error("Paypack payment error:", error);
       setErrorMessage("Failed to open payment gateway: " + (error as any).message);
+      setLoading(false);
+    }
+  };
+
+  const verifyPaypackPayment = async () => {
+    try {
+      setLoading(true);
+      
+      const bookingId = localStorage.getItem('pending_booking_id');
+      const transactionRef = localStorage.getItem('pending_transaction_ref');
+
+      if (!bookingId || !transactionRef) {
+        setErrorMessage("Missing payment details. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      console.log("🔍 Verifying payment:", { bookingId, transactionRef });
+
+      // Call verify payment endpoint
+      const response = await apiClient.post('/bookings/verify-payment', {
+        transaction_ref: transactionRef,
+        booking_id: bookingId
+      });
+
+      console.log("Payment verification response:", response);
+
+      // Safely check for status property
+      const statusConfirmed =
+        response.data &&
+        typeof response.data === 'object' &&
+        'status' in response.data &&
+        (response.data as { status?: string }).status === 'confirmed';
+
+      if (response.success || statusConfirmed) {
+        setSuccessMessage("✅ Payment verified! Your booking is confirmed.");
+        setIsPendingPayment(false);
+        
+        // Clear stored data
+        localStorage.removeItem('pending_booking_id');
+        localStorage.removeItem('pending_transaction_ref');
+        
+        // Redirect to bookings page after 2 seconds
+        setTimeout(() => {
+          navigate('/bookings');
+        }, 2000);
+      } else {
+        setErrorMessage("Payment verification failed. Please try again or contact support.");
+      }
+    } catch (error) {
+      console.error("Payment verification error:", error);
+      setErrorMessage("Failed to verify payment: " + (error as any).message);
+    } finally {
       setLoading(false);
     }
   };
@@ -878,6 +981,29 @@ export default function VehicleDetails() {
                     <span className="text-green-600 text-sm font-medium">
                       {successMessage}
                     </span>
+                    {isPendingPayment && (
+                      <div className="mt-4 flex gap-3 justify-center">
+                        <Button
+                          onClick={verifyPaypackPayment}
+                          disabled={loading}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {loading ? "Verifying..." : "✅ Verify Payment"}
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setSuccessMessage("");
+                            setIsPendingPayment(false);
+                            setShowUSSDModal(false);
+                            localStorage.removeItem('pending_booking_id');
+                            localStorage.removeItem('pending_transaction_ref');
+                          }}
+                          variant="outline"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </form>
@@ -885,6 +1011,61 @@ export default function VehicleDetails() {
           </div>
         </div>
       </div>
+
+      {/* USSD Payment Confirmation Modal */}
+      {showUSSDModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`${settings.darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-8 max-w-md w-full mx-4 shadow-2xl`}>
+            <div className="text-center">
+              <div className="mb-4 text-5xl">📱</div>
+              <h2 className={`text-2xl font-bold mb-3 ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
+                Check Your Phone
+              </h2>
+              <p className={`text-lg mb-2 ${settings.darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                A payment confirmation message has been sent to:
+              </p>
+              <p className={`text-xl font-semibold mb-4 ${settings.darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                {ussdPhone}
+              </p>
+              <div className={`bg-blue-50 dark:bg-blue-900 rounded-lg p-4 mb-4 text-left ${settings.darkMode ? 'bg-gray-700' : ''}`}>
+                <p className={`${settings.darkMode ? 'text-gray-300' : 'text-gray-700'} text-sm font-medium mb-2`}>
+                  📲 What to do next:
+                </p>
+                <ol className={`list-decimal list-inside space-y-1 text-sm ${settings.darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <li>Look for a USSD prompt on your phone</li>
+                  <li>A pop-up message will appear with payment details</li>
+                  <li>Enter your PIN to confirm the payment</li>
+                  <li>Once confirmed, click "Verify Payment" below</li>
+                </ol>
+              </div>
+              <p className={`text-xs mb-6 ${settings.darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                ⏱️ This usually takes 10-30 seconds
+              </p>
+              <Button
+                onClick={() => {
+                  verifyPaypackPayment();
+                }}
+                disabled={loading}
+                className="w-full bg-green-600 hover:bg-green-700 mb-3"
+              >
+                {loading ? "Verifying Payment..." : "✅ Payment Confirmed"}
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowUSSDModal(false);
+                  setIsPendingPayment(false);
+                  localStorage.removeItem('pending_booking_id');
+                  localStorage.removeItem('pending_transaction_ref');
+                }}
+                variant="outline"
+                className="w-full"
+              >
+                Cancel Payment
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
 
   );
