@@ -19,7 +19,7 @@ export const SettingProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [settings, setSettings] = useState<Settings>({
     darkMode: false,
     language: 'en',
-    currency: 'USD',
+    currency: 'RWF',
   });
 
   const toggleDarkMode = () => {
@@ -31,7 +31,7 @@ export const SettingProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   const setCurrency = (currency: string) => {
-    setSettings(prev => ({ ...prev, currency }));
+    setSettings(prev => ({ ...prev, currency: 'RWF' }));
   };
 
   return (

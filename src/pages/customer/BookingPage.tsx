@@ -105,7 +105,9 @@ export default function VehicleDetails() {
     if (!vehicle) return 0;
     const isForSale = vehicle.listing_type === "sale";
     if (isForSale) return vehicle.selling_price || 0;
-    return days * (vehicle.price || 0);
+    const daily = vehicle.price ?? (vehicle as any).daily_rate ?? 0;
+    const numericDaily = typeof daily === "string" ? parseFloat(daily) : daily;
+    return days * (Number.isFinite(numericDaily) ? numericDaily : 0);
   };
 
   // Paypack Config
@@ -589,10 +591,10 @@ export default function VehicleDetails() {
               <div className="p-8">
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h1 className={`text-3xl font-bold mb-2 ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
+                    <h1 className={`text-2xl font-bold mb-2 ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
                       {vehicle.name}
                     </h1>
-                    <p className="text-xl text-blue-600 font-semibold">{vehicle.type}</p>
+                    <p className="text-lg text-blue-600 font-semibold">{vehicle.type}</p>
                   </div>
                   <span
                     className={`px-4 py-2 rounded-full text-sm font-bold ${vehicle.status === "Available"
@@ -814,7 +816,7 @@ export default function VehicleDetails() {
                       {isForSale ? "Vehicle Price:" : "Daily Rate:"}
                     </span>
                     <span className={`font-semibold ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
-                      {formatPrice(isForSale ? vehicle.selling_price || 0 : vehicle.price || 0)}{!isForSale && "/day"}
+                      {formatPrice(isForSale ? vehicle.selling_price || 0 : (vehicle.price ?? (vehicle as any).daily_rate ?? 0))}{!isForSale && "/day"}
                     </span>
                   </div>
                   <div className={`border-t pt-2 mt-2 ${settings.darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
@@ -1028,8 +1030,8 @@ export default function VehicleDetails() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className={`${settings.darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-8 max-w-md w-full mx-4 shadow-2xl`}>
             <div className="text-center">
-              <div className="mb-4 text-5xl">📱</div>
-              <h2 className={`text-2xl font-bold mb-3 ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
+              <div className="mb-4 text-4xl">📱</div>
+              <h2 className={`text-xl font-bold mb-3 ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
                 Check Your Phone
               </h2>
               <p className={`text-lg mb-2 ${settings.darkMode ? 'text-gray-300' : 'text-gray-600'}`}>

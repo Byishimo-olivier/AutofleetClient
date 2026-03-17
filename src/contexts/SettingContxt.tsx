@@ -134,16 +134,16 @@ const translations = {
   fr: {
     // Navigation
     profile: "Profil",
-    settings: "Paramètres de l'app",
-    security: "Sécurité",
-    privacy: "Confidentialité",
+    settings: "ParamÃƒÂ¨tres de l'app",
+    security: "SÃƒÂ©curitÃƒÂ©",
+    privacy: "ConfidentialitÃƒÂ©",
     dashboard: "Tableau de bord",
-    vehicles: "Véhicules",
-    bookings: "Réservations",
+    vehicles: "VÃƒÂ©hicules",
+    bookings: "RÃƒÂ©servations",
     feedback: "Commentaires",
     analytics: "Analyses",
     support: "Support",
-    logout: "Déconnexion",
+    logout: "DÃƒÂ©connexion",
 
     // Auth
     login: "Connexion",
@@ -153,9 +153,9 @@ const translations = {
     email: "Email",
     password: "Mot de passe",
     confirmPassword: "Confirmer le mot de passe",
-    firstName: "Prénom",
+    firstName: "PrÃƒÂ©nom",
     lastName: "Nom",
-    phone: "Numéro de téléphone",
+    phone: "NumÃƒÂ©ro de tÃƒÂ©lÃƒÂ©phone",
 
     // Common
     save: "Enregistrer",
@@ -167,17 +167,17 @@ const translations = {
     filter: "Filtrer",
     sort: "Trier",
     loading: "Chargement...",
-    success: "Succès",
+    success: "SuccÃƒÂ¨s",
     error: "Erreur",
 
     // App Specific
     autofleetHub: "AutoFleet Hub",
     customer: "Client",
-    owner: "Propriétaire de véhicule",
+    owner: "PropriÃƒÂ©taire de vÃƒÂ©hicule",
     admin: "Administrateur",
-    myBookings: "Mes réservations",
-    addVehicle: "Ajouter un véhicule",
-    rentVehicle: "Louer un véhicule",
+    myBookings: "Mes rÃƒÂ©servations",
+    addVehicle: "Ajouter un vÃƒÂ©hicule",
+    rentVehicle: "Louer un vÃƒÂ©hicule",
 
     // Settings
     notifications: "Notifications",
@@ -304,12 +304,7 @@ const translations = {
 };
 
 const currencyConfig = {
-  USD: { symbol: '$', code: 'USD', name: 'US Dollar' },
-  RWF: { symbol: '₣', code: 'RWF', name: 'Rwandan Franc' },
-  EUR: { symbol: '€', code: 'EUR', name: 'Euro' },
-  KES: { symbol: 'KSh', code: 'KES', name: 'Kenyan Shilling' },
-  TZS: { symbol: 'TSh', code: 'TZS', name: 'Tanzanian Shilling' },
-  UGX: { symbol: 'USh', code: 'UGX', name: 'Ugandan Shilling' },
+  RWF: { symbol: "RWF", code: "RWF", name: "Rwandan Franc" }
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -320,10 +315,18 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   // Get current translation
   const t = translations[settings.language as keyof typeof translations] || translations.en;
 
-  // Format price based on selected currency
-  const formatPrice = (amount: number) => {
-    const config = currencyConfig[settings.currency as keyof typeof currencyConfig] || currencyConfig.USD;
-    return `${config.symbol}${amount.toLocaleString()}`;
+  // Format price always in RWF
+  const formatPrice = (amount: number | string) => {
+    const numericAmount = typeof amount === "string"
+      ? parseFloat(amount.replace(/[^\d.-]/g, ""))
+      : amount;
+    const safeAmount = Number.isFinite(numericAmount) ? numericAmount : 0;
+    return new Intl.NumberFormat("en-RW", {
+      style: "currency",
+      currency: "RWF",
+      currencyDisplay: "code",
+      maximumFractionDigits: 0
+    }).format(safeAmount);
   };
 
   // Load settings on mount
@@ -344,7 +347,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         let parsed = JSON.parse(savedSettings);
 
         // MIGRATION: Force RWF if local storage is USD
-        if (parsed.currency === "USD") {
+        if (parsed.currency !== "RWF") {
           parsed.currency = "RWF";
           localStorage.setItem("appSettings", JSON.stringify(parsed));
         }
@@ -362,7 +365,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
         };
 
         // MIGRATION: Force RWF if current session/db is USD
-        if (updatedSettings.currency === "USD") {
+        if (updatedSettings.currency !== "RWF") {
           updatedSettings = { ...updatedSettings, currency: "RWF" };
           // Save back to API if possible, or just local
           apiClient.put("/users/settings", { preferences: updatedSettings }).catch(e => console.error("Migration save failed", e));
@@ -450,7 +453,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const updateSetting = async (key: string, value: any) => {
-    const newSettings = { ...settings, [key]: value };
+    const finalValue = key === "currency" ? "RWF" : value;
+    const newSettings = { ...settings, [key]: finalValue };
     setSettings(newSettings);
 
     // Save to localStorage immediately for better UX
@@ -458,7 +462,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
 
     // Dispatch custom events for specific settings
     if (key === 'currency') {
-      window.dispatchEvent(new CustomEvent('currencyChanged', { detail: value }));
+      window.dispatchEvent(new CustomEvent('currencyChanged', { detail: 'RWF' }));
     }
 
     if (key === 'darkMode') {
@@ -474,8 +478,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
 
     try {
-      await apiClient.put("/users/settings", { [key]: value });
-      console.log(`✅ Setting ${key} updated successfully`);
+      await apiClient.put("/users/settings", { [key]: finalValue });
+      console.log(`Ã¢Å“â€¦ Setting ${key} updated successfully`);
     } catch (error) {
       console.error("Error updating setting:", error);
       // Optionally revert the setting if API call fails
@@ -516,3 +520,5 @@ export const useTranslation = () => {
     language: settings.language,
   };
 };
+
+

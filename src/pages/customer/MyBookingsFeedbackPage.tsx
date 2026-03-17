@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Star, Upload } from "lucide-react";
+import { X, Star, Upload, MapPin } from "lucide-react";
 import { apiClient, API_BASE_URL, STATIC_BASE_URL } from "@/services/apiClient";
 
 
@@ -90,6 +90,11 @@ const MyBookingsFeedbackPage: React.FC = () => {
 
   // State for real data
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [trackingBookingId, setTrackingBookingId] = useState<string | null>(null);
+  const [trackingData, setTrackingData] = useState<any>(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [trackingError, setTrackingError] = useState<string | null>(null);
+  const [trackingLastUpdated, setTrackingLastUpdated] = useState<string | null>(null);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -350,6 +355,50 @@ const MyBookingsFeedbackPage: React.FC = () => {
     }
   };
 
+  const openTracking = (bookingId: string) => {
+    setTrackingBookingId(bookingId);
+  };
+
+  const closeTracking = () => {
+    setTrackingBookingId(null);
+    setTrackingData(null);
+    setTrackingError(null);
+    setTrackingLastUpdated(null);
+  };
+
+  useEffect(() => {
+    if (!trackingBookingId) return;
+    let active = true;
+    let interval: any;
+
+    const fetchTracking = async () => {
+      setTrackingLoading(true);
+      try {
+        const res = await apiClient.get<any>(`/tracking/booking/${trackingBookingId}/latest`);
+        if (!active) return;
+        if (res.success) {
+          setTrackingData(res.data || null);
+          setTrackingError(null);
+          setTrackingLastUpdated(new Date().toISOString());
+        } else {
+          setTrackingError(res.message || "Failed to fetch tracking");
+        }
+      } catch (err: any) {
+        if (!active) return;
+        setTrackingError(err?.message || "Failed to fetch tracking");
+      } finally {
+        if (active) setTrackingLoading(false);
+      }
+    };
+
+    fetchTracking();
+    interval = setInterval(fetchTracking, 10000);
+    return () => {
+      active = false;
+      if (interval) clearInterval(interval);
+    };
+  }, [trackingBookingId]);
+
   const getImageUrl = (img: string | null | undefined) => {
     if (!img) return 'https://placehold.co/600x400?text=No+Image';
     if (img.startsWith("http://") || img.startsWith("https://")) return img;
@@ -552,96 +601,139 @@ const MyBookingsFeedbackPage: React.FC = () => {
           ) : tab === "booking" ? (
             // Bookings Tab
             bookings.map((booking) => (
-              <div
-                key={booking.id}
-                className="bg-white rounded-xl shadow px-6 py-4 flex flex-col md:flex-row items-center md:items-stretch gap-4"
-              >
-                <div className="w-28 h-20 bg-gray-300 rounded-lg mr-3 overflow-hidden flex items-center justify-center border">
-                  {(() => {
-                    const images = parseVehicleImages(booking.images);
-                    const firstImage = images && images.length > 0 ? images[0] : null;
-                    const imageUrl = getImageUrl(firstImage);
-                    return (
-                      <img
-                        src={imageUrl}
-                        alt={getVehicleName(booking)}
-                        className="w-full h-full object-cover"
-                        onError={e => {
-                          (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
-                        }}
-                      />
-                    );
-                  })()}
-                </div>
-                <div className="flex-1 flex flex-col md:flex-row gap-4">
-                  <div className="flex-1">
-                    <div className="font-semibold">{getVehicleName(booking)}</div>
-                    <div className="text-xs text-gray-500">{booking.license_plate}</div>
-                    <div className="text-xs mt-2">
-                      <span className="font-semibold">Booking ID:</span>{" "}
-                      <span className="text-blue-700">#{booking.id}</span>
+              <div key={booking.id} className="space-y-4">
+                <div className="bg-white rounded-xl shadow px-6 py-4 flex flex-col md:flex-row items-center md:items-stretch gap-4">
+                  <div className="w-28 h-20 bg-gray-300 rounded-lg mr-3 overflow-hidden flex items-center justify-center border">
+                    {(() => {
+                      const images = parseVehicleImages(booking.images);
+                      const firstImage = images && images.length > 0 ? images[0] : null;
+                      const imageUrl = getImageUrl(firstImage);
+                      return (
+                        <img
+                          src={imageUrl}
+                          alt={getVehicleName(booking)}
+                          className="w-full h-full object-cover"
+                          onError={e => {
+                            (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
+                          }}
+                        />
+                      );
+                    })()}
+                  </div>
+                  <div className="flex-1 flex flex-col md:flex-row gap-4">
+                    <div className="flex-1">
+                      <div className="font-semibold">{getVehicleName(booking)}</div>
+                      <div className="text-xs text-gray-500">{booking.license_plate}</div>
+                      <div className="text-xs mt-2">
+                        <span className="font-semibold">Booking ID:</span>{" "}
+                        <span className="text-blue-700">#{booking.id}</span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs">
+                        <span className="font-semibold">Location:</span>{" "}
+                        {booking.pickup_location && booking.pickup_location !== "N/A"
+                          ? booking.pickup_location
+                          : booking.location_address || "N/A"}
+                      </div>
+                      <div className="text-xs mt-2">
+                        <span className="font-semibold">Pickup:</span> {formatDate(booking.start_date)}
+                      </div>
+                      <div className="text-xs">
+                        <span className="font-semibold">Return:</span> {formatDate(booking.end_date)}
+                      </div>
+                    </div>
+                    <div className="flex-1 flex flex-col gap-1">
+                      <div className="text-xs">
+                        <span className="font-semibold">Payment:</span>{" "}
+                        <span className={booking.payment_status === 'paid' ? 'text-green-700' : 'text-yellow-700'}>
+                          {booking.payment_status?.charAt(0).toUpperCase() + booking.payment_status?.slice(1)}
+                        </span>
+                      </div>
+                      <div className="text-xs">
+                        <span className="font-semibold">Total:</span>{" "}
+                        <span className="font-bold">${booking.total_amount}</span>
+                      </div>
+                      <div className="text-xs">
+                        <span className="font-semibold">Status:</span>{" "}
+                        <span className={getStatusColor(booking.status)}>
+                          {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="text-xs">
-                      <span className="font-semibold">Location:</span>{" "}
-                      {booking.pickup_location && booking.pickup_location !== "N/A"
-                        ? booking.pickup_location
-                        : booking.location_address || "N/A"}
-                    </div>
-                    <div className="text-xs mt-2">
-                      <span className="font-semibold">Pickup:</span> {formatDate(booking.start_date)}
-                    </div>
-                    <div className="text-xs">
-                      <span className="font-semibold">Return:</span> {formatDate(booking.end_date)}
-                    </div>
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1">
-                    <div className="text-xs">
-                      <span className="font-semibold">Payment:</span>{" "}
-                      <span className={booking.payment_status === 'paid' ? 'text-green-700' : 'text-yellow-700'}>
-                        {booking.payment_status?.charAt(0).toUpperCase() + booking.payment_status?.slice(1)}
-                      </span>
-                    </div>
-                    <div className="text-xs">
-                      <span className="font-semibold">Total:</span>{" "}
-                      <span className="font-bold">${booking.total_amount}</span>
-                    </div>
-                    <div className="text-xs">
-                      <span className="font-semibold">Status:</span>{" "}
-                      <span className={getStatusColor(booking.status)}>
-                        {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
-                      </span>
-                    </div>
+                  <div className="flex flex-col gap-2 items-end">
+                    <button className="bg-gray-100 px-4 py-2 rounded font-semibold text-gray-700 border border-gray-200 hover:bg-gray-200">
+                      View Details
+                    </button>
+                    {booking.status === "confirmed" || booking.status === "active" ? (
+                      <>
+                        <button
+                          className="bg-blue-700 px-4 py-2 rounded font-semibold text-white hover:bg-blue-900 inline-flex items-center gap-2"
+                          onClick={() => openTracking(booking.id)}
+                        >
+                          <MapPin className="w-4 h-4" /> Track Vehicle
+                        </button>
+                        <button
+                          className="bg-gray-100 px-4 py-2 rounded font-semibold text-red-700 border border-gray-200 hover:bg-red-100"
+                          onClick={() => cancelBooking(booking.id)}
+                        >
+                          Cancel Booking
+                        </button>
+                      </>
+                    ) : booking.status === "cancelled" ? (
+                      <button
+                        className="bg-blue-700 px-4 py-2 rounded font-semibold text-white hover:bg-blue-900"
+                        onClick={() => openFeedbackModal(booking)}
+                      >
+                        Leave Feedback
+                      </button>
+                    ) : (
+                      <button
+                        className="bg-blue-700 px-4 py-2 rounded font-semibold text-white hover:bg-blue-900"
+                        onClick={() => openFeedbackModal(booking)}
+                      >
+                        Leave Feedback
+                      </button>
+                    )}
                   </div>
                 </div>
-                <div className="flex flex-col gap-2 items-end">
-                  <button className="bg-gray-100 px-4 py-2 rounded font-semibold text-gray-700 border border-gray-200 hover:bg-gray-200">
-                    View Details
-                  </button>
-                  {booking.status === "confirmed" || booking.status === "active" ? (
-                    <button
-                      className="bg-gray-100 px-4 py-2 rounded font-semibold text-red-700 border border-gray-200 hover:bg-red-100"
-                      onClick={() => cancelBooking(booking.id)}
-                    >
-                      Cancel Booking
-                    </button>
-                  ) : booking.status === "cancelled" ? (
-                    <button
-                      className="bg-blue-700 px-4 py-2 rounded font-semibold text-white hover:bg-blue-900"
-                      onClick={() => openFeedbackModal(booking)}
-                    >
-                      Leave Feedback
-                    </button>
-                  ) : (
-                    <button
-                      className="bg-blue-700 px-4 py-2 rounded font-semibold text-white hover:bg-blue-900"
-                      onClick={() => openFeedbackModal(booking)}
-                    >
-                      Leave Feedback
-                    </button>
-                  )}
-                </div>
+                {trackingBookingId === booking.id && (
+                  <div className="mt-4 w-full bg-gray-50 border rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-semibold text-sm">Tracking Panel</div>
+                      <button onClick={closeTracking} className="text-xs px-3 py-1 rounded bg-gray-200 text-gray-800">Stop</button>
+                    </div>
+                    {trackingLastUpdated && (
+                      <div className="text-xs text-gray-400 mb-2">Last updated: {new Date(trackingLastUpdated).toLocaleTimeString()}</div>
+                    )}
+                    {trackingLoading && <div className="text-xs text-gray-500">Loading location...</div>}
+                    {trackingError && <div className="text-xs text-red-500">{trackingError}</div>}
+                    {!trackingLoading && !trackingError && !trackingData && (
+                      <div className="text-xs text-gray-500">No tracking data yet.</div>
+                    )}
+                    {trackingData && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div className="text-xs space-y-1">
+                          <div>Lat: <span className="font-semibold">{trackingData.latitude}</span></div>
+                          <div>Lng: <span className="font-semibold">{trackingData.longitude}</span></div>
+                          {trackingData.speed !== null && <div>Speed: <span className="font-semibold">{trackingData.speed}</span> km/h</div>}
+                          {trackingData.fuel_level !== null && <div>Fuel: <span className="font-semibold">{trackingData.fuel_level}</span>%</div>}
+                          {trackingData.mileage !== null && <div>Mileage: <span className="font-semibold">{trackingData.mileage}</span> km</div>}
+                        </div>
+                        <div className="w-full h-48 rounded overflow-hidden border">
+                          <iframe
+                            title="Live Map Panel"
+                            width="100%"
+                            height="100%"
+                            frameBorder="0"
+                            src={`https://www.openstreetmap.org/export/embed.html?marker=${trackingData.latitude},${trackingData.longitude}&zoom=15`}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))
           ) : (
@@ -933,6 +1025,48 @@ const MyBookingsFeedbackPage: React.FC = () => {
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {trackingBookingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 relative">
+            <button
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+              onClick={closeTracking}
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <div className="font-bold text-lg mb-4">Live Tracking — Booking #{trackingBookingId}</div>
+            {trackingLastUpdated && (
+              <div className="text-xs text-gray-400 mb-2">Last updated: {new Date(trackingLastUpdated).toLocaleTimeString()}</div>
+            )}
+            {trackingLoading && <div className="text-sm text-gray-500">Loading location...</div>}
+            {trackingError && <div className="text-sm text-red-500">{trackingError}</div>}
+            {!trackingLoading && !trackingError && !trackingData && (
+              <div className="text-sm text-gray-500">No tracking data yet.</div>
+            )}
+            {trackingData && (
+              <>
+                <div className="text-sm mb-4">
+                  <div>Lat: <span className="font-semibold">{trackingData.latitude}</span></div>
+                  <div>Lng: <span className="font-semibold">{trackingData.longitude}</span></div>
+                  {trackingData.speed !== null && <div>Speed: <span className="font-semibold">{trackingData.speed}</span> km/h</div>}
+                  {trackingData.fuel_level !== null && <div>Fuel: <span className="font-semibold">{trackingData.fuel_level}</span>%</div>}
+                  {trackingData.mileage !== null && <div>Mileage: <span className="font-semibold">{trackingData.mileage}</span> km</div>}
+                </div>
+                <div className="w-full h-64 rounded overflow-hidden border">
+                  <iframe
+                    title="Live Map"
+                    width="100%"
+                    height="100%"
+                    frameBorder="0"
+                    src={`https://www.openstreetmap.org/export/embed.html?marker=${trackingData.latitude},${trackingData.longitude}&zoom=15`}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

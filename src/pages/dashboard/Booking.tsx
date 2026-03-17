@@ -23,6 +23,7 @@ import {
   Trash2,
   Download,
   RefreshCw,
+  MapPin,
 } from "lucide-react";
 import { FaBan } from 'react-icons/fa';
 import { apiClient } from "@/services/apiClient";
@@ -97,6 +98,11 @@ const BookingPage: React.FC = () => {
     totalRevenue: 0,
     ongoingBookings: 0,
   });
+  const [trackingBookingId, setTrackingBookingId] = useState<string | null>(null);
+  const [trackingData, setTrackingData] = useState<any>(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
+  const [trackingError, setTrackingError] = useState<string | null>(null);
+  const [trackingLastUpdated, setTrackingLastUpdated] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -142,6 +148,17 @@ const BookingPage: React.FC = () => {
 
     // Or open a modal (implement your modal logic here)
     alert(`Edit booking ${booking.id} (implement modal or navigation)`);
+  };
+
+  const openTracking = (bookingId: string) => {
+    setTrackingBookingId(bookingId);
+  };
+
+  const closeTracking = () => {
+    setTrackingBookingId(null);
+    setTrackingData(null);
+    setTrackingError(null);
+    setTrackingLastUpdated(null);
   };
 
   // Fetch bookings
@@ -220,6 +237,39 @@ const BookingPage: React.FC = () => {
   useEffect(() => {
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    if (!trackingBookingId) return;
+    let active = true;
+    let interval: any;
+
+    const fetchTracking = async () => {
+      setTrackingLoading(true);
+      try {
+        const res = await apiClient.get<any>(`/tracking/booking/${trackingBookingId}/latest`);
+        if (!active) return;
+        if (res.success) {
+          setTrackingData(res.data || null);
+          setTrackingError(null);
+          setTrackingLastUpdated(new Date().toISOString());
+        } else {
+          setTrackingError(res.message || "Failed to fetch tracking");
+        }
+      } catch (err: any) {
+        if (!active) return;
+        setTrackingError(err?.message || "Failed to fetch tracking");
+      } finally {
+        if (active) setTrackingLoading(false);
+      }
+    };
+
+    fetchTracking();
+    interval = setInterval(fetchTracking, 10000);
+    return () => {
+      active = false;
+      if (interval) clearInterval(interval);
+    };
+  }, [trackingBookingId]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -364,8 +414,8 @@ const BookingPage: React.FC = () => {
               <ClipboardList className="w-6 h-6 text-blue-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-500 font-medium truncate">Total Bookings</p>
-              <p className="text-xl md:text-2xl font-bold">{stats.totalBookings.toLocaleString()}</p>
+              <p className="text-sm text-gray-500 font-medium leading-snug">Total Bookings</p>
+              <p className="text-lg md:text-xl font-bold">{stats.totalBookings.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -377,8 +427,8 @@ const BookingPage: React.FC = () => {
               <Car className="w-6 h-6 text-green-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-500 font-medium truncate">Active Bookings</p>
-              <p className="text-xl md:text-2xl font-bold">{stats.activeBookings.toLocaleString()}</p>
+              <p className="text-sm text-gray-500 font-medium leading-snug">Active Bookings</p>
+              <p className="text-lg md:text-xl font-bold">{stats.activeBookings.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -390,8 +440,8 @@ const BookingPage: React.FC = () => {
               <Clock className="w-6 h-6 text-yellow-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-500 font-medium truncate">Pending Approval</p>
-              <p className="text-xl md:text-2xl font-bold">{stats.pendingBookings.toLocaleString()}</p>
+              <p className="text-sm text-gray-500 font-medium leading-snug">Pending Approval</p>
+              <p className="text-lg md:text-xl font-bold">{stats.pendingBookings.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -403,8 +453,8 @@ const BookingPage: React.FC = () => {
               <DollarSign className="w-6 h-6 text-purple-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-500 font-medium truncate">Total Revenue</p>
-              <p className="text-xl md:text-2xl font-bold truncate">{formatPrice ? formatPrice(stats.totalRevenue) : `₣${stats.totalRevenue.toLocaleString()}`}</p>
+              <p className="text-sm text-gray-500 font-medium leading-snug">Total Revenue</p>
+              <p className="text-lg md:text-xl font-bold">{formatPrice ? formatPrice(stats.totalRevenue) : `RWF ${stats.totalRevenue.toLocaleString()}`}</p>
             </div>
           </div>
         </div>
@@ -416,8 +466,8 @@ const BookingPage: React.FC = () => {
               <BarChart2 className="w-6 h-6 text-indigo-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-gray-500 font-medium truncate">Ongoing Bookings</p>
-              <p className="text-xl md:text-2xl font-bold">{stats.ongoingBookings.toLocaleString()}</p>
+              <p className="text-sm text-gray-500 font-medium leading-snug">Ongoing Bookings</p>
+              <p className="text-lg md:text-xl font-bold">{stats.ongoingBookings.toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -567,6 +617,13 @@ const BookingPage: React.FC = () => {
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
+                          <button
+                            className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            onClick={() => openTracking(booking.id)}
+                            title="Track vehicle"
+                          >
+                            <MapPin className="w-4 h-4" />
+                          </button>
                           {booking.status?.toLowerCase() === 'pending' && (
                             <button
                               className="p-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
@@ -649,9 +706,86 @@ const BookingPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {trackingBookingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className={`w-full max-w-2xl mx-4 rounded-xl shadow-lg ${settings?.darkMode ? 'bg-gray-800 text-white' : 'bg-white'}`}>
+            <div className="flex items-center justify-between p-4 border-b border-gray-200/20">
+              <div className="font-semibold">Live Tracking — Booking #{trackingBookingId}</div>
+              <button onClick={closeTracking} className="text-sm px-3 py-1 rounded bg-gray-200 text-gray-800">Close</button>
+            </div>
+            <div className="p-4 space-y-4">
+              {trackingLastUpdated && (
+                <div className="text-xs text-gray-400">Last updated: {new Date(trackingLastUpdated).toLocaleTimeString()}</div>
+              )}
+              {trackingLoading && <div className="text-sm text-gray-500">Loading location...</div>}
+              {trackingError && <div className="text-sm text-red-500">{trackingError}</div>}
+              {!trackingLoading && !trackingError && !trackingData && (
+                <div className="text-sm text-gray-500">No tracking data yet.</div>
+              )}
+              {trackingData && (
+                <>
+                  <div className="text-sm">
+                    <div>Lat: <span className="font-semibold">{trackingData.latitude}</span></div>
+                    <div>Lng: <span className="font-semibold">{trackingData.longitude}</span></div>
+                    {trackingData.speed !== null && <div>Speed: <span className="font-semibold">{trackingData.speed}</span> km/h</div>}
+                    {trackingData.fuel_level !== null && <div>Fuel: <span className="font-semibold">{trackingData.fuel_level}</span>%</div>}
+                    {trackingData.mileage !== null && <div>Mileage: <span className="font-semibold">{trackingData.mileage}</span> km</div>}
+                  </div>
+                  <div className="w-full h-64 rounded overflow-hidden border">
+                    <iframe
+                      title="Live Map"
+                      width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      src={`https://www.openstreetmap.org/export/embed.html?marker=${trackingData.latitude},${trackingData.longitude}&zoom=15`}
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {trackingBookingId && (
+        <div className={`mt-6 rounded-xl p-4 border ${settings?.darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-gray-200'}`}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-semibold">Tracking Panel — Booking #{trackingBookingId}</div>
+            <button onClick={closeTracking} className="text-sm px-3 py-1 rounded bg-gray-200 text-gray-800">Stop Tracking</button>
+          </div>
+          {trackingLastUpdated && (
+            <div className="text-xs text-gray-400 mb-2">Last updated: {new Date(trackingLastUpdated).toLocaleTimeString()}</div>
+          )}
+          {trackingLoading && <div className="text-sm text-gray-500">Loading location...</div>}
+          {trackingError && <div className="text-sm text-red-500">{trackingError}</div>}
+          {!trackingLoading && !trackingError && !trackingData && (
+            <div className="text-sm text-gray-500">No tracking data yet.</div>
+          )}
+          {trackingData && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="text-sm space-y-1">
+                <div>Lat: <span className="font-semibold">{trackingData.latitude}</span></div>
+                <div>Lng: <span className="font-semibold">{trackingData.longitude}</span></div>
+                {trackingData.speed !== null && <div>Speed: <span className="font-semibold">{trackingData.speed}</span> km/h</div>}
+                {trackingData.fuel_level !== null && <div>Fuel: <span className="font-semibold">{trackingData.fuel_level}</span>%</div>}
+                {trackingData.mileage !== null && <div>Mileage: <span className="font-semibold">{trackingData.mileage}</span> km</div>}
+              </div>
+              <div className="w-full h-56 rounded overflow-hidden border">
+                <iframe
+                  title="Live Map Panel"
+                  width="100%"
+                  height="100%"
+                  frameBorder="0"
+                  src={`https://www.openstreetmap.org/export/embed.html?marker=${trackingData.latitude},${trackingData.longitude}&zoom=15`}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
 
 export default BookingPage;
-
