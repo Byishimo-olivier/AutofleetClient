@@ -28,6 +28,7 @@ import {
 import { FaBan } from 'react-icons/fa';
 import { apiClient } from "@/services/apiClient";
 import { useSettings } from '@/contexts/SettingContxt';
+import TrackingMap from "@/components/TrackingMap";
 
 const statusColors: Record<string, string> = {
   cancelled: "text-red-600",
@@ -99,7 +100,10 @@ const BookingPage: React.FC = () => {
     ongoingBookings: 0,
   });
   const [trackingBookingId, setTrackingBookingId] = useState<string | null>(null);
+  const [trackingVehicleId, setTrackingVehicleId] = useState<number | null>(null);
   const [trackingData, setTrackingData] = useState<any>(null);
+  const [trackingHistory, setTrackingHistory] = useState<any[]>([]);
+  const [trackingAlerts, setTrackingAlerts] = useState<any[]>([]);
   const [trackingLoading, setTrackingLoading] = useState(false);
   const [trackingError, setTrackingError] = useState<string | null>(null);
   const [trackingLastUpdated, setTrackingLastUpdated] = useState<string | null>(null);
@@ -150,13 +154,18 @@ const BookingPage: React.FC = () => {
     alert(`Edit booking ${booking.id} (implement modal or navigation)`);
   };
 
-  const openTracking = (bookingId: string) => {
+  const openTracking = (bookingId: string, vehicleId?: string | number) => {
     setTrackingBookingId(bookingId);
+    const vid = vehicleId !== undefined ? Number(vehicleId) : null;
+    setTrackingVehicleId(Number.isFinite(vid) ? vid : null);
   };
 
   const closeTracking = () => {
     setTrackingBookingId(null);
+    setTrackingVehicleId(null);
     setTrackingData(null);
+    setTrackingHistory([]);
+    setTrackingAlerts([]);
     setTrackingError(null);
     setTrackingLastUpdated(null);
   };
@@ -246,14 +255,35 @@ const BookingPage: React.FC = () => {
     const fetchTracking = async () => {
       setTrackingLoading(true);
       try {
-        const res = await apiClient.get<any>(`/tracking/booking/${trackingBookingId}/latest`);
+        const [latestRes, historyRes, alertsRes] = await Promise.all([
+          apiClient.get<any>(`/tracking/booking/${trackingBookingId}/latest`),
+          apiClient.get<any>(`/tracking/booking/${trackingBookingId}/history?limit=200`),
+          apiClient.get<any>(`/tracking/booking/${trackingBookingId}/alerts?limit=20`)
+        ]);
         if (!active) return;
-        if (res.success) {
-          setTrackingData(res.data || null);
-          setTrackingError(null);
-          setTrackingLastUpdated(new Date().toISOString());
+        const latest = latestRes.success ? (latestRes.data || null) : null;
+        const history = historyRes.success ? (Array.isArray(historyRes.data) ? historyRes.data : []) : [];
+        if (latest) {
+          setTrackingData(latest);
+        } else if (history[0]) {
+          setTrackingData(history[0]);
         } else {
-          setTrackingError(res.message || "Failed to fetch tracking");
+          setTrackingData(null);
+        }
+
+        if (historyRes.success) {
+          setTrackingHistory(history);
+          setTrackingError(null);
+          if (latest || history[0]) {
+            setTrackingLastUpdated(new Date().toISOString());
+          } else {
+            setTrackingLastUpdated(null);
+          }
+        } else if (!latestRes.success) {
+          setTrackingError(historyRes.message || latestRes.message || "Failed to fetch tracking");
+        }
+        if (alertsRes.success) {
+          setTrackingAlerts(Array.isArray(alertsRes.data) ? alertsRes.data : []);
         }
       } catch (err: any) {
         if (!active) return;
@@ -359,6 +389,37 @@ const BookingPage: React.FC = () => {
       // Optionally refresh bookings/vehicles list here
     } catch (err) {
       alert('Failed to mark vehicle as unavailable.');
+    }
+  };
+
+  const sendTrackingPing = async () => {
+    if (!trackingVehicleId) {
+      setTrackingError("Missing vehicle id for tracking.");
+      return;
+    }
+    setTrackingLoading(true);
+    try {
+      const baseLat = -1.9441;
+      const baseLng = 30.0619;
+      const jitter = () => (Math.random() - 0.5) * 0.002;
+      const payload: any = {
+        vehicle_id: trackingVehicleId,
+        latitude: baseLat + jitter(),
+        longitude: baseLng + jitter(),
+        speed: Math.round(30 + Math.random() * 20),
+        status: "online",
+      };
+      if (trackingBookingId) {
+        payload.booking_id = Number(trackingBookingId);
+      }
+      const res = await apiClient.post("/tracking/update", payload);
+      if (!res.success) {
+        setTrackingError(res.message || "Failed to send tracking ping.");
+      }
+    } catch (err: any) {
+      setTrackingError(err?.message || "Failed to send tracking ping.");
+    } finally {
+      setTrackingLoading(false);
     }
   };
 
@@ -619,7 +680,7 @@ const BookingPage: React.FC = () => {
                           </button>
                           <button
                             className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                            onClick={() => openTracking(booking.id)}
+                            onClick={() => openTracking(booking.id, booking.vehicle_id)}
                             title="Track vehicle"
                           >
                             <MapPin className="w-4 h-4" />
@@ -721,7 +782,15 @@ const BookingPage: React.FC = () => {
               {trackingLoading && <div className="text-sm text-gray-500">Loading location...</div>}
               {trackingError && <div className="text-sm text-red-500">{trackingError}</div>}
               {!trackingLoading && !trackingError && !trackingData && (
-                <div className="text-sm text-gray-500">No tracking data yet.</div>
+                <div className="text-sm text-gray-500">
+                  No tracking data yet.
+                  <button
+                    onClick={sendTrackingPing}
+                    className="ml-2 text-blue-600 underline text-sm"
+                  >
+                    Send test ping
+                  </button>
+                </div>
               )}
               {trackingData && (
                 <>
@@ -733,14 +802,21 @@ const BookingPage: React.FC = () => {
                     {trackingData.mileage !== null && <div>Mileage: <span className="font-semibold">{trackingData.mileage}</span> km</div>}
                   </div>
                   <div className="w-full h-64 rounded overflow-hidden border">
-                    <iframe
-                      title="Live Map"
-                      width="100%"
-                      height="100%"
-                      frameBorder="0"
-                      src={`https://www.openstreetmap.org/export/embed.html?marker=${trackingData.latitude},${trackingData.longitude}&zoom=15`}
+                    <TrackingMap
+                      points={(trackingHistory.length ? trackingHistory : (trackingData ? [trackingData] : [])) as any}
+                      height={256}
                     />
                   </div>
+                  {trackingAlerts.length > 0 && (
+                    <div className="text-xs text-red-600 space-y-1">
+                      <div className="font-semibold">Alerts</div>
+                      {trackingAlerts.slice(0, 5).map((a, idx) => (
+                        <div key={idx}>
+                          {new Date(a.created_at).toLocaleTimeString()} — {a.message}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -772,14 +848,21 @@ const BookingPage: React.FC = () => {
                 {trackingData.mileage !== null && <div>Mileage: <span className="font-semibold">{trackingData.mileage}</span> km</div>}
               </div>
               <div className="w-full h-56 rounded overflow-hidden border">
-                <iframe
-                  title="Live Map Panel"
-                  width="100%"
-                  height="100%"
-                  frameBorder="0"
-                  src={`https://www.openstreetmap.org/export/embed.html?marker=${trackingData.latitude},${trackingData.longitude}&zoom=15`}
+                <TrackingMap
+                  points={(trackingHistory.length ? trackingHistory : (trackingData ? [trackingData] : [])) as any}
+                  height={224}
                 />
               </div>
+              {trackingAlerts.length > 0 && (
+                <div className="md:col-span-2 text-xs text-red-600 space-y-1">
+                  <div className="font-semibold">Alerts</div>
+                  {trackingAlerts.slice(0, 8).map((a, idx) => (
+                    <div key={idx}>
+                      {new Date(a.created_at).toLocaleTimeString()} — {a.message}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

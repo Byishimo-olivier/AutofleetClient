@@ -197,6 +197,11 @@ const LoginPage: React.FC = () => {
                   )}
                 </button>
               </div>
+              <div className="mt-2 text-right">
+                <Link to="/forgot-password" className="text-xs text-blue-400 hover:text-blue-300 underline">
+                  Forgot password?
+                </Link>
+              </div>
             </div>
             
             {/* Terms Checkbox */}
@@ -259,4 +264,3 @@ const LoginPage: React.FC = () => {
 };
 
 export default LoginPage;
-

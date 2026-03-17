@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { X, Star, Upload, MapPin } from "lucide-react";
 import { apiClient, API_BASE_URL, STATIC_BASE_URL } from "@/services/apiClient";
+import TrackingMap from "@/components/TrackingMap";
 
 
 // Types for backend data structure
@@ -92,6 +93,8 @@ const MyBookingsFeedbackPage: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [trackingBookingId, setTrackingBookingId] = useState<string | null>(null);
   const [trackingData, setTrackingData] = useState<any>(null);
+  const [trackingHistory, setTrackingHistory] = useState<any[]>([]);
+  const [trackingAlerts, setTrackingAlerts] = useState<any[]>([]);
   const [trackingLoading, setTrackingLoading] = useState(false);
   const [trackingError, setTrackingError] = useState<string | null>(null);
   const [trackingLastUpdated, setTrackingLastUpdated] = useState<string | null>(null);
@@ -362,6 +365,8 @@ const MyBookingsFeedbackPage: React.FC = () => {
   const closeTracking = () => {
     setTrackingBookingId(null);
     setTrackingData(null);
+    setTrackingHistory([]);
+    setTrackingAlerts([]);
     setTrackingError(null);
     setTrackingLastUpdated(null);
   };
@@ -374,14 +379,22 @@ const MyBookingsFeedbackPage: React.FC = () => {
     const fetchTracking = async () => {
       setTrackingLoading(true);
       try {
-        const res = await apiClient.get<any>(`/tracking/booking/${trackingBookingId}/latest`);
+        const [historyRes, alertsRes] = await Promise.all([
+          apiClient.get<any>(`/tracking/booking/${trackingBookingId}/history?limit=200`),
+          apiClient.get<any>(`/tracking/booking/${trackingBookingId}/alerts?limit=20`)
+        ]);
         if (!active) return;
-        if (res.success) {
-          setTrackingData(res.data || null);
+        if (historyRes.success) {
+          const history = Array.isArray(historyRes.data) ? historyRes.data : [];
+          setTrackingHistory(history);
+          setTrackingData(history[0] || null);
           setTrackingError(null);
           setTrackingLastUpdated(new Date().toISOString());
         } else {
-          setTrackingError(res.message || "Failed to fetch tracking");
+          setTrackingError(historyRes.message || "Failed to fetch tracking");
+        }
+        if (alertsRes.success) {
+          setTrackingAlerts(Array.isArray(alertsRes.data) ? alertsRes.data : []);
         }
       } catch (err: any) {
         if (!active) return;
@@ -722,14 +735,18 @@ const MyBookingsFeedbackPage: React.FC = () => {
                           {trackingData.mileage !== null && <div>Mileage: <span className="font-semibold">{trackingData.mileage}</span> km</div>}
                         </div>
                         <div className="w-full h-48 rounded overflow-hidden border">
-                          <iframe
-                            title="Live Map Panel"
-                            width="100%"
-                            height="100%"
-                            frameBorder="0"
-                            src={`https://www.openstreetmap.org/export/embed.html?marker=${trackingData.latitude},${trackingData.longitude}&zoom=15`}
-                          />
+                          <TrackingMap points={trackingHistory as any} height={192} />
                         </div>
+                        {trackingAlerts.length > 0 && (
+                          <div className="md:col-span-2 text-xs text-red-600 space-y-1">
+                            <div className="font-semibold">Alerts</div>
+                            {trackingAlerts.slice(0, 5).map((a, idx) => (
+                              <div key={idx}>
+                                {new Date(a.created_at).toLocaleTimeString()} — {a.message}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1057,14 +1074,18 @@ const MyBookingsFeedbackPage: React.FC = () => {
                   {trackingData.mileage !== null && <div>Mileage: <span className="font-semibold">{trackingData.mileage}</span> km</div>}
                 </div>
                 <div className="w-full h-64 rounded overflow-hidden border">
-                  <iframe
-                    title="Live Map"
-                    width="100%"
-                    height="100%"
-                    frameBorder="0"
-                    src={`https://www.openstreetmap.org/export/embed.html?marker=${trackingData.latitude},${trackingData.longitude}&zoom=15`}
-                  />
+                  <TrackingMap points={trackingHistory as any} height={256} />
                 </div>
+                {trackingAlerts.length > 0 && (
+                  <div className="text-xs text-red-600 space-y-1 mt-3">
+                    <div className="font-semibold">Alerts</div>
+                    {trackingAlerts.slice(0, 8).map((a, idx) => (
+                      <div key={idx}>
+                        {new Date(a.created_at).toLocaleTimeString()} — {a.message}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </div>

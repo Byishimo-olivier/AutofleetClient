@@ -14,6 +14,8 @@ import BOOKINGPAGE from "@/pages/customer/BookingPage";
 import SupportPage from "@/pages/customer/SupportPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
+import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import AdminLayout from "@/components/layout/AdminLayout";
 import SidebarLayout from "@/components/layout/SidebarLayout";
@@ -42,7 +44,7 @@ const ConditionalNavBar: React.FC = () => {
   const { settings } = useSettings();
   const location = useLocation();
   // Define routes where NavBar should be hidden regardless of settings
-  const authRoutes = ['/login', '/register'];
+  const authRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
   const isAuthRoute = authRoutes.includes(location.pathname);
   // Show NavBar based on settings and current route
   const shouldShowNavBar = settings?.showNavBar !== false && !isAuthRoute;
@@ -54,7 +56,7 @@ const ConditionalChatBot: React.FC = () => {
   const { settings } = useSettings();
   const location = useLocation();
   // Define routes where ChatBot should be hidden
-  const excludedRoutes = ['/login', '/register', '/'];
+  const excludedRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/'];
   const isExcludedRoute = excludedRoutes.includes(location.pathname);
   // Show ChatBot based on settings and current route
   const shouldShowChatBot = settings?.showChatBot !== false && !isExcludedRoute;
@@ -186,6 +188,18 @@ function App() {
               path="/register"
               element={<RegisterPage />}
             />
+            <Route
+              path="/forgot-password"
+              element={<ForgotPasswordPage />}
+            />
+            <Route
+              path="/reset-password"
+              element={<ResetPasswordPage />}
+            />
+            <Route
+              path="/reset-password/:token"
+              element={<ResetPasswordPage />}
+            />
             {/* Admin Routes */}
             <Route
               path="/admin"
@@ -294,4 +308,3 @@ export type Settings = {
   showNavBar?: boolean;
   showChatBot?: boolean;
 };
-

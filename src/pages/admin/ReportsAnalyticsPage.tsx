@@ -20,16 +20,29 @@ import {
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  LineChart, Line, BarChart, Bar, PieChart as RePieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, Legend, ResponsiveContainer
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart as RePieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
 } from "recharts";
-import { useSettings } from '@/contexts/SettingContxt';
-import { apiClient } from '@/services/apiClient';
+import { useSettings } from "@/contexts/SettingContxt";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiClient } from "@/services/apiClient";
 import AdminLayout from "@/components/layout/AdminLayout";
 import ReportHeader from "@/components/ReportHeader";
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import logo from '@/assets/logo.png';
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import logo from "@/assets/logo.png";
 
 
 interface DashboardStats {
@@ -80,6 +93,7 @@ const ReportsAnalyticsPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { settings, formatPrice, t } = useSettings();
+  const { user } = useAuth();
 
   // State management
   const [dashboardStats, setDashboardStats] = useState<DashboardStats>({
@@ -886,7 +900,7 @@ const ReportsAnalyticsPage: React.FC = () => {
         {/* Report Header */}
         <ReportHeader
           title="Reports & Analytics"
-          user={settings?.user?.name || "Unknown User"}
+          user={`${user?.first_name || ''} ${user?.last_name || ''}`.trim() || user?.email || "Unknown User"}
           time={new Date().toLocaleString()}
           logoUrl={logo}
         />

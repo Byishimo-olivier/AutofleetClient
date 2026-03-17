@@ -17,21 +17,23 @@ interface ApiResponse<T = any> {
 }
 
 const isProd = import.meta.env.PROD;
-const envApiUrl = import.meta.env.VITE_API_URL;
+const envApiUrl = (import.meta.env.VITE_API_URL || '').trim();
 
 if (isProd && !envApiUrl) {
   console.warn(
     '⚠️ VITE_API_URL is not defined in production environment. ' +
-    'The app will likely fail to connect to the backend. ' +
-    'Please ensure VITE_API_URL is set in your deployment platform (Vercel/Render).'
+    'Falling back to same-origin `/api` requests. ' +
+    'Ensure your host rewrites /api to the backend (e.g., Vercel rewrites).'
   );
 }
 
-const rawBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const rawBaseUrl = envApiUrl;
 // Remove trailing slash and any accidental /api suffix for the static base
-export const STATIC_BASE_URL = rawBaseUrl.replace(/\/+$/, '').replace(/\/api$/i, '');
-// Consistently add /api for the API base
-export const API_BASE_URL = `${STATIC_BASE_URL}/api`;
+export const STATIC_BASE_URL = rawBaseUrl
+  ? rawBaseUrl.replace(/\/+$/, '').replace(/\/api$/i, '')
+  : '';
+// Consistently add /api for the API base (or same-origin /api if no base provided)
+export const API_BASE_URL = STATIC_BASE_URL ? `${STATIC_BASE_URL}/api` : '/api';
 
 class ApiClient {
   private baseURL: string;
@@ -85,7 +87,15 @@ class ApiClient {
       console.log(`🌐 Making ${config.method || 'GET'} request to:`, url);
 
       const response = await fetch(url, config);
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      let data: any = null;
+
+      if (contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        data = text ? { message: text } : null;
+      }
 
       if (!response.ok) {
         // Handle 401 Unauthorized - token expired or invalid
@@ -168,4 +178,6 @@ class ApiClient {
 
 // Create and export the API client instance
 export const apiClient = new ApiClient(API_BASE_URL);
+
+
 

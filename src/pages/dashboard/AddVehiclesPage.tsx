@@ -42,6 +42,15 @@ interface VehicleForm {
   locationAddress: string;
   listing_type: string;
   selling_price: string;
+  alerts_enabled: boolean;
+  overspeed_enabled: boolean;
+  geofence_enabled: boolean;
+  tamper_enabled: boolean;
+  speed_limit_kmh: string;
+  geofence_lat: string;
+  geofence_lng: string;
+  geofence_radius_m: string;
+  alert_cooldown_minutes: string;
 }
 
 const initialForm: VehicleForm = {
@@ -63,6 +72,15 @@ const initialForm: VehicleForm = {
   locationAddress: '',
   listing_type: 'rent',
   selling_price: '',
+  alerts_enabled: true,
+  overspeed_enabled: true,
+  geofence_enabled: false,
+  tamper_enabled: true,
+  speed_limit_kmh: '',
+  geofence_lat: '',
+  geofence_lng: '',
+  geofence_radius_m: '',
+  alert_cooldown_minutes: '10',
 };
 
 const VehiclesPage: React.FC = () => {
@@ -79,6 +97,11 @@ const VehiclesPage: React.FC = () => {
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('');
   const [generatingDescription, setGeneratingDescription] = useState(false);
+  const [deviceList, setDeviceList] = useState<any[]>([]);
+  const [deviceLabel, setDeviceLabel] = useState('');
+  const [deviceKeyLoading, setDeviceKeyLoading] = useState(false);
+  const [newDeviceKey, setNewDeviceKey] = useState<string | null>(null);
+  const [alertsSaving, setAlertsSaving] = useState(false);
 
 
   useEffect(() => {
@@ -106,6 +129,93 @@ const VehiclesPage: React.FC = () => {
     }
   };
 
+  const loadTrackingConfig = async (vehicleId: number) => {
+    try {
+      const [settingsRes, devicesRes] = await Promise.all([
+        apiClient.get<any>(`/tracking/vehicle/${vehicleId}/alert-settings`),
+        apiClient.get<any>(`/tracking/vehicle/${vehicleId}/devices`)
+      ]);
+      if (settingsRes?.success && settingsRes.data) {
+        const s = settingsRes.data;
+        setForm(prev => ({
+          ...prev,
+          alerts_enabled: s.alerts_enabled ?? true,
+          overspeed_enabled: s.overspeed_enabled ?? true,
+          geofence_enabled: s.geofence_enabled ?? false,
+          tamper_enabled: s.tamper_enabled ?? true,
+          speed_limit_kmh: s.speed_limit_kmh !== null && s.speed_limit_kmh !== undefined ? String(s.speed_limit_kmh) : '',
+          geofence_lat: s.geofence_lat !== null && s.geofence_lat !== undefined ? String(s.geofence_lat) : '',
+          geofence_lng: s.geofence_lng !== null && s.geofence_lng !== undefined ? String(s.geofence_lng) : '',
+          geofence_radius_m: s.geofence_radius_m !== null && s.geofence_radius_m !== undefined ? String(s.geofence_radius_m) : '',
+          alert_cooldown_minutes: s.alert_cooldown_minutes !== null && s.alert_cooldown_minutes !== undefined
+            ? String(s.alert_cooldown_minutes)
+            : '10'
+        }));
+      }
+      if (devicesRes?.success) {
+        setDeviceList(Array.isArray(devicesRes.data) ? devicesRes.data : []);
+      } else {
+        setDeviceList([]);
+      }
+    } catch (err) {
+      console.error('Failed to load tracking config:', err);
+      setDeviceList([]);
+    }
+  };
+
+  const saveAlertSettings = async (vehicleId: number) => {
+    setAlertsSaving(true);
+    try {
+      const payload = {
+        alerts_enabled: form.alerts_enabled,
+        overspeed_enabled: form.overspeed_enabled,
+        geofence_enabled: form.geofence_enabled,
+        tamper_enabled: form.tamper_enabled,
+        speed_limit_kmh: form.speed_limit_kmh !== '' ? Number(form.speed_limit_kmh) : null,
+        geofence_lat: form.geofence_lat !== '' ? Number(form.geofence_lat) : null,
+        geofence_lng: form.geofence_lng !== '' ? Number(form.geofence_lng) : null,
+        geofence_radius_m: form.geofence_radius_m !== '' ? Number(form.geofence_radius_m) : null,
+        alert_cooldown_minutes: form.alert_cooldown_minutes !== '' ? Number(form.alert_cooldown_minutes) : 10
+      };
+      await apiClient.put(`/tracking/vehicle/${vehicleId}/alert-settings`, payload);
+    } catch (err) {
+      console.error('Failed to save alert settings:', err);
+    } finally {
+      setAlertsSaving(false);
+    }
+  };
+
+  const generateDeviceKey = async () => {
+    if (!editingId) return;
+    setDeviceKeyLoading(true);
+    try {
+      const res: any = await apiClient.post('/tracking/device/register', {
+        vehicle_id: editingId,
+        label: deviceLabel || undefined
+      });
+      const apiKey = res?.data?.api_key || res?.api_key || res?.data?.data?.api_key || null;
+      if (apiKey) {
+        setNewDeviceKey(apiKey);
+      }
+      setDeviceLabel('');
+      await loadTrackingConfig(editingId);
+    } catch (err) {
+      console.error('Failed to generate device key:', err);
+    } finally {
+      setDeviceKeyLoading(false);
+    }
+  };
+
+  const revokeDeviceKey = async (deviceId: number) => {
+    if (!editingId) return;
+    try {
+      await apiClient.post('/tracking/device/revoke', { device_id: deviceId });
+      await loadTrackingConfig(editingId);
+    } catch (err) {
+      console.error('Failed to revoke device key:', err);
+    }
+  };
+
   // Fetch when filters change
   useEffect(() => {
     fetchVehicles();
@@ -115,6 +225,11 @@ const VehiclesPage: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setForm(prev => ({ ...prev, [name]: checked }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,6 +276,7 @@ const VehiclesPage: React.FC = () => {
       if (editingId) {
         // Edit mode: update vehicle
         await apiClient.put(`/vehicles/${editingId}`, vehicleData);
+        await saveAlertSettings(editingId);
       } else {
         // Add mode: create vehicle
         const res: any = await apiClient.post('/vehicles', vehicleData);
@@ -171,6 +287,7 @@ const VehiclesPage: React.FC = () => {
           res.vehicleId ||
           null;
         if (!vehicleId) throw new Error('Vehicle ID not returned from backend.');
+        await saveAlertSettings(vehicleId);
       }
 
       // Upload images if any (optional: only on add or always)
@@ -267,7 +384,7 @@ const VehiclesPage: React.FC = () => {
     }
   };
 
-  const handleEditVehicle = (vehicle: Vehicle) => {
+  const handleEditVehicle = async (vehicle: Vehicle) => {
 
     const v = vehicle as any; // Cast to access additional DB fields that might not be in the TS interface
     setForm({
@@ -293,6 +410,8 @@ const VehiclesPage: React.FC = () => {
     });
     setEditingId(vehicle.id); // <-- Track which vehicle is being edited
     setShowModal(true);
+    setNewDeviceKey(null);
+    await loadTrackingConfig(vehicle.id);
   };
 
   if (loading) {
@@ -320,6 +439,8 @@ const VehiclesPage: React.FC = () => {
           onClick={() => {
             setForm(initialForm);
             setEditingId(null);
+            setDeviceList([]);
+            setNewDeviceKey(null);
             setShowModal(true);
           }}
         >
@@ -519,6 +640,8 @@ const VehiclesPage: React.FC = () => {
                 setForm(initialForm);
                 setUploadError(null);
                 setEditingId(null); // Reset edit mode
+                setDeviceList([]);
+                setNewDeviceKey(null);
               }}
               aria-label="Close"
             >
@@ -726,6 +849,111 @@ const VehiclesPage: React.FC = () => {
                     placeholder="e.g., Kigali, Rwanda"
                   />
                 </div>
+                {/* Tracking & Alerts */}
+                <div className="md:col-span-2 border-t pt-4">
+                  <h3 className="text-sm font-semibold text-gray-800 mb-3">Tracking & Alerts</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        name="alerts_enabled"
+                        checked={form.alerts_enabled}
+                        onChange={handleCheckboxChange}
+                      />
+                      Enable alerts
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        name="overspeed_enabled"
+                        checked={form.overspeed_enabled}
+                        onChange={handleCheckboxChange}
+                      />
+                      Overspeed alerts
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        name="geofence_enabled"
+                        checked={form.geofence_enabled}
+                        onChange={handleCheckboxChange}
+                      />
+                      Geofence alerts
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        name="tamper_enabled"
+                        checked={form.tamper_enabled}
+                        onChange={handleCheckboxChange}
+                      />
+                      Tamper alerts
+                    </label>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Speed Limit (km/h)</label>
+                      <input
+                        name="speed_limit_kmh"
+                        type="number"
+                        step="0.1"
+                        value={form.speed_limit_kmh}
+                        onChange={handleInputChange}
+                        className="w-full border px-3 py-2 rounded"
+                        placeholder="e.g., 80"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Alert Cooldown (min)</label>
+                      <input
+                        name="alert_cooldown_minutes"
+                        type="number"
+                        min="1"
+                        value={form.alert_cooldown_minutes}
+                        onChange={handleInputChange}
+                        className="w-full border px-3 py-2 rounded"
+                        placeholder="10"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Geofence Center Lat</label>
+                      <input
+                        name="geofence_lat"
+                        type="number"
+                        step="any"
+                        value={form.geofence_lat}
+                        onChange={handleInputChange}
+                        className="w-full border px-3 py-2 rounded"
+                        placeholder="e.g., -1.9441"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Geofence Center Lng</label>
+                      <input
+                        name="geofence_lng"
+                        type="number"
+                        step="any"
+                        value={form.geofence_lng}
+                        onChange={handleInputChange}
+                        className="w-full border px-3 py-2 rounded"
+                        placeholder="e.g., 30.0619"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium mb-1">Geofence Radius (meters)</label>
+                      <input
+                        name="geofence_radius_m"
+                        type="number"
+                        step="1"
+                        value={form.geofence_radius_m}
+                        onChange={handleInputChange}
+                        className="w-full border px-3 py-2 rounded"
+                        placeholder="e.g., 3000"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Overspeed and geofence alerts apply only during active bookings.
+                  </p>
+                </div>
               </div>
               {/* Description */}
               <div className="mb-4">
@@ -785,6 +1013,63 @@ const VehiclesPage: React.FC = () => {
                   )}
                 </div>
               </div>
+              {editingId && (
+                <div className="mb-4 border-t pt-4">
+                  <h3 className="text-sm font-semibold text-gray-800 mb-2">Tracking Devices</h3>
+                  {newDeviceKey && (
+                    <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                      <div className="font-semibold mb-1">New Device Key (save this now)</div>
+                      <code className="break-all">{newDeviceKey}</code>
+                    </div>
+                  )}
+                  <div className="flex flex-col sm:flex-row gap-2 mb-3">
+                    <input
+                      value={deviceLabel}
+                      onChange={(e) => setDeviceLabel(e.target.value)}
+                      className="flex-1 border px-3 py-2 rounded"
+                      placeholder="Device label (e.g., OBD Tracker)"
+                    />
+                    <button
+                      type="button"
+                      onClick={generateDeviceKey}
+                      disabled={deviceKeyLoading}
+                      className="px-4 py-2 rounded bg-blue-700 text-white text-sm hover:bg-blue-800 disabled:opacity-50"
+                    >
+                      {deviceKeyLoading ? 'Generating...' : 'Generate Key'}
+                    </button>
+                  </div>
+                  {deviceList.length === 0 ? (
+                    <div className="text-xs text-gray-500">No devices registered yet.</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {deviceList.map((d) => (
+                        <div key={d.id} className="flex items-center justify-between text-xs bg-gray-50 border rounded px-3 py-2">
+                          <div>
+                            <div className="font-semibold">{d.label || 'Unnamed device'}</div>
+                            <div className="text-gray-500">
+                              Last seen: {d.last_seen ? new Date(d.last_seen).toLocaleString() : 'Never'}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded ${d.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
+                              {d.is_active ? 'Active' : 'Revoked'}
+                            </span>
+                            {d.is_active && (
+                              <button
+                                type="button"
+                                onClick={() => revokeDeviceKey(d.id)}
+                                className="text-red-600 hover:underline"
+                              >
+                                Revoke
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {/* Price per Day or Selling Price */}
               {form.listing_type === 'rent' && (
                 <div className="mb-4">
@@ -827,15 +1112,18 @@ const VehiclesPage: React.FC = () => {
                     setForm(initialForm);
                     setUploadError(null);
                     setEditingId(null); // Reset edit mode
+                    setDeviceList([]);
+                    setNewDeviceKey(null);
                   }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 rounded bg-blue-700 text-white font-semibold hover:bg-blue-800"
+                  disabled={alertsSaving}
+                  className="px-6 py-2 rounded bg-blue-700 text-white font-semibold hover:bg-blue-800 disabled:opacity-60"
                 >
-                  Add Vehicle
+                  {alertsSaving ? 'Saving...' : (editingId ? 'Update Vehicle' : 'Add Vehicle')}
                 </button>
               </div>
             </form>

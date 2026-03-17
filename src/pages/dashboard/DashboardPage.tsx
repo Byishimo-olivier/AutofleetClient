@@ -26,6 +26,10 @@ const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [insights, setInsights] = useState<string[]>([]);
   const [insightsLoading, setInsightsLoading] = useState(false);
+  const [trackingVehicleId, setTrackingVehicleId] = useState("");
+  const [trackingBookingId, setTrackingBookingId] = useState("");
+  const [trackingStatus, setTrackingStatus] = useState<string | null>(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
 
 
   useEffect(() => {
@@ -77,6 +81,40 @@ const DashboardPage: React.FC = () => {
     formatPrice ? formatPrice(amount) : `₣${amount.toLocaleString()}`;
 
   const isOwner = user?.role === 'owner';
+
+  const sendTrackingPing = async () => {
+    if (!trackingVehicleId) {
+      setTrackingStatus("Please enter a vehicle ID.");
+      return;
+    }
+    setTrackingLoading(true);
+    setTrackingStatus(null);
+    try {
+      const baseLat = -1.9441;
+      const baseLng = 30.0619;
+      const jitter = () => (Math.random() - 0.5) * 0.002;
+      const payload: any = {
+        vehicle_id: Number(trackingVehicleId),
+        latitude: baseLat + jitter(),
+        longitude: baseLng + jitter(),
+        speed: Math.round(30 + Math.random() * 20),
+        status: "online",
+      };
+      if (trackingBookingId) {
+        payload.booking_id = Number(trackingBookingId);
+      }
+      const res = await apiClient.post("/tracking/update", payload);
+      if (res.success) {
+        setTrackingStatus("Tracking ping sent. Check the booking tracking panel.");
+      } else {
+        setTrackingStatus(res.message || "Failed to send tracking ping.");
+      }
+    } catch (err: any) {
+      setTrackingStatus(err?.message || "Failed to send tracking ping.");
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
 
   return (
     <div className="flex-1 p-4 md:p-8">
@@ -256,6 +294,45 @@ const DashboardPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {isOwner && (
+        <div className="bg-white rounded shadow p-4 md:p-6 mt-6">
+          <div className="font-semibold mb-4 text-sm md:text-base">Tracking Tools (Owner)</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Vehicle ID</label>
+              <input
+                value={trackingVehicleId}
+                onChange={(e) => setTrackingVehicleId(e.target.value)}
+                placeholder="e.g. 12"
+                className="w-full px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Booking ID (optional)</label>
+              <input
+                value={trackingBookingId}
+                onChange={(e) => setTrackingBookingId(e.target.value)}
+                placeholder="e.g. 34"
+                className="w-full px-3 py-2 rounded border border-gray-300 focus:outline-none focus:ring"
+              />
+            </div>
+            <button
+              onClick={sendTrackingPing}
+              disabled={trackingLoading}
+              className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50"
+            >
+              {trackingLoading ? "Sending..." : "Send Tracking Ping"}
+            </button>
+          </div>
+          {trackingStatus && (
+            <div className="text-xs text-gray-600 mt-3">{trackingStatus}</div>
+          )}
+          <div className="text-xs text-gray-400 mt-1">
+            This sends a one-off tracking update to the backend so tracking panels show data.
+          </div>
+        </div>
+      )}
     </div>
   );
 };
