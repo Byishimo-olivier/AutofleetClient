@@ -200,10 +200,21 @@ export default function VehicleDetails() {
     try {
       // Format phone number: ensure it starts with 250 for Rwanda
       let phoneNumber = phone.trim().replace(/\s+/g, '');
+      if (phoneNumber.startsWith('+')) {
+        phoneNumber = phoneNumber.substring(1);
+      }
+      if (phoneNumber.startsWith('00')) {
+        phoneNumber = phoneNumber.substring(2);
+      }
       if (phoneNumber.startsWith('0')) {
         phoneNumber = '250' + phoneNumber.substring(1);
       } else if (!phoneNumber.startsWith('250')) {
         phoneNumber = '250' + phoneNumber;
+      }
+      if (!/^2507\d{8}$/.test(phoneNumber)) {
+        setErrorMessage("Invalid phone number. Use 0788123456 or +250788123456.");
+        setLoading(false);
+        return;
       }
 
       console.log("🔐 Initiating Paypack payment:", {
