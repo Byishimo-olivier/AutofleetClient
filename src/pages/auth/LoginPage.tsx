@@ -204,7 +204,7 @@ const LoginPage: React.FC = () => {
               </div>
             </div>
             
-            {/* Terms Checkbox */}
+            {/* Terms Checkbox
             <div className="flex items-center space-x-2 pt-2">
               <input
                 type="checkbox"
@@ -217,7 +217,7 @@ const LoginPage: React.FC = () => {
               <label htmlFor="terms" className="text-white text-sm">
                 I accept the Terms & Condition
               </label>
-            </div>
+            </div> */}
             
             {/* Sign In Button */}
             <button

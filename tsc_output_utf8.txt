@@ -1,0 +1,100 @@
+﻿src/admin-dashboard-app/src/hooks/useAuth.tsx(16,18): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<null>'.
+src/admin-dashboard-app/src/hooks/useAuth.tsx(25,24): error TS7006: Parameter 'email' implicitly has an 'any' type.
+src/admin-dashboard-app/src/hooks/useAuth.tsx(25,31): error TS7006: Parameter 'password' implicitly has an 'any' type.
+src/admin-dashboard-app/src/hooks/useAuth.tsx(38,16): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<null>'.
+src/admin-dashboard-app/src/hooks/useAuth.tsx(50,16): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<null>'.
+src/admin-dashboard-app/src/pages/admin/AdminDashboard.tsx(21,29): error TS2307: Cannot find module '@/contexts/SettingContext' or its corresponding type declarations.
+src/admin-dashboard-app/src/pages/admin/BookingsManagement.tsx(3,22): error TS1149: File name 'C:/Users/HP/Downloads/byron/frontend/src/components/ui/Card.tsx' differs from already included file name 'C:/Users/HP/Downloads/byron/frontend/src/components/ui/card.tsx' only in casing.
+  The file is in the program because:
+    Imported via '@/components/ui/card' from file 'C:/Users/HP/Downloads/byron/frontend/src/pages/auth/RegisterPage.tsx'
+    Imported via "@/components/ui/Card" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/UserManagement.tsx'
+    Imported via "@/components/ui/Card" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx'
+    Imported via "@/components/ui/Card" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/BookingsManagement.tsx'
+    Matched by include pattern 'src' in 'C:/Users/HP/Downloads/byron/frontend/tsconfig.json'
+src/admin-dashboard-app/src/pages/admin/BookingsManagement.tsx(4,24): error TS1149: File name 'C:/Users/HP/Downloads/byron/frontend/src/components/ui/Button.tsx' differs from already included file name 'C:/Users/HP/Downloads/byron/frontend/src/components/ui/button.tsx' only in casing.
+  The file is in the program because:
+    Imported via "@/components/ui/button" from file 'C:/Users/HP/Downloads/byron/frontend/src/pages/customer/BookingPage.tsx'
+    Imported via '@/components/ui/button' from file 'C:/Users/HP/Downloads/byron/frontend/src/pages/auth/RegisterPage.tsx'
+    Imported via "@/components/ui/Button" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/UserManagement.tsx'
+    Imported via "@/components/ui/Button" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx'
+    Imported via "@/components/ui/Button" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/BookingsManagement.tsx'
+    Matched by include pattern 'src' in 'C:/Users/HP/Downloads/byron/frontend/tsconfig.json'
+src/admin-dashboard-app/src/pages/admin/NotificationsCenter.tsx(2,29): error TS2307: Cannot find module '@/contexts/SettingContext' or its corresponding type declarations.
+src/admin-dashboard-app/src/pages/admin/UserManagement.tsx(4,29): error TS2307: Cannot find module '@/contexts/SettingContext' or its corresponding type declarations.
+src/admin-dashboard-app/src/pages/admin/UserManagement.tsx(5,8): error TS2613: Module '"C:/Users/HP/Downloads/byron/frontend/src/components/ui/button"' has no default export. Did you mean to use 'import { Button } from "C:/Users/HP/Downloads/byron/frontend/src/components/ui/button"' instead?
+src/admin-dashboard-app/src/pages/admin/UserManagement.tsx(5,20): error TS1149: File name 'C:/Users/HP/Downloads/byron/frontend/src/components/ui/Button.tsx' differs from already included file name 'C:/Users/HP/Downloads/byron/frontend/src/components/ui/button.tsx' only in casing.
+  The file is in the program because:
+    Imported via "@/components/ui/button" from file 'C:/Users/HP/Downloads/byron/frontend/src/pages/customer/BookingPage.tsx'
+    Imported via '@/components/ui/button' from file 'C:/Users/HP/Downloads/byron/frontend/src/pages/auth/RegisterPage.tsx'
+    Imported via "@/components/ui/Button" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/UserManagement.tsx'
+    Imported via "@/components/ui/Button" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx'
+    Imported via "@/components/ui/Button" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/BookingsManagement.tsx'
+    Matched by include pattern 'src' in 'C:/Users/HP/Downloads/byron/frontend/tsconfig.json'
+src/admin-dashboard-app/src/pages/admin/UserManagement.tsx(6,8): error TS2613: Module '"C:/Users/HP/Downloads/byron/frontend/src/components/ui/card"' has no default export. Did you mean to use 'import { Card } from "C:/Users/HP/Downloads/byron/frontend/src/components/ui/card"' instead?
+src/admin-dashboard-app/src/pages/admin/UserManagement.tsx(6,18): error TS1149: File name 'C:/Users/HP/Downloads/byron/frontend/src/components/ui/Card.tsx' differs from already included file name 'C:/Users/HP/Downloads/byron/frontend/src/components/ui/card.tsx' only in casing.
+  The file is in the program because:
+    Imported via '@/components/ui/card' from file 'C:/Users/HP/Downloads/byron/frontend/src/pages/auth/RegisterPage.tsx'
+    Imported via "@/components/ui/Card" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/UserManagement.tsx'
+    Imported via "@/components/ui/Card" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx'
+    Imported via "@/components/ui/Card" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/BookingsManagement.tsx'
+    Matched by include pattern 'src' in 'C:/Users/HP/Downloads/byron/frontend/tsconfig.json'
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(4,29): error TS2307: Cannot find module '@/contexts/SettingContext' or its corresponding type declarations.
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(5,8): error TS2613: Module '"C:/Users/HP/Downloads/byron/frontend/src/components/ui/button"' has no default export. Did you mean to use 'import { Button } from "C:/Users/HP/Downloads/byron/frontend/src/components/ui/button"' instead?
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(5,20): error TS1149: File name 'C:/Users/HP/Downloads/byron/frontend/src/components/ui/Button.tsx' differs from already included file name 'C:/Users/HP/Downloads/byron/frontend/src/components/ui/button.tsx' only in casing.
+  The file is in the program because:
+    Imported via "@/components/ui/button" from file 'C:/Users/HP/Downloads/byron/frontend/src/pages/customer/BookingPage.tsx'
+    Imported via '@/components/ui/button' from file 'C:/Users/HP/Downloads/byron/frontend/src/pages/auth/RegisterPage.tsx'
+    Imported via "@/components/ui/Button" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/UserManagement.tsx'
+    Imported via "@/components/ui/Button" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx'
+    Imported via "@/components/ui/Button" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/BookingsManagement.tsx'
+    Matched by include pattern 'src' in 'C:/Users/HP/Downloads/byron/frontend/tsconfig.json'
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(6,8): error TS2613: Module '"C:/Users/HP/Downloads/byron/frontend/src/components/ui/card"' has no default export. Did you mean to use 'import { Card } from "C:/Users/HP/Downloads/byron/frontend/src/components/ui/card"' instead?
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(6,18): error TS1149: File name 'C:/Users/HP/Downloads/byron/frontend/src/components/ui/Card.tsx' differs from already included file name 'C:/Users/HP/Downloads/byron/frontend/src/components/ui/card.tsx' only in casing.
+  The file is in the program because:
+    Imported via '@/components/ui/card' from file 'C:/Users/HP/Downloads/byron/frontend/src/pages/auth/RegisterPage.tsx'
+    Imported via "@/components/ui/Card" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/UserManagement.tsx'
+    Imported via "@/components/ui/Card" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx'
+    Imported via "@/components/ui/Card" from file 'C:/Users/HP/Downloads/byron/frontend/src/admin-dashboard-app/src/pages/admin/BookingsManagement.tsx'
+    Matched by include pattern 'src' in 'C:/Users/HP/Downloads/byron/frontend/tsconfig.json'
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(18,9): error TS2322: Type '{ id: number; make: string; model: string; year: number; available: true; }' is not assignable to type 'never'.
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(19,9): error TS2322: Type '{ id: number; make: string; model: string; year: number; available: false; }' is not assignable to type 'never'.
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(36,52): error TS2339: Property 'id' does not exist on type 'never'.
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(49,30): error TS2339: Property 'id' does not exist on type 'never'.
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(50,63): error TS2339: Property 'make' does not exist on type 'never'.
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(50,79): error TS2339: Property 'model' does not exist on type 'never'.
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(51,34): error TS2339: Property 'year' does not exist on type 'never'.
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(52,39): error TS2339: Property 'available' does not exist on type 'never'.
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(54,64): error TS2339: Property 'id' does not exist on type 'never'.
+src/admin-dashboard-app/src/pages/admin/VehicleManagement.tsx(55,66): error TS2339: Property 'id' does not exist on type 'never'.
+src/autofleet-hub-chatbot/src/components/chatbot/ChatBot.tsx(6,10): error TS2614: Module '"../../hooks/useChatBot"' has no exported member 'useChatBot'. Did you mean to use 'import useChatBot from "../../hooks/useChatBot"' instead?
+src/autofleet-hub-chatbot/src/components/chatbot/ChatBot.tsx(7,10): error TS2614: Module '"../../hooks/useChatHistory"' has no exported member 'useChatHistory'. Did you mean to use 'import useChatHistory from "../../hooks/useChatHistory"' instead?
+src/autofleet-hub-chatbot/src/components/chatbot/ChatBot.tsx(26,24): error TS7006: Parameter 'msg' implicitly has an 'any' type.
+src/autofleet-hub-chatbot/src/components/chatbot/ChatBot.tsx(26,29): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/autofleet-hub-chatbot/src/components/chatbot/ChatBot.tsx(27,12): error TS2741: Property 'isUser' is missing in type '{ key: any; message: any; }' but required in type 'ChatBubbleProps'.
+src/autofleet-hub-chatbot/src/components/chatbot/ChatBot.tsx(30,18): error TS2322: Type '{ onSendMessage: (message: string) => void; }' is not assignable to type 'IntrinsicAttributes'.
+  Property 'onSendMessage' does not exist on type 'IntrinsicAttributes'.
+src/autofleet-hub-chatbot/src/components/chatbot/ChatBot.tsx(31,8): error TS2739: Type '{}' is missing the following properties from type 'ChatSuggestionsProps': suggestions, onSuggestionClick
+src/autofleet-hub-chatbot/src/components/chatbot/ChatInput.tsx(2,10): error TS2614: Module '"../ui/Button"' has no exported member 'Button'. Did you mean to use 'import Button from "../ui/Button"' instead?
+src/autofleet-hub-chatbot/src/components/chatbot/ChatInput.tsx(3,10): error TS2614: Module '"../ui/Input"' has no exported member 'Input'. Did you mean to use 'import Input from "../ui/Input"' instead?
+src/autofleet-hub-chatbot/src/components/chatbot/ChatInput.tsx(4,10): error TS2614: Module '"../../hooks/useChatBot"' has no exported member 'useChatBot'. Did you mean to use 'import useChatBot from "../../hooks/useChatBot"' instead?
+src/autofleet-hub-chatbot/src/components/chatbot/ChatInput.tsx(28,20): error TS7006: Parameter 'e' implicitly has an 'any' type.
+src/autofleet-hub-chatbot/src/contexts/ChatBotContext.tsx(3,10): error TS2724: '"../services/chatBotAPI"' has no exported member named 'sendMessageToBot'. Did you mean 'sendMessage'?
+src/autofleet-hub-chatbot/src/contexts/ChatBotContext.tsx(16,11): error TS2739: Type '{ sender: "user"; content: string; }' is missing the following properties from type 'ChatMessage': id, timestamp
+src/autofleet-hub-chatbot/src/contexts/ChatBotContext.tsx(21,13): error TS2739: Type '{ sender: "bot"; content: any; }' is missing the following properties from type 'ChatMessage': id, timestamp
+src/autofleet-hub-chatbot/src/contexts/ChatBotContext.tsx(21,74): error TS2339: Property 'reply' does not exist on type 'ChatResponse'.
+src/autofleet-hub-chatbot/src/hooks/useChatBot.ts(2,10): error TS2305: Module '"../services/chatBotAPI"' has no exported member 'sendMessageToChatBot'.
+src/autofleet-hub-chatbot/src/hooks/useChatBot.ts(2,32): error TS2305: Module '"../services/chatBotAPI"' has no exported member 'receiveMessageFromChatBot'.
+src/autofleet-hub-chatbot/src/hooks/useChatBot.ts(13,7): error TS2322: Type 'string' is not assignable to type 'Date'.
+src/autofleet-hub-chatbot/src/hooks/useChatBot.ts(24,9): error TS2322: Type 'string' is not assignable to type 'Date'.
+src/autofleet-hub-chatbot/src/services/messageProcessor.ts(8,5): error TS2353: Object literal may only specify known properties, and 'type' does not exist in type 'ChatResponse'.
+src/autofleet-hub-chatbot/src/utils/chatHelpers.ts(1,30): error TS2307: Cannot find module 'uuid' or its corresponding type declarations.
+src/components/ui/dropdown-menu.tsx(53,7): error TS2769: No overload matches this call.
+  The last overload gave the following error.
+    Object literal may only specify known properties, and 'onClick' does not exist in type 'Partial<unknown> & Attributes'.
+src/hooks/useChatBot.ts(64,9): error TS2322: Type '"error" | "navigation" | "confirmation" | undefined' is not assignable to type '"text" | "navigation" | "quick_reply" | "typing" | undefined'.
+  Type '"error"' is not assignable to type '"text" | "navigation" | "quick_reply" | "typing" | undefined'.
+src/pages/admin/UserManagementPage.tsx(412,11): error TS2353: Object literal may only specify known properties, and 'active' does not exist in type 'SetStateAction<UserStats>'.
+src/pages/admin/UserManagementPage.tsx(412,29): error TS2339: Property 'active' does not exist on type 'Partial<UserStats>'.
+src/pages/admin/UserManagementPage.tsx(413,31): error TS2339: Property 'inactive' does not exist on type 'Partial<UserStats>'.
+src/pages/admin/UserManagementPage.tsx(436,18): error TS2339: Property 'is_active' does not exist on type 'User'.
+src/pages/admin/UserManagementPage.tsx(670,76): error TS2339: Property 'active' does not exist on type 'UserStats'.

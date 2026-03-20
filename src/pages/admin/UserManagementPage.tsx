@@ -34,6 +34,7 @@ interface User {
   role: string;
   created_at: string;
   last_login?: string;
+  is_active:boolean;
 }
 
 interface UserStats {
@@ -41,6 +42,8 @@ interface UserStats {
   admin: number;
   owner: number;
   customer: number;
+  active: number;
+  inactive:number;
 }
 
 interface NewUser {
@@ -68,7 +71,9 @@ const UserManagementPage: React.FC = () => {
     total: 0,
     admin: 0,
     owner: 0,
-    customer: 0
+    customer: 0,
+    active:0,
+    inactive:0
   });
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);

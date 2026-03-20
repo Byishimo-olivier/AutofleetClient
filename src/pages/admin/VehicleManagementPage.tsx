@@ -56,6 +56,7 @@ interface Vehicle {
   locationLng?: number;
   created_at: string;
   updated_at: string;
+  owner_has_active_subscription?: boolean;
 }
 
 interface VehicleStats {
@@ -702,6 +703,9 @@ const VehicleManagementPage: React.FC = () => {
                     Status
                   </th>
                   <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${settings.darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+                    Subscription
+                  </th>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${settings.darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
                     Actions
                   </th>
                 </tr>
@@ -709,7 +713,7 @@ const VehicleManagementPage: React.FC = () => {
               <tbody className={`divide-y ${settings.darkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex items-center justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                         <span className="ml-2">Loading vehicles...</span>
@@ -796,6 +800,17 @@ const VehicleManagementPage: React.FC = () => {
                         <div className={`text-sm ${settings.darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                           {vehicle.owner_phone}
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {vehicle.owner_has_active_subscription ? (
+                          <span className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold w-fit">
+                            <CheckCircle className="w-3 h-3" /> Visible
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold w-fit">
+                            <XCircle className="w-3 h-3" /> Hidden
+                          </span>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className={`text-sm font-medium ${settings.darkMode ? 'text-white' : 'text-gray-900'}`}>

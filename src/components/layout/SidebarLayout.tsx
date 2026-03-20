@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  BarChart2, Car, ClipboardList, MessageCircle, Users, User, LogOut, Settings, AlertCircle, Menu, X
+  BarChart2, Car, ClipboardList, MessageCircle, Users, User, LogOut, Settings, AlertCircle, Menu, X, CreditCard
 } from "lucide-react";
 import { apiClient } from "@/services/apiClient";
 import { useTheme } from "@/contexts/SettingContxt";
@@ -331,6 +331,22 @@ const SidebarLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <span className="ml-3">{item.label}</span>
             </div>
           ))}
+          
+          {userProfile?.role === 'owner' && (
+            <div
+              className={`flex items-center px-4 py-2.5 rounded-lg cursor-pointer transition text-sm ${location.pathname === "/subscription-plans"
+                ? "bg-[#3d4f8f] text-white"
+                : "text-gray-300 hover:bg-[#3d4f8f]/50 hover:text-white"
+                }`}
+              onClick={() => {
+                navigate("/subscription-plans");
+                setIsSidebarOpen(false);
+              }}
+            >
+              <CreditCard className="w-5 h-5" />
+              <span className="ml-3">Subscription</span>
+            </div>
+          )}
         </nav>
 
         {/* User Actions */}

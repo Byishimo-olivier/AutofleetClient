@@ -1,5 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { Car, ClipboardList, DollarSign, Plus, FileText, BarChart2, Sparkles, BrainCircuit } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  Car,
+  ClipboardList,
+  MessageSquare,
+  ArrowRight,
+  Plus,
+  TrendingUp,
+  CreditCard,
+  DollarSign,
+  Sparkles,
+  BrainCircuit,
+  FileText,
+  BarChart2,
+  CheckCircle2,
+  AlertCircle,
+  Loader2
+} from "lucide-react";
 import { aiService } from '@/services/aiService';
 
 import {
@@ -12,6 +29,11 @@ import { useAuth } from '@/contexts/AuthContext';
 const DashboardPage: React.FC = () => {
   const { formatPrice } = useSettings();
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [paymentVerifying, setPaymentVerifying] = useState(false);
+  const [paymentResult, setPaymentResult] = useState<{ success: boolean; message: string } | null>(null);
+
   const [stats, setStats] = useState<any>({
     totalVehicles: 0,
     activeBookings: 0,
@@ -31,6 +53,36 @@ const DashboardPage: React.FC = () => {
   const [trackingStatus, setTrackingStatus] = useState<string | null>(null);
   const [trackingLoading, setTrackingLoading] = useState(false);
 
+  useEffect(() => {
+    const query = new URLSearchParams(location.search);
+    const status = query.get('payment_status');
+    const transactionId = query.get('transaction_id');
+    const txRef = query.get('tx_ref');
+    const paymentSuccess = query.get('payment_success');
+
+    if (status === 'verifying' && transactionId && txRef) {
+      setPaymentVerifying(true);
+      apiClient.get(`/subscriptions/verify-flw?transaction_id=${transactionId}&tx_ref=${txRef}`)
+        .then(res => {
+          if (res.success) {
+            setPaymentResult({ success: true, message: 'Your subscription has been activated successfully!' });
+            // Remove query params after 5 seconds
+            setTimeout(() => navigate('/dashboard', { replace: true }), 5000);
+          } else {
+            setPaymentResult({ success: false, message: res.message || 'Payment verification failed.' });
+          }
+        })
+        .catch(err => {
+          setPaymentResult({ success: false, message: 'An error occurred during verification.' });
+        })
+        .finally(() => setPaymentVerifying(false));
+    }
+
+    if (paymentSuccess === 'true') {
+      setPaymentResult({ success: true, message: 'Payment successful!' });
+      setTimeout(() => navigate('/dashboard', { replace: true }), 5000);
+    }
+  }, [location, navigate]);
 
   useEffect(() => {
     setLoading(true);
@@ -117,7 +169,44 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 p-4 md:p-8">
+    <div className="flex-1 p-4 md:p-8 relative">
+      {/* Payment Verification Overlays */}
+      {paymentVerifying && (
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center backdrop-blur-md">
+          <div className="bg-white p-10 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm text-center border border-gray-100 animate-in fade-in zoom-in duration-300">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-blue-100 rounded-full animate-ping opacity-20"></div>
+              <Loader2 className="w-16 h-16 text-blue-600 animate-spin relative" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifying Payment</h2>
+            <p className="text-gray-500 leading-relaxed">Please wait while we confirm your subscription transaction with the provider...</p>
+          </div>
+        </div>
+      )}
+
+      {paymentResult && (
+        <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center backdrop-blur-md">
+          <div className="bg-white p-10 rounded-3xl shadow-2xl flex flex-col items-center max-w-sm text-center border border-gray-100 animate-in fade-in zoom-in duration-300">
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 ${paymentResult.success ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+              {paymentResult.success ? (
+                <CheckCircle2 className="w-12 h-12" />
+              ) : (
+                <AlertCircle className="w-12 h-12" />
+              )}
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              {paymentResult.success ? 'Success!' : 'Payment Failed'}
+            </h2>
+            <p className="text-gray-500 mb-8 leading-relaxed">{paymentResult.message}</p>
+            <button 
+              onClick={() => setPaymentResult(null)}
+              className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all shadow-lg"
+            >
+              Back to Dashboard
+            </button>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -148,12 +237,17 @@ const DashboardPage: React.FC = () => {
           label="Active Bookings"
           value={loading ? "..." : stats.activeBookings}
         />
-        <StatCard
-          icon={<ClipboardList className="w-6 h-6 text-purple-600" />}
-          label="Total Bookings"
-          value={loading ? "..." : stats.totalBookings}
-        />
-        {/* Platform Revenue card — for owners also shows their personal revenue */}
+        
+        {isOwner ? (
+          <SubscriptionCard />
+        ) : (
+          <StatCard
+            icon={<ClipboardList className="w-6 h-6 text-purple-600" />}
+            label="Total Bookings"
+            value={loading ? "..." : stats.totalBookings}
+          />
+        )}
+
         <StatCard
           icon={<DollarSign className="w-6 h-6 text-red-600" />}
           label="Platform Revenue"
@@ -402,6 +496,66 @@ function BookingRow({ name, car, status }: { name: string; car: string; status: 
         <div className="text-xs text-gray-500">{car}</div>
       </div>
       <span className={`px-3 py-1 rounded text-xs font-semibold ${color}`}>{status}</span>
+    </div>
+  );
+}
+
+function SubscriptionCard() {
+  const [sub, setSub] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    apiClient.get<any>("/subscriptions/status")
+      .then(res => {
+        if (res.success) setSub(res.data);
+      })
+      .catch(err => {
+        console.error("Subscription status error:", err);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return (
+    <div className="bg-white rounded shadow p-4 flex items-center space-x-4 animate-pulse">
+      <div className="bg-gray-100 rounded-full p-3 w-12 h-12"></div>
+      <div className="flex-1 space-y-2">
+        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+      </div>
+    </div>
+  );
+
+  const isActive = sub?.is_active;
+  const planName = sub?.plan_name || 'No Plan';
+  const expiryDate = sub?.end_date ? new Date(sub.end_date).toLocaleDateString() : 'N/A';
+
+  return (
+    <div className={`bg-white rounded shadow p-4 flex flex-col space-y-4 border-l-4 ${isActive ? 'border-green-500' : 'border-red-500'}`}>
+      <div className="flex items-center space-x-4">
+        <div className={`rounded-full p-3 ${isActive ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+          <CreditCard className="w-6 h-6" />
+        </div>
+        <div className="flex-1">
+          <div className="text-sm text-gray-500">Subscription</div>
+          <div className="text-lg font-bold flex items-center gap-2">
+            {planName}
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {isActive ? 'Active' : 'Expired'}
+            </span>
+          </div>
+          <div className="text-[10px] text-gray-400">Expires: {expiryDate}</div>
+        </div>
+      </div>
+      
+      {!isActive && (
+        <button 
+          onClick={() => navigate('/subscription-plans')}
+          className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+        >
+          <Plus className="w-4 h-4" /> Subscribe Now
+        </button>
+      )}
     </div>
   );
 }

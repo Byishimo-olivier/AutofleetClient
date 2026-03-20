@@ -14,6 +14,7 @@ import {
   Sliders,
   AlertCircle,
   User,
+  CreditCard,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSettings } from '@/contexts/SettingContxt';
@@ -111,6 +112,7 @@ const AdminDashboard: React.FC = () => {
     { icon: <PieChart className="w-5 h-5" />, label: "Reports & Analytics", to: "/admin/reports" },
     { icon: <MessageCircle className="w-5 h-5" />, label: "Disputes & Support", to: "/admin/disputes" },
     { icon: <Sliders className="w-5 h-5" />, label: "System Settings", to: "/admin/settings" },
+    { icon: <CreditCard className="w-5 h-5" />, label: "Subscription Management", to: "/admin/subscriptions" },
     { icon: <AlertCircle className="w-5 h-5" />, label: "Notifications Center", to: "/admin/notifications" },
     { icon: <User className="w-5 h-5" />, label: t.profile || "Profile & Account", to: "/profile" },
   ];

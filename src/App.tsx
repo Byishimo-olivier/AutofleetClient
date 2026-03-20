@@ -8,6 +8,7 @@ import Booking from "@/pages/dashboard/Booking";
 import FeedbackPage from "@/pages/dashboard/FeedbackPage";
 import AnalyticsPage from "@/pages/dashboard/AnalyticsPage";
 import ProfilePage from "@/pages/dashboard/ProfilePage";
+import SubscriptionPlansPage from "@/pages/dashboard/SubscriptionPlansPage";
 import MyBookingsFeedbackPage from "@/pages/customer/MyBookingsFeedbackPage";
 import Vehicle from "@/pages/customer/VehiclesPage";
 import BOOKINGPAGE from "@/pages/customer/BookingPage";
@@ -35,6 +36,7 @@ import ReportsAnalyticsPage from "@/pages/admin/ReportsAnalyticsPage";
 import DisputesSupportPage from "@/pages/admin/DisputesSupportPage";
 import SystemSettingsPage from "@/pages/admin/SystemSettingsPage";
 import NotificationsCenterPage from "@/pages/admin/NotificationsCenterPage";
+import SubscriptionManagementPage from "@/pages/admin/SubscriptionManagementPage";
 
 // Components
 // ...existing code...
@@ -127,6 +129,16 @@ function App() {
                 <ProtectedRoute allowedRoles={['owner', 'customer', 'admin']}>
                   <SidebarLayout>
                     <ProfilePage />
+                  </SidebarLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/subscription-plans"
+              element={
+                <ProtectedRoute allowedRoles={['owner']}>
+                  <SidebarLayout>
+                    <SubscriptionPlansPage />
                   </SidebarLayout>
                 </ProtectedRoute>
               }
@@ -287,6 +299,16 @@ function App() {
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminLayout>
                     <NotificationsCenterPage />
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/subscriptions"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminLayout>
+                    <SubscriptionManagementPage />
                   </AdminLayout>
                 </ProtectedRoute>
               }
