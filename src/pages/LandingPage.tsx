@@ -1,10 +1,14 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Car, CalendarCheck, MapPin, ShieldCheck, Star } from "lucide-react";
 import { useSettings } from "@/contexts/SettingContxt";
+import { apiClient, STATIC_BASE_URL } from "@/services/apiClient";
 
 export default function LandingPage() {
-  const { settings } = useSettings();
+  const [featuredVehicles, setFeaturedVehicles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { settings, formatPrice } = useSettings();
   const isDark = settings?.darkMode;
 
   const bg = isDark ? "bg-[#0f1115] text-[#e7e7e7]" : "bg-[#f7f2ea] text-[#1f1b16]";
@@ -13,6 +17,52 @@ export default function LandingPage() {
   const subtle = isDark ? "text-white/70" : "text-[#5b5047]";
   const accent = isDark ? "text-[#f6a13a]" : "text-[#b35b15]";
   const accentBg = isDark ? "bg-[#f6a13a] text-black" : "bg-[#b35b15] text-white";
+
+  useEffect(() => {
+    const fetchVehicles = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          page: "1",
+          limit: "3",
+        });
+        const res = await apiClient.get<any>(`/vehicles?${params.toString()}`);
+        if (res && res.success && res.data && Array.isArray(res.data.vehicles)) {
+          setFeaturedVehicles(res.data.vehicles);
+        } else {
+          setFeaturedVehicles([]);
+        }
+      } catch (error) {
+        console.error("Error fetching landing page vehicles:", error);
+        setFeaturedVehicles([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVehicles();
+  }, []);
+
+  const getImageUrl = (img: string | null | undefined) => {
+    if (!img) return "https://placehold.co/600x400?text=No+Image";
+    if (img.startsWith("http://") || img.startsWith("https://")) return img;
+    const normalizedImg = img.startsWith("/") ? img : `/${img}`;
+    return `${STATIC_BASE_URL}${normalizedImg}`;
+  };
+
+  const parseVehicleImages = (images: any) => {
+    let parsedImages: any[] = [];
+    try {
+      if (Array.isArray(images)) {
+        parsedImages = parsedImages.concat(images);
+      } else if (images && typeof images === "string" && images.trim() !== "") {
+        parsedImages = JSON.parse(images);
+      }
+    } catch (error) {
+      console.error("Failed to parse landing page vehicle images:", error);
+    }
+    return parsedImages;
+  };
 
   return (
     <div className={`min-h-screen ${bg}`}>
@@ -40,7 +90,7 @@ export default function LandingPage() {
                   Browse Vehicles
                   <ArrowRight className="h-4 w-4" />
                 </Link>
-                <Link to="/customer/vehicles" className={`px-6 py-3 rounded-2xl font-bold border ${panel}`}>
+                <Link to="/Vehicles" className={`px-6 py-3 rounded-2xl font-bold border ${panel}`}>
                   View All Deals
                 </Link>
               </div>
@@ -103,24 +153,68 @@ export default function LandingPage() {
       <section id="fleet" className="max-w-7xl mx-auto px-6 py-16">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-3xl md:text-4xl font-black">Popular picks</h2>
-          <Link to="/home" className={`text-sm font-bold ${accent}`}>See full fleet</Link>
+          <Link to="/Vehicles" className={`text-sm font-bold ${accent}`}>See full fleet</Link>
         </div>
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            { name: "City Compact", price: "RWF 18,000/day", tag: "Best for Kigali" },
-            { name: "Luxury SUV", price: "RWF 45,000/day", tag: "Business ready" },
-            { name: "Family Van", price: "RWF 35,000/day", tag: "Spacious ride" }
-          ].map((item, idx) => (
-            <div key={idx} className={`rounded-3xl border p-6 ${card}`}>
-              <div className={`text-xs font-semibold ${subtle}`}>{item.tag}</div>
-              <div className="mt-3 text-2xl font-black">{item.name}</div>
-              <div className={`mt-2 ${accent} font-bold`}>{item.price}</div>
-              <div className={`mt-6 inline-flex items-center gap-2 text-sm ${subtle}`}>
-                <Star className={`h-4 w-4 ${accent}`} /> Rated 4.8+
-              </div>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className={`rounded-[2.5rem] border p-12 text-center ${panel}`}>Loading vehicles...</div>
+        ) : featuredVehicles.length === 0 ? (
+          <div className={`rounded-[2.5rem] border p-12 text-center ${panel}`}>No vehicles found.</div>
+        ) : (
+          <div className="grid md:grid-cols-3 gap-6">
+            {featuredVehicles.map((vehicle, idx) => {
+              const images = parseVehicleImages(vehicle.images);
+              const imageUrl = getImageUrl(images[0]);
+              const isForSale = vehicle.listing_type === "sale";
+
+              return (
+                <div key={idx} className={`rounded-[2rem] border overflow-hidden ${card} transition hover:-translate-y-1`}>
+                  <div className="relative">
+                    <img
+                      src={imageUrl}
+                      alt={`${vehicle.make} ${vehicle.model}`}
+                      className="h-56 w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "https://placehold.co/600x400?text=No+Image";
+                      }}
+                    />
+                    <div className="absolute top-4 left-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${panel}`}>
+                        {vehicle.status || "Available"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-6">
+                    <div className={`text-xs font-semibold ${subtle}`}>
+                      {vehicle.type || "Vehicle"}
+                    </div>
+                    <div className="mt-3 text-2xl font-black">
+                      {vehicle.make} {vehicle.model}
+                    </div>
+                    <div className={`mt-2 text-sm ${subtle}`}>
+                      {vehicle.locationAddress || vehicle.location_address || vehicle.location || "Location not set"}
+                    </div>
+                    <div className={`mt-3 ${accent} font-bold`}>
+                      {isForSale
+                        ? formatPrice(vehicle.selling_price ?? 0)
+                        : `${formatPrice(vehicle.price ?? vehicle.daily_rate ?? 0)}/day`}
+                    </div>
+                    <div className={`mt-4 inline-flex items-center gap-2 text-sm ${subtle}`}>
+                      <Star className={`h-4 w-4 ${accent}`} /> Rated {Number(vehicle.rating || 0).toFixed(1)}
+                    </div>
+                    <button
+                      className={`mt-6 inline-flex items-center gap-2 rounded-2xl px-5 py-3 font-bold ${accentBg}`}
+                      onClick={() => navigate(`/Booking/${vehicle.id}`, { state: { vehicle } })}
+                    >
+                      {isForSale ? "Buy now" : "Book now"}
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section id="trust" className="max-w-7xl mx-auto px-6 pb-20">
