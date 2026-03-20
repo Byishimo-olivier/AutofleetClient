@@ -25,6 +25,7 @@ export default function LandingPage() {
         const params = new URLSearchParams({
           page: "1",
           limit: "3",
+          includeAllPublic: "true",
         });
         const res = await apiClient.get<any>(`/vehicles?${params.toString()}`);
         if (res && res.success && res.data && Array.isArray(res.data.vehicles)) {
