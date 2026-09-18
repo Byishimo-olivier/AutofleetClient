@@ -92,7 +92,7 @@ const VehiclesPage: React.FC = () => {
   const [form, setForm] = useState<VehicleForm>(initialForm);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [status, setStatus] = useState('');
@@ -163,7 +163,7 @@ const VehiclesPage: React.FC = () => {
     }
   };
 
-  const saveAlertSettings = async (vehicleId: number) => {
+  const saveAlertSettings = async (vehicleId: string) => {
     setAlertsSaving(true);
     try {
       const payload = {
@@ -276,7 +276,6 @@ const VehiclesPage: React.FC = () => {
       if (editingId) {
         // Edit mode: update vehicle
         await apiClient.put(`/vehicles/${editingId}`, vehicleData);
-        await saveAlertSettings(editingId);
       } else {
         // Add mode: create vehicle
         const res: any = await apiClient.post('/vehicles', vehicleData);
@@ -290,13 +289,20 @@ const VehiclesPage: React.FC = () => {
         await saveAlertSettings(vehicleId);
       }
 
-      // Upload images if any (optional: only on add or always)
+      // Images are stored by the upload endpoint after the vehicle gets its ObjectId.
       if (form.images.length > 0 && vehicleId) {
         const imgForm = new FormData();
         form.images.forEach((file) => {
           imgForm.append('images', file);
         });
-        await apiClient.post(`/vehicle-images/upload/${vehicleId}`, imgForm);
+        const uploadResponse = await apiClient.post(`/vehicle-images/upload/${vehicleId}`, imgForm);
+        if (!uploadResponse.success) {
+          throw new Error(uploadResponse.message || 'Vehicle images could not be saved.');
+        }
+      }
+
+      if (vehicleId) {
+        await saveAlertSettings(vehicleId);
       }
 
       setShowModal(false);
@@ -345,7 +351,7 @@ const VehiclesPage: React.FC = () => {
     }
   };
 
-  const handleDeleteVehicle = async (vehicleId: number) => {
+  const handleDeleteVehicle = async (vehicleId: string) => {
     if (!window.confirm("Are you sure you want to delete this vehicle?")) return;
     try {
       await apiClient.delete(`/vehicles/${vehicleId}`);

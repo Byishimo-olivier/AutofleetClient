@@ -28,13 +28,7 @@ const RegisterPage: React.FC = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const [step, setStep] = useState(1);
-  const [selectedPlan, setSelectedPlan] = useState('basic');
-
-  const plans = [
-    { id: 'basic', name: 'Basic Plan', amount: 50000, description: 'Perfect for small fleets (up to 5 vehicles)' },
-    { id: 'premium', name: 'Premium Plan', amount: 100000, description: 'For large fleets (unlimited vehicles)' }
-  ];
+  // Subscription plans and payment remain available in the dashboard for later.
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -48,29 +42,20 @@ const RegisterPage: React.FC = () => {
     e.preventDefault();
     setError('');
 
-    // Step 1 Validation
-    if (step === 1) {
-      if (formData.password !== formData.confirmPassword) {
-        setError('Passwords do not match');
-        return;
-      }
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
 
-      if (formData.password.length < 6) {
-        setError('Password must be at least 6 characters long');
-        return;
-      }
-
-      if (formData.role === 'owner') {
-        setStep(2);
-        return;
-      }
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
     }
 
     setIsLoading(true);
 
     try {
-      // Step 1: Register User
-      const response = await register({
+      await register({
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -79,39 +64,7 @@ const RegisterPage: React.FC = () => {
         role: formData.role
       });
 
-      // Step 2: If Owner, Create Subscription
-      if (formData.role === 'owner') {
-        try {
-          // Note: We need to use the token from register response (AuthContext usually handles this)
-          // We'll call the subscription endpoint using a clean URL structure
-          const baseUrl = import.meta.env.VITE_API_URL.replace(/\/api$/, '');
-          const subResponse = await fetch(`${baseUrl}/api/subscriptions/subscribe`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('autofleet_token')}`
-            },
-            body: JSON.stringify({
-              planId: selectedPlan,
-              phoneNumber: formData.phone || ''
-            })
-          });
-
-          const subData = await subResponse.json();
-          if (!subData.success) {
-            throw new Error(subData.message || 'Subscription failed');
-          }
-
-          // Redirect to a summary/pending page or dashboard
-          navigate('/dashboard');
-        } catch (subErr: any) {
-          console.error('Subscription error during signup:', subErr);
-          // We registered but sub failed. Maybe just go to dashboard and ask for sub there?
-          navigate('/dashboard'); 
-        }
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -125,17 +78,10 @@ const RegisterPage: React.FC = () => {
       <div className="flex flex-col justify-center items-center w-full md:w-1/2 bg-black bg-opacity-90 px-8 py-12">
         <div className="w-full max-w-md">
           <h2 className="text-center text-3xl font-bold text-white mb-2">
-            {step === 1 ? 'Create your account' : 'Choose your subscription'}
+            Create your account
           </h2>
           <p className="text-center text-sm text-gray-400 mb-8">
-            {step === 1 ? (
-              <>
-                Or{' '}
-                <Link to="/login" className="font-medium text-blue-400 hover:text-blue-300">
-                  sign in to your existing account
-                </Link>
-              </>
-            ) : 'Owners require an active subscription to list vehicles'}
+            <>Or{' '}<Link to="/login" className="font-medium text-blue-400 hover:text-blue-300">sign in to your existing account</Link></>
           </p>
           
           <Card className="bg-transparent shadow-none border-gray-800">
@@ -147,8 +93,7 @@ const RegisterPage: React.FC = () => {
                   </Alert>
                 )}
 
-                {step === 1 ? (
-                  <>
+                <>
                     {/* Account Type Selection */}
                     <div>
                       <Label htmlFor="role" className="text-white">Account Type</Label>
@@ -225,12 +170,11 @@ const RegisterPage: React.FC = () => {
 
                     {/* Phone */}
                     <div>
-                      <Label htmlFor="phone" className="text-white">Phone number (Paypack Mobile Money)</Label>
+                      <Label htmlFor="phone" className="text-white">Phone number</Label>
                       <Input
                         id="phone"
                         name="phone"
                         type="tel"
-                        required={formData.role === 'owner'}
                         value={formData.phone}
                         onChange={handleInputChange}
                         className="mt-1 bg-gray-900 text-white border-gray-700"
@@ -273,34 +217,6 @@ const RegisterPage: React.FC = () => {
                       </label>
                     </div>
                   </>
-                ) : (
-                  <div className="space-y-4">
-                    {plans.map((plan) => (
-                      <div 
-                        key={plan.id}
-                        onClick={() => setSelectedPlan(plan.id)}
-                        className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                          selectedPlan === plan.id 
-                          ? 'border-blue-500 bg-blue-900 bg-opacity-20' 
-                          : 'border-gray-800 hover:border-gray-700'
-                        }`}
-                      >
-                        <div className="flex justify-between items-center mb-1">
-                          <h3 className="font-bold text-white">{plan.name}</h3>
-                          <span className="text-blue-400 font-bold">{plan.amount.toLocaleString()} RWF</span>
-                        </div>
-                        <p className="text-xs text-gray-400">{plan.description}</p>
-                      </div>
-                    ))}
-                    <button 
-                      type="button" 
-                      onClick={() => setStep(1)}
-                      className="text-sm text-gray-400 hover:text-white"
-                    >
-                      ← Back to details
-                    </button>
-                  </div>
-                )}
 
                 <Button
                   type="submit"
@@ -310,7 +226,7 @@ const RegisterPage: React.FC = () => {
                   {isLoading ? (
                     <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Processing...</>
                   ) : (
-                    step === 1 ? (formData.role === 'owner' ? 'Continue to Plans' : 'Create Account') : 'Pay & Complete'
+                    'Create Account'
                   )}
                 </Button>
               </form>

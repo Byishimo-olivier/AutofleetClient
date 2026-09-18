@@ -40,10 +40,13 @@ interface Vehicle {
   description?: string;
   make?: string;
   model?: string;
+  color?: string;
   location_address?: string;
   locationAddress?: string;
   locationLat?: number;
   locationLng?: number;
+  owner_phone?: string;
+  ownerPhone?: string;
 }
 
 type PaymentMethod = "mobile" | "card";
@@ -476,14 +479,28 @@ export default function VehicleDetails() {
       return;
     }
 
-    const bookingPrice = calculateTotalPrice();
-    if (bookingPrice <= 0) {
-      setErrorMessage("Total price must be greater than 0");
+    const ownerPhone = vehicle.owner_phone || vehicle.ownerPhone;
+    if (!ownerPhone) {
+      setErrorMessage("The owner has not provided a WhatsApp number yet.");
       return;
     }
 
-    // Trigger Paypack payment
-    await handlePaypackPayment();
+    const normalizedPhone = ownerPhone.replace(/[^\d+]/g, '').replace(/^\+/, '');
+    const whatsappPhone = normalizedPhone.startsWith('0')
+      ? `250${normalizedPhone.slice(1)}`
+      : normalizedPhone;
+    const vehicleName = vehicle.name || `${vehicle.make || ''} ${vehicle.model || ''}`.trim();
+    const bookingType = isForSale ? 'purchase' : 'rental';
+    const message = [
+      `Hello, I am interested in a ${bookingType} for your ${vehicleName}${vehicle.color ? ` (${vehicle.color})` : ''}.`,
+      `Pickup location: ${pickupLocation}`,
+      !isForSale ? `Pickup date: ${pickupDate}` : '',
+      !isForSale ? `Return date: ${returnDate}` : '',
+      `Please let me know if it is available.`
+    ].filter(Boolean).join('\n');
+
+    window.open(`https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+    setSuccessMessage("WhatsApp opened. Send the message to contact the owner.");
   };
 
   if (loading) {
@@ -837,6 +854,8 @@ export default function VehicleDetails() {
                   </div>
                 </div>
 
+                {/* Payment controls are retained below for later activation. */}
+                {false && <>
                 {/* Payment Method */}
                 <div>
                   <label className={`block text-sm font-medium mb-3 ${settings.darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
@@ -956,6 +975,7 @@ export default function VehicleDetails() {
                     </div>
                   </div>
                 )}
+                </>}
 
                 {/* Action Buttons */}
                 <div className="grid grid-cols-2 gap-3 pt-4">
@@ -968,7 +988,7 @@ export default function VehicleDetails() {
                     disabled={vehicle.status === "Rented" || vehicle.status === "Sold"}
                   >
                     <CheckCircle className="w-5 h-5" />
-                    {vehicle.status === "Rented" ? "RENTED" : vehicle.status === "Sold" ? "SOLD" : "Confirm & Pay"}
+                    {vehicle.status === "Rented" ? "RENTED" : vehicle.status === "Sold" ? "SOLD" : "Message Owner on WhatsApp"}
                   </button>
                   <button
                     type="button"
@@ -1025,8 +1045,8 @@ export default function VehicleDetails() {
         </div>
       </div>
 
-      {/* USSD Payment Confirmation Modal */}
-      {showUSSDModal && (
+      {/* USSD payment modal retained for later activation. */}
+      {false && showUSSDModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className={`${settings.darkMode ? 'bg-gray-800' : 'bg-white'} rounded-lg p-8 max-w-md w-full mx-4 shadow-2xl`}>
             <div className="text-center">
